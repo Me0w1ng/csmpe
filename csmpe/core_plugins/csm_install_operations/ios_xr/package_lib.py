@@ -76,19 +76,6 @@ class SoftwarePackage(object):
             return None
 
     @property
-    def architecture(self):
-        # asr9k-mcast-px.pie-5.3.2 (external name)
-        # disk0:asr9k-mcast-px-5.3.2 (internal name)
-        # asr9k-px-5.3.3.CSCuy81837.pie (external name)
-        # disk0:asr9k-px-5.3.3.CSCuy81837-1.0.0 (internal name)
-        if 'services-infra' in self.package_name:
-            return True
-        if "-px" in self.package_name:
-            return "px"
-        else:
-            return None
-
-    @property
     def version(self):
         result = re.search(version_re, self.package_name)
         return result.group("VERSION") if result else None
@@ -111,12 +98,11 @@ class SoftwarePackage(object):
         return None
 
     def is_valid(self):
-        return self.platform and self.version and self.architecture and (self.package_type or self.smu or self.sp)
+        return self.platform and self.version and (self.package_type or self.smu or self.sp)
 
     def __eq__(self, other):
         result = self.platform == other.platform and \
             self.package_type == other.package_type and \
-            self.architecture == other.architecture and \
             self.version == other.version and \
             self.smu == other.smu and \
             self.sp == other.sp and \
@@ -133,7 +119,7 @@ class SoftwarePackage(object):
 
     def __hash__(self):
         return hash("{}{}{}{}{}".format(
-            self.platform, self.package_type, self.architecture, self.version, self.smu, self.sp, self.subversion))
+            self.platform, self.package_type, self.version, self.smu, self.sp, self.subversion))
 
     @staticmethod
     def from_show_cmd(cmd):
