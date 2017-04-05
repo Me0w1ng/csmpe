@@ -44,19 +44,24 @@ class Plugin(CSMPlugin):
             self.ctx.error("No package list provided")
             return
 
-        pkgs = SoftwarePackage.from_package_list(packages)
+        # If a wide card character is detected, only the first element
+        # in the list is considered valid.
+        if any('*' in package for package in packages):
+            to_remove = packages[0]
+        else:
+            pkgs = SoftwarePackage.from_package_list(packages)
 
-        admin_installed_inact = SoftwarePackage.from_show_cmd(send_admin_cmd(self.ctx, "show install inactive"))
-        installed_inact = SoftwarePackage.from_show_cmd(self.ctx.send("show install inactive"))
+            admin_installed_inact = SoftwarePackage.from_show_cmd(send_admin_cmd(self.ctx, "show install inactive"))
+            installed_inact = SoftwarePackage.from_show_cmd(self.ctx.send("show install inactive"))
 
-        installed_inact.update(admin_installed_inact)
-        packages_to_remove = pkgs & installed_inact
+            installed_inact.update(admin_installed_inact)
+            packages_to_remove = pkgs & installed_inact
 
-        if not packages_to_remove:
-            self.ctx.warning("Packages already removed. Nothing to be removed")
-            return
+            if not packages_to_remove:
+                self.ctx.warning("Packages already removed. Nothing to be removed")
+                return
 
-        to_remove = " ".join(map(str, packages_to_remove))
+            to_remove = " ".join(map(str, packages_to_remove))
 
         cmd = 'install remove {}'.format(to_remove)
 

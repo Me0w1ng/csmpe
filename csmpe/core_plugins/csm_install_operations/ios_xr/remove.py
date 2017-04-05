@@ -45,16 +45,21 @@ class Plugin(CSMPlugin):
             self.ctx.error("No package list provided")
             return
 
-        pkgs = SoftwarePackage.from_package_list(packages)
+        # If a wide card character is detected, like 'disk0:*6.0.2*', only the first element
+        # in the list is considered valid.  An example CLI is 'admin install remove disk0:*6.0.2*'.
+        if any('*' in package for package in packages):
+            to_remove = packages[0]
+        else:
+            pkgs = SoftwarePackage.from_package_list(packages)
 
-        installed_inact = SoftwarePackage.from_show_cmd(self.ctx.send("admin show install inactive summary"))
-        packages_to_remove = pkgs & installed_inact
+            installed_inact = SoftwarePackage.from_show_cmd(self.ctx.send("admin show install inactive summary"))
+            packages_to_remove = pkgs & installed_inact
 
-        if not packages_to_remove:
-            self.ctx.warning("Packages already removed. Nothing to be removed")
-            return
+            if not packages_to_remove:
+                self.ctx.warning("Packages already removed. Nothing to be removed")
+                return
 
-        to_remove = " ".join(map(str, packages_to_remove))
+            to_remove = " ".join(map(str, packages_to_remove))
 
         cmd = 'admin install remove {} prompt-level none async'.format(to_remove)
 
