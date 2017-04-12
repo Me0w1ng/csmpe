@@ -33,6 +33,7 @@ class Plugin(CSMPlugin):
     name = "Node Status Check Plugin"
     platforms = {'ASR900'}
     phases = {'Pre-Upgrade', 'Post-Upgrade'}
+    os = {'XE'}
 
     def run(self):
         # show platform can take more than 1 minute after router reload. Issue No. 47
