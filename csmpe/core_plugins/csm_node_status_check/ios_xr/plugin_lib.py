@@ -42,6 +42,19 @@ def parse_show_platform(ctx, output):
     0/PS0/M0/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
     0/PS0/M1/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
 
+    ASR9K:
+    RP/0/RSP0/CPU0:PE4#admin show platform
+    Node            Type                      State            Config State
+    -----------------------------------------------------------------------------
+    0/RSP0/CPU0     A9K-RSP880-LT-SE(Active)  IOS XR RUN       PWR,NSHUT,MON
+    0/RSP1/CPU0     A9K-RSP880-LT-SE(Standby) IOS XR RUN       PWR,NSHUT,MON
+    0/FT0/SP        ASR-9006-FAN-V2           READY
+    0/FT1/SP        ASR-9006-FAN-V2           READY
+    0/0/CPU0        A9K-24X10GE-1G-SE         IOS XR RUN       PWR,NSHUT,MON
+    0/PS0/M0/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
+    0/PS0/M1/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
+    0/PS0/M2/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
+
     CRS:
     Node          Type              PLIM               State           Config State
     ------------- ----------------- ------------------ --------------- ---------------
@@ -62,21 +75,43 @@ def parse_show_platform(ctx, output):
     """
     host = ctx.get_host
     inventory = {}
+    if host.family == 'ASR9K':
+        sl = ['Node', 'Type', 'State', 'Config State']
+    elif host.family == 'CRS':
+        sl = ['Node', 'Type', 'PLIM', 'State', 'Config State']
+    else:
+        ctx.warning("Unsupported platform {}".format(host.family))
+        return None
+    dl = {}
+
     lines = output.split('\n')
+    lines = [x for x in lines if x]
     for line in lines:
         line = line.strip()
-        if len(line) > 0 and line[0].isdigit():
-            states = re.split('\s\s+', line)
 
-            if not re.search('CPU\d+$', states[0]):
+        if line[0:4] == 'Node':
+            for s in sl:
+                n = line.find(s)
+                if n != -1:
+                    dl[s] = n
+                else:
+                    ctx.warning("unrecognized show platform header {}".format(line))
+                    return None
+            continue
+
+        if line[0].isdigit():
+            node = line[:dl['Type']]
+            if not re.search('CPU\d+$', node):
                 continue
+
             if host.family == 'ASR9K':
-                node, node_type, state, config_state = states
-            elif host.family == 'CRS':
-                node, node_type, plim, state, config_state = states
-            else:
-                ctx.warning("Unsupported platform {}".format(host.family))
-                return None
+                node_type = line[dl['Type']:dl['State']]
+            else:   # CRS
+                node_type = line[dl['Type']:dl['PLIM']]
+
+            state = line[dl['State']:dl['Config State']]
+            config_state = line[dl['Config State']:]
+
             entry = {
                 'type': node_type,
                 'state': state,
