@@ -203,7 +203,8 @@ def install_activate_reload(ctx):
     ctx.info(message)
     ctx.post_status(message)
 
-    ctx.reload()
+    if not ctx.reload():
+        ctx.error("Encountered error when attempting to reload device.")
 
     success = wait_for_reload(ctx)
 

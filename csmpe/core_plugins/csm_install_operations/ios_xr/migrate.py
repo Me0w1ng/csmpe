@@ -89,11 +89,7 @@ class Plugin(CSMPlugin):
         :return: True if no error occurred.
         """
 
-        self.ctx.send("run", wait_for_string="#")
-
-        output = self.ctx.send("ksh /pkg/bin/migrate_to_eXR -m eusb", wait_for_string="#", timeout=600)
-
-        self.ctx.send("exit")
+        output = self.ctx.send("run /pkg/bin/migrate_to_eXR -m eusb", timeout=600)
 
         self._check_migration_script_output(output)
 
@@ -128,9 +124,9 @@ class Plugin(CSMPlugin):
 
     def _reload_all(self):
         """Reload all nodes to boot eXR image."""
-        self.ctx.reload(reload_timeout=MIGRATION_TIME_OUT)
-
-        return self._wait_for_reload()
+        if self.ctx.reload(reload_timeout=MIGRATION_TIME_OUT):
+            return self._wait_for_reload()
+        self.ctx.error("Encountered error when attempting to reload device.")
 
     def _wait_for_reload(self):
         """Wait for all nodes to come up with max timeout as 18 minutes after the first RSP/RP comes up."""

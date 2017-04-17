@@ -148,7 +148,8 @@ def wait_for_reload(ctx):
         ctx.info("Keeping console connected")
         ctx.post_status("Boot process started")
         ctx.info("Boot process started")
-        ctx.reload(reload_timeout=1500, no_reload_cmd=True)
+        if not ctx.reload(reload_timeout=1500, no_reload_cmd=True):
+            ctx.error("Encountered error when attempting to reload device.")
         ctx.info("Boot process finished")
 
     ctx.info("Device connected successfully")

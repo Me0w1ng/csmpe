@@ -93,6 +93,8 @@ class PluginContext(object):
             )
             self._set_logging(hostname=self._csm.hostname, log_dir=self._csm.log_directory, log_level=logging.DEBUG)
             self._connection.msg_callback = self._post_and_log
+            self._connection.error_msg_callback = self._error_callback
+
             self._device_detect()
         else:
             self._connection = None
@@ -102,6 +104,11 @@ class PluginContext(object):
         self.info(message)
         self.post_status(message)
         return
+
+    def _error_callback(self, message):
+        self.save_job_info('ERROR:' + self._format_log(message))
+        """Log ERROR message"""
+        self._logger.error(self._format_log(message))
 
     def _set_logging(self, hostname="host", log_dir=None, log_level=logging.NOTSET):
         self._logger = logging.getLogger("{}.plugin_manager".format(hostname))

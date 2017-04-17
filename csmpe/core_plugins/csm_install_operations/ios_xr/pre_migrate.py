@@ -46,7 +46,7 @@ NOX_64_BINARY = "nox-linux-64.bin"
 
 TIMEOUT_FOR_COPY_CONFIG = 3600
 TIMEOUT_FOR_COPY_IMAGE = 1800
-TIMEOUT_FOR_FPD_UPGRADE = 9600
+TIMEOUT_FOR_FPD_UPGRADE = 5400
 
 IMAGE_LOCATION = "harddisk:/"
 CONFIG_LOCATION = "harddiskb:/"
@@ -475,9 +475,9 @@ class Plugin(CSMPlugin):
 
     def _resize_eusb(self):
         """Resize the eUSB partition on device - Run the /pkg/bin/resize_eusb script on device(from ksh)."""
-        self.ctx.send("run", wait_for_string="#")
-        output = self.ctx.send("ksh /pkg/bin/resize_eusb", wait_for_string="#")
-        self.ctx.send("exit")
+
+        output = self.ctx.send("run /pkg/bin/resize_eusb")
+
         if "Pre-Migration Operation Completed." not in output:
             self.ctx.error("Pre-Migrate partition check failed. Please check session.log.")
         # output = self.ctx.send("show media")
@@ -643,7 +643,7 @@ class Plugin(CSMPlugin):
                                     events, transitions, timeout=30):
                 self.ctx.error("Error while upgrading FPD subtype {}. Please check session.log".format(fpdtype))
 
-            fpd_log = self.ctx.send("show log | include fpd")
+            fpd_log = self.ctx.send("show log | include fpd", timeout=300)
 
             for location in subtype_to_locations_need_upgrade[fpdtype]:
 
