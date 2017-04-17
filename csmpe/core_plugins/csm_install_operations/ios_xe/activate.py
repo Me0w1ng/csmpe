@@ -67,7 +67,7 @@ class Plugin(CSMPlugin):
         self.ctx.info("Activate package(s) pending")
         self.ctx.post_status("Activate Package(s) Pending")
 
-        prompt = self.ctx._connection.hostname
+        # prompt = self.ctx._connection.hostname
 
         # issu: need to copy the consolidated image to the installed folder
         if mode == 'issu':
@@ -86,25 +86,25 @@ class Plugin(CSMPlugin):
 
         # configurations
         cmd = "configure terminal"
-        self.ctx.send(cmd, wait_for_string=prompt)
+        self.ctx.send(cmd)
         cmd = "config-register 0x2102"
-        self.ctx.send(cmd, wait_for_string=prompt)
+        self.ctx.send(cmd)
 
         if mode == 'issu':
             cmd = 'redundancy'
-            self.ctx.send(cmd, wait_for_string=prompt)
+            self.ctx.send(cmd)
             cmd = 'mode sso'
-            self.ctx.send(cmd, wait_for_string=prompt)
+            self.ctx.send(cmd)
         else:
             cmd = "no boot system"
-            self.ctx.send(cmd, wait_for_string=prompt)
+            self.ctx.send(cmd)
             if mode == 'consolidated':
                 cmd = "boot system bootflash:" + pkg
             else:
                 cmd = 'boot system ' + folder + '/packages.conf'
-            self.ctx.send(cmd, wait_for_string=prompt)
+            self.ctx.send(cmd)
 
-        self.ctx.send('end', wait_for_string=prompt)
+        self.ctx.send('end')
 
         cmd = "write memory"
         install_activate_write_memory(self.ctx, cmd, self.ctx._connection.hostname)
