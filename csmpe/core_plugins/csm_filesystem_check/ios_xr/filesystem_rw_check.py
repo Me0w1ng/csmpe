@@ -37,7 +37,7 @@ class Plugin(CSMPlugin):
     name = "Filesystem Check Plugin"
     platforms = {'ASR9K', 'CRS'}
     phases = {'Pre-Upgrade'}
-    os = {'XR'}
+    os = {'None'}
 
     def _can_create_dir(self, filesystem):
 
