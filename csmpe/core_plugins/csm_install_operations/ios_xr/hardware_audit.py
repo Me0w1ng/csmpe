@@ -155,12 +155,12 @@ class Plugin(CSMPlugin):
                 supported = True
                 break
         if mandatory and not supported:
-            self.ctx.error("The card type for {} is not supported for migration to ASR9K-64.".format(node_name) +
+            self.ctx.error("The card type for {} is not supported for migration to ASR9K-X64.".format(node_name) +
                            " Please check the user manual under 'Help' on CSM Server for list of " +
-                           "supported hardware for ASR9K-64.")
+                           "supported hardware for ASR9K-X64.")
 
         if supported and value['state'] != operational_state:
-            self.ctx.error("{} is supported in ASR9K-64, but it's in {}".format(node_name, value['state']) +
+            self.ctx.error("{} is supported in ASR9K-X64, but it's in {}".format(node_name, value['state']) +
                            " state. Valid operational state for migration: {}".format(operational_state))
         if supported:
             return 1

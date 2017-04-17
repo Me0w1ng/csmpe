@@ -61,7 +61,7 @@ class Plugin(CSMPlugin):
         try:
             output = self.ctx.send(cmd)
         except CommandSyntaxError:
-            # This will happen when the device is ASR9K-64 and the ISIS package is not installed.
+            # This will happen when the device is ASR9K-X64 and the ISIS package is not installed.
             self.ctx.info("The CLI 'show isis neighbor summary' is not available for checking the number " +
                           "of ISIS neighbors. Possible reason: the ISIS package (if any) needs to be installed.")
             return

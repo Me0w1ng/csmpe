@@ -154,7 +154,7 @@ class Plugin(CSMPlugin):
 
         self._run_migration_script()
 
-        log_and_post_status(self.ctx, "Reload device to boot ASR9K-64 image.")
+        log_and_post_status(self.ctx, "Reload device to boot ASR9K-X64 image.")
         self._reload_all()
 
         run_additional_custom_commands(self.ctx, {"show platform"})
