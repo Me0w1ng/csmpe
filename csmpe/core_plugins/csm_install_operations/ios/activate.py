@@ -63,20 +63,20 @@ class Plugin(CSMPlugin):
         self.ctx.info("Activate package(s) pending")
         self.ctx.post_status("Activate Package(s) Pending")
 
-        prompt = self.ctx._connection.hostname
+        # prompt = self.ctx._connection.hostname
 
         # configurations
         cmd = "configure terminal"
-        self.ctx.send(cmd, wait_for_string=prompt)
+        self.ctx.send(cmd)
         cmd = "config-register 0x2102"
-        self.ctx.send(cmd, wait_for_string=prompt)
+        self.ctx.send(cmd)
 
         cmd = "no boot system"
-        self.ctx.send(cmd, wait_for_string=prompt)
+        self.ctx.send(cmd)
         cmd = "boot system flash:" + pkg
-        self.ctx.send(cmd, wait_for_string=prompt)
+        self.ctx.send(cmd)
 
-        self.ctx.send('end', wait_for_string=prompt)
+        self.ctx.send('end')
 
         cmd = "write memory"
         install_activate_write_memory(self.ctx, cmd, self.ctx._connection.hostname)
