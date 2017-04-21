@@ -186,9 +186,9 @@ def parse_show_platform(ctx, output):
             if not re.search('CPU\d+\s*$', node):
                 continue
 
-            node_type = line[dl['type']:dl['state']]
-            state = line[dl['state']:dl['config state']]
-            config_state = line[dl['config state']:]
+            node_type = line[dl['type']:dl['state']].strip()
+            state = line[dl['state']:dl['config state']].strip()
+            config_state = line[dl['config state']:].strip()
 
             entry = {
                 'type': node_type,
