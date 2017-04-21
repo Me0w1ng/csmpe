@@ -100,17 +100,17 @@ def parse_show_platform(ctx, output):
             continue
 
         if line[0].isdigit():
-            node = line[:dl['Type']]
+            node = line[:dl['Type']].strip()
             if not re.search('CPU\d+$', node):
                 continue
 
             if host.family == 'ASR9K':
-                node_type = line[dl['Type']:dl['State']]
+                node_type = line[dl['Type']:dl['State']].strip()
             else:   # CRS
-                node_type = line[dl['Type']:dl['PLIM']]
+                node_type = line[dl['Type']:dl['PLIM']].strip()
 
-            state = line[dl['State']:dl['Config State']]
-            config_state = line[dl['Config State']:]
+            state = line[dl['State']:dl['Config State']].strip()
+            config_state = line[dl['Config State']:].strip()
 
             entry = {
                 'type': node_type,
