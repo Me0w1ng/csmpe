@@ -5,7 +5,7 @@ import json
 from csmpe.context import PluginError
 from csmpe.core_plugins.csm_custom_commands_capture.plugin import Plugin as CmdCapturePlugin
 
-SUPPORTED_HW_JSON = "./asr9k_64bit/migration_supported_hw.json"
+SUPPORTED_HW_JSON = "./asr9k_x64/migration_supported_hw.json"
 
 ADMIN_RP = "\d+/RS?P\d+"
 ADMIN_LC = "\d+/\d+"

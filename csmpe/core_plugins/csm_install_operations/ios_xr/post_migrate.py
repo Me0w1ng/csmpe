@@ -108,7 +108,7 @@ class Plugin(CSMPlugin):
 
     def _reload_all(self):
         """Reload the device with 1 hour maximum timeout"""
-        if self.ctx.reload(reload_timeout=3600, os=self.ctx.os_type):
+        if self.ctx.reload(reload_timeout=3600):
             return self._wait_for_reload()
         self.ctx.error("Encountered error when attempting to reload device.")
 
