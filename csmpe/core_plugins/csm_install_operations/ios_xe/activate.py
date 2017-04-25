@@ -107,7 +107,7 @@ class Plugin(CSMPlugin):
         self.ctx.send('end')
 
         cmd = "write memory"
-        install_activate_write_memory(self.ctx, cmd, self.ctx._connection.hostname)
+        install_activate_write_memory(self.ctx, cmd)
         # self.ctx.send(cmd, timeout=300, wait_for_string=prompt)
 
         # Start activation
