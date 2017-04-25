@@ -89,10 +89,15 @@ def wait_for_reload(ctx):
      Wait for system to come up with max timeout as 25 Minutes
 
     """
+    begin = time.time()
     ctx.disconnect()
-    time.sleep(180)
+    ctx.post_status("Waiting for device boot to reconnect")
+    ctx.info("Waiting for device boot to reconnect")
+    time.sleep(1500)   # 25 * 60 = 1500
+    ctx.reconnect(force_discovery=True)   # default max_timeout=360
+    ctx.info("Boot process finished")
+    ctx.info("Device connected successfully")
 
-    ctx.reconnect(max_timeout=1500, force_discovery=True)  # 25 * 60 = 1500
     timeout = 3600
     poll_time = 30
     time_waited = 0
@@ -124,6 +129,8 @@ def wait_for_reload(ctx):
         m = re.search('(asr.*\.bin)', output)
         if m:
             ctx.info("The device is in the desired state")
+            elapsed = time.time() - begin
+            ctx.info("Overall outage time: {} minute(s) {:.0f} second(s)".format(elapsed // 60, elapsed % 60))
             return True
 
     # Some nodes did not come to run state
@@ -150,9 +157,9 @@ def install_activate_write_memory(ctx, cmd, hostname):
     plugin_ctx = ctx
 
     # Seeing this message without the reboot prompt indicates a non-reload situation
-    Build_config = re.compile("[OK]")
+    Build_config = re.compile("\[OK\]")
 
-    Overwrite_warning = re.compile("Overwrite the previous NVRAM configuration?[confirm]")
+    Overwrite_warning = re.compile("Overwrite the previous NVRAM configuration\?\[confirm\]")
 
     Host_prompt = re.compile(hostname)
 
@@ -203,7 +210,7 @@ def install_activate_reload(ctx):
     ctx.info(message)
     ctx.post_status(message)
 
-    if not ctx.reload():
+    if not ctx.reload(reload_timeout=1200, no_reload_cmd=True):
         ctx.error("Encountered error when attempting to reload device.")
 
     success = wait_for_reload(ctx)
