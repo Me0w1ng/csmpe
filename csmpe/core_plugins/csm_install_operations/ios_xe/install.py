@@ -44,6 +44,13 @@ def issu_error_state(fsm_ctx):
     return False
 
 
+def issu_connection_closed(fsm_ctx):
+    plugin_ctx.warning("Unexpected connection closed by foreign host during ISSU")
+    # sleep until both standby and active RSP's are upgraded
+    time.sleep(3600)
+    return True
+
+
 def validate_node_state(inventory):
     valid_state = [
         'ok',
@@ -66,10 +73,15 @@ def wait_for_reload(ctx):
      Wait for system to come up with max timeout as 25 Minutes
 
     """
+    begin = time.time()
     ctx.disconnect()
-    time.sleep(180)
+    ctx.post_status("Waiting for device boot to reconnect")
+    ctx.info("Waiting for device boot to reconnect")
+    time.sleep(1500)   # 25 * 60 = 1500
+    ctx.reconnect(force_discovery=True)
+    ctx.info("Boot process finished")
+    ctx.info("Device connected successfully")
 
-    ctx.reconnect(max_timeout=3600, force_discovery=True)  # 60 * 60 = 3600
     timeout = 3600
     poll_time = 30
     time_waited = 0
@@ -102,6 +114,8 @@ def wait_for_reload(ctx):
         inventory = parse_show_platform(ctx, output)
         if validate_node_state(inventory):
             ctx.info("All nodes in desired state")
+            elapsed = time.time() - begin
+            ctx.info("Overall outage time: {} minute(s) {:.0f} second(s)".format(elapsed // 60, elapsed % 60))
             return True
 
     # Some nodes did not come to run state
@@ -110,7 +124,7 @@ def wait_for_reload(ctx):
     return False
 
 
-def install_activate_write_memory(ctx, cmd, hostname):
+def install_activate_write_memory(ctx, cmd):
     """
 
     PAN-5201-ASR903#write memory
@@ -128,17 +142,13 @@ def install_activate_write_memory(ctx, cmd, hostname):
     plugin_ctx = ctx
 
     # Seeing this message without the reboot prompt indicates a non-reload situation
-    Build_config = re.compile("[OK]")
+    Build_config = re.compile("\[OK\]")
+    Overwrite_warning = re.compile("Overwrite the previous NVRAM configuration\?\[confirm\]")
 
-    Overwrite_warning = re.compile("Overwrite the previous NVRAM configuration?[confirm]")
-
-    Host_prompt = re.compile(hostname)
-
-    events = [Host_prompt, Overwrite_warning, Build_config]
+    events = [Overwrite_warning, Build_config]
     transitions = [
         (Overwrite_warning, [0], 1, send_newline, 1200),
-        (Build_config, [0, 1], 2, None, 1200),
-        (Host_prompt, [0, 1, 2], -1, None, 1200),
+        (Build_config, [0, 1], -1, None, 1200),
     ]
 
     if not ctx.run_fsm("write memory", cmd, events, transitions, timeout=1200):
@@ -219,7 +229,7 @@ def install_activate_reload(ctx):
     ctx.info(message)
     ctx.post_status(message)
 
-    if not ctx.reload():
+    if not ctx.reload(reload_timeout=1200, no_reload_cmd=True):
         ctx.error("Encountered error when attempting to reload device.")
 
     success = wait_for_reload(ctx)
@@ -246,6 +256,7 @@ def install_activate_issu(ctx, cmd):
     plugin_ctx = ctx
 
     # Seeing a message without STAGE 4 is an error
+    Phase_one = re.compile("Starting disk space verification")
     Stage_one = re.compile("STAGE 1: Installing software on standby RP")
     Stage_two = re.compile("STAGE 2: Restarting standby RP")
     Stage_three = re.compile("STAGE 3: Installing sipspa package on local RP")
@@ -253,19 +264,24 @@ def install_activate_issu(ctx, cmd):
     Load_on_reboot = re.compile("SUCCESS: Software provisioned.  New software will load on reboot")
     Missing_conf = re.compile("SYSTEM IS NOT BOOTED VIA PACKAGE FILE")
     Failed = re.compile("FAILED:")
-
-    events = [Stage_one, Stage_two, Stage_three, Stage_four, Load_on_reboot, Missing_conf, Failed]
+    Connection_closed = re.compile("Connection closed by foreign host")
+    #            0          1          2          3             4            5
+    events = [Phase_one, Stage_one, Stage_two, Stage_three, Stage_four, Load_on_reboot,
+              Missing_conf, Failed, Connection_closed]
+    #            6            7            8
     transitions = [
-        (Stage_one, [0], 1, None, 900),
-        (Stage_two, [1], 2, None, 900),
-        (Stage_three, [2], 3, None, 1800),
-        (Stage_four, [3], 4, None, 1800),
-        (Load_on_reboot, [4], -1, None, 1800),
-        (Missing_conf, [0, 1, 2, 3, 4], -1, issu_error_state, 1800),
-        (Failed, [0, 1, 2, 3, 4], -1, issu_error_state, 1800),
+        (Phase_one, [0], 1, None, 1800),
+        (Stage_one, [0, 1], 2, None, 1800),
+        (Stage_two, [2], 3, None, 1800),
+        (Stage_three, [3], 4, None, 1800),
+        (Stage_four, [4], 5, None, 1800),
+        (Load_on_reboot, [5], -1, None, 1800),
+        (Missing_conf, [0, 1, 2, 3, 4, 5], -1, issu_error_state, 60),
+        (Failed, [0, 1, 2, 3, 4, 5], -1, issu_error_state, 60),
+        (Connection_closed, [1, 2, 3, 4], -1, issu_connection_closed, 4200)
     ]
 
-    if not ctx.run_fsm("ISSU", cmd, events, transitions, timeout=3600):
+    if not ctx.run_fsm("ISSU", cmd, events, transitions, timeout=4200):
         ctx.error("Failed: {}".format(cmd))
 
     time.sleep(300)

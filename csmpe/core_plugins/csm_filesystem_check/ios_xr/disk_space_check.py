@@ -101,9 +101,11 @@ class Plugin(CSMPlugin):
             total_size += size
             self.ctx.info("Package: {} requires {} bytes.".format(package, size))
 
-        self.ctx.info("Total (required/available): {}/{} bytes".format(total_size, disk0_free))
         if disk0_free < total_size:
-            self.ctx.error("Not enough space on disk0: to install packages. The install process can't proceed.")
+            self.ctx.error("Not enough space on disk0: to install packages. The install process can't proceed."
+                           "\n"
+                           "Total (required/available): {}/{} bytes".format(total_size, disk0_free))
         else:
             self.ctx.info("There is enough space on disk0: to install packages.")
+            self.ctx.info("Total (required/available): {}/{} bytes".format(total_size, disk0_free))
         return True
