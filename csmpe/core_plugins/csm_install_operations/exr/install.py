@@ -278,9 +278,6 @@ def observe_install_add_remove(ctx, output, has_tar=False):
     result = re.search('Install operation (\d+)', output)
     if result:
         op_id = result.group(1)
-        if has_tar is True:
-            ctx.operation_id = op_id
-            ctx.info("The operation {} stored".format(op_id))
     else:
         log_install_errors(ctx, output)
         ctx.error("Operation failed")
@@ -290,6 +287,9 @@ def observe_install_add_remove(ctx, output, has_tar=False):
 
     if op_success in output:
         watch_operation(ctx, op_id)
+        if has_tar is True:
+            ctx.set_operation_id(ctx.software_packages, op_id)
+            ctx.info("The operation {} stored".format(op_id))
     else:
         log_install_errors(ctx, output)
         ctx.error("Operation {} failed".format(op_id))

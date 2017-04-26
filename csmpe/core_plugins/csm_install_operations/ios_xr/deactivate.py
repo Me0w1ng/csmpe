@@ -30,6 +30,7 @@ from package_lib import SoftwarePackage
 from csmpe.plugins import CSMPlugin
 from install import install_activate_deactivate
 from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_inventory
+from csmpe.core_plugins.csm_install_operations.utils import get_cmd_for_install_activate_deactivate
 
 
 class Plugin(CSMPlugin):
@@ -72,22 +73,13 @@ class Plugin(CSMPlugin):
         """
         Performs install deactivate operation
         """
-        operation_id = None
-        if hasattr(self.ctx, 'operation_id'):
-            if self.ctx.operation_id != -1:
-                self.ctx.info("Using the operation ID: {}".format(self.ctx.operation_id))
-                operation_id = self.ctx.operation_id
+        cmd = get_cmd_for_install_activate_deactivate(self.ctx, self.get_tobe_deactivated_pkg_list,
+                                                      cmd_with_package_names='admin install deactivate {} prompt-level none async',
+                                                      cmd_with_operation_id='admin install deactivate id {} prompt-level none async')
 
-        if operation_id is None or operation_id == -1:
-            tobe_deactivated = self.get_tobe_deactivated_pkg_list()
-            if not tobe_deactivated:
-                self.ctx.info("Nothing to be deactivated.")
-                return True
-
-        if operation_id is not None and operation_id != -1:
-            cmd = 'admin install deactivate id {} prompt-level none async'.format(operation_id)
-        else:
-            cmd = 'admin install deactivate {} prompt-level none async'.format(tobe_deactivated)
+        if not cmd:
+            self.ctx.info("Nothing to be deactivated.")
+            return True
 
         self.ctx.info("Deactivate package(s) pending")
         self.ctx.post_status("Deactivate Package(s) Pending")

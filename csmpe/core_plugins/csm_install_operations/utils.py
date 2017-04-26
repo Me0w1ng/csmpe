@@ -52,3 +52,32 @@ def update_device_info_udi(ctx):
     # ctx._connection._update_udi()
     ctx._csm.save_data("device_info", ctx._connection.device_info)
     ctx._csm.save_data("udi", ctx._connection.udi)
+
+
+def get_cmd_for_install_activate_deactivate(ctx, func_get_pkg_list,
+                                            cmd_with_package_names, cmd_with_operation_id):
+    try:
+        has_tar = False
+        for package in ctx.software_packages:
+            if "tar" in package:
+                has_tar = True
+                break
+        if has_tar:
+            operation_id = ctx.get_operation_id(ctx.software_packages)
+        else:
+            operation_id = None
+    except AttributeError:
+        ctx.error("No package is selected.")
+        return
+
+    if operation_id is None or operation_id == -1:
+        if has_tar:
+            ctx.error("No install add operation of the exact selected packages has been completed successfully.")
+            return
+        tobe_activated_deactivated = func_get_pkg_list()
+        if not tobe_activated_deactivated:
+            return None
+        return cmd_with_package_names.format(tobe_activated_deactivated)
+    else:
+        ctx.info("Using the operation ID: {}".format(operation_id))
+        return cmd_with_operation_id.format(operation_id)

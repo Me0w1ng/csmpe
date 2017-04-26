@@ -248,9 +248,6 @@ def install_add_remove(ctx, cmd, has_tar=False):
     result = re.search('Install operation (\d+) \'', output)
     if result:
         op_id = result.group(1)
-        if has_tar is True:
-            ctx.operation_id = op_id
-            ctx.info("The operation {} stored".format(op_id))
     else:
         log_install_errors(ctx, output)
         ctx.error("Operation failed")
@@ -267,6 +264,10 @@ def install_add_remove(ctx, cmd, has_tar=False):
             return  # for same of clarity
 
         ctx.info("Operation {} finished successfully".format(op_id))
+        if has_tar is True:
+            ctx.set_operation_id(ctx.software_packages, op_id)
+            ctx.info("The operation {} stored".format(op_id))
+
         return  # for sake of clarity
     else:
         log_install_errors(ctx, output)
