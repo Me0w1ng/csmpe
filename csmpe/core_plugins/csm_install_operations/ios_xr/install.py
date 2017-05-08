@@ -142,7 +142,7 @@ def wait_for_reload(ctx):
         ctx.post_status("Waiting for device boot to reconnect")
         ctx.info("Waiting for device boot to reconnect")
         time.sleep(60)
-        ctx.reconnect(max_timeout=1500, force_discovery=True)  # 25 * 60 = 1500
+        ctx.reconnect(max_timeout=3600, force_discovery=True)  # 60 * 60 = 3600
 
     else:
         ctx.info("Keeping console connected")
