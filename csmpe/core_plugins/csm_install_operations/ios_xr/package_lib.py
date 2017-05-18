@@ -40,7 +40,8 @@ sp_re = None
 subversion_re = 1.0.0
 """
 platforms = ["asr9k", "hfr"]
-package_types = "mini mcast mgbl mpls k9sec diags fpd doc bng li optic services services-infa " \
+# 'services-infra' needs to be before 'service' for matching purpose
+package_types = "mini mcast mgbl mpls k9sec diags fpd doc bng li optic services-infra services " \
                 "infra-test video 9000v asr901 asr903 ncs500x".split()
 version_re = re.compile("(?P<VERSION>\d+\.\d+\.\d+(\.\d+\w+)?)")
 smu_re = re.compile("(?P<SMU>CSC[a-z]{2}\d{5})")
@@ -138,6 +139,7 @@ class SoftwarePackage(object):
             software_package = SoftwarePackage(pkg)
             if software_package.is_valid():
                 software_packages.add(software_package)
+
         return software_packages
 
     def __repr__(self):

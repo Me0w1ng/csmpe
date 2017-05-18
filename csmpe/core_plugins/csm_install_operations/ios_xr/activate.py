@@ -66,10 +66,10 @@ class Plugin(CSMPlugin):
                         packages_to_activate.add(inactive_pkg)
 
             if not packages_to_activate:
-                to_deactivate = " ".join(map(str, pkgs))
+                to_activate = " ".join(map(str, pkgs))
 
                 state_of_packages = "\nTo activate :{} \nInactive: {} \nActive: {}".format(
-                    to_deactivate, installed_inact, installed_act
+                    to_activate, installed_inact, installed_act
                 )
                 self.ctx.info(state_of_packages)
                 self.ctx.error('To be activated packages not in inactive packages list.')
