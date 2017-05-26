@@ -213,7 +213,7 @@ class PluginContext(object):
         Loads (data, timestamp) tuple for the key from host context data
         """
         result = self._csm.load_data(key)
-        if result:
+        if result is not None:
             self.info("Key '{}' loaded from CSM storage".format(key))
             if isinstance(result, list):
                 return tuple(result)
@@ -235,7 +235,7 @@ class PluginContext(object):
         Loads (data, timestamp) tuple for the key
         """
         result = self._csm.load_job_data(key)
-        if result:
+        if result is not None:
             self.info("Key '{}' loaded from CSM storage".format(key))
             if isinstance(result, list):
                 return tuple(result)
