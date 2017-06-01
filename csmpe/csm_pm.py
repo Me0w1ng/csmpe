@@ -31,6 +31,7 @@ import pkginfo
 from stevedore.dispatch import DispatchExtensionManager
 from stevedore.exception import NoMatches
 
+
 from context import PluginContext
 
 install_phases = ['Pre-Upgrade', 'Pre-Add', 'Add', 'Pre-Activate', 'Activate', 'Pre-Deactivate',
@@ -159,7 +160,7 @@ class CSMPluginManager(object):
         self._ctx.current_plugin = None
         self._ctx.success = True
         self._ctx.info("CSM Plugin Manager Finished")
-        self._ctx.disconnect()
+        self._ctx.finalize()
         return results
 
     def set_platform_filter(self, platform):
