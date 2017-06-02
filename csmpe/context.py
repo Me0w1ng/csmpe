@@ -84,6 +84,7 @@ class PluginContext(object):
     """
     def __init__(self, csm=None):
         self._csm = csm
+        self._log_handler = None
         self.current_plugin = ""
         if csm is not None:
             self._connection = condoor.Connection(
@@ -126,8 +127,24 @@ class PluginContext(object):
             handler = logging.StreamHandler()
 
         handler.setFormatter(formatter)
+        self._log_handler = handler
         self._logger.addHandler(handler)
         self._logger.setLevel(log_level)
+
+    def _reset_logging(self):
+        self._logger.removeHandler(self._log_handler)
+        self._log_handler.close()
+
+    def __del__(self):
+        self.finalize()
+
+    def finalize(self):
+        """Clean up the the context."""
+        if self._connection:
+            self._connection.disconnect()
+            self._connection.finalize()
+
+        self._reset_logging()
 
     @property
     def TIMEOUT(self):
@@ -184,7 +201,7 @@ class PluginContext(object):
 
         """Log ERROR message"""
         self._logger.error(self._format_log(message))
-        self.disconnect()
+        self.finalize()
         raise PluginError
 
     def warning(self, message):
