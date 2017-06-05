@@ -138,7 +138,7 @@ class Plugin(CSMPlugin):
 
         return True
 
-    def run(self):
+    def _run(self):
 
         host = None
         try:

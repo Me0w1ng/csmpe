@@ -69,7 +69,7 @@ class Plugin(CSMPlugin):
                                                                                             packages_to_deactivate))))
                 return " ".join(map(str, packages_to_deactivate))
 
-    def run(self):
+    def _run(self):
         """
         Performs install deactivate operation
         """

@@ -45,7 +45,7 @@ class Plugin(CSMPlugin):
     # with the installed software. Configuration will be restored from an alternate source and may take
     # longer than usual on this boot.
 
-    def run(self):
+    def _run(self):
         # FIXME: Consider optimization
         # The log may be large
         # Maybe better run sh logging | i "Error|error|ERROR|Traceback|Core for pid" directly on the device

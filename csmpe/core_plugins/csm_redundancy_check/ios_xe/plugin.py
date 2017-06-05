@@ -39,7 +39,7 @@ class Plugin(CSMPlugin):
     platforms = {'ASR900'}
     phases = {'Pre-Upgrade', 'Post-Upgrade'}
 
-    def run(self):
+    def _run(self):
         """
         PAN-5201-ASR903#show redundancy states
         my state = 13 -ACTIVE

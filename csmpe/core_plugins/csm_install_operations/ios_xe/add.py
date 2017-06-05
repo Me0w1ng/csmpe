@@ -37,7 +37,7 @@ class Plugin(CSMPlugin):
     phases = {'Add'}
     os = {'XE'}
 
-    def run(self):
+    def _run(self):
         server_repository_url = self.ctx.server_repository_url
 
         if server_repository_url is None:

@@ -45,7 +45,7 @@ class Plugin(CSMPlugin):
     phases = {'Pre-Activate'}
     os = {'XE'}
 
-    def run(self):
+    def _run(self):
 
         self.ctx.info("Hardware platform: {}".format(self.ctx._connection.platform))
         self.ctx.info("OS Version: {}".format(self.ctx._connection.os_version))

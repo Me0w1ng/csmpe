@@ -39,7 +39,7 @@ class Plugin(CSMPlugin):
     phases = {'Remove'}
     os = {'XR'}
 
-    def run(self):
+    def _run(self):
         packages = self.ctx.software_packages
         if packages is None:
             self.ctx.error("No package list provided")

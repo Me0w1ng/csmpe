@@ -870,7 +870,7 @@ class Plugin(CSMPlugin):
         else:
             self.ctx.error("The configuration migration tool NoX is currently not available for 32 bit linux system.")
 
-    def run(self):
+    def _run(self):
         server_repo_url = None
         try:
             server_repo_url = self.ctx.server_repository_url
@@ -921,7 +921,7 @@ class Plugin(CSMPlugin):
 
         self.ctx.save_job_data('hardware_audit_version', exr_version)
         hardware_audit_plugin = HardwareAuditPlugin(self.ctx)
-        hardware_audit_plugin.run()
+        hardware_audit_plugin._run()
 
         fpd_relevant_nodes_tuple = self.ctx.load_job_data('fpd_relevant_nodes')
         if fpd_relevant_nodes_tuple:

@@ -39,7 +39,7 @@ class Plugin(CSMPlugin):
     phases = {'Commit'}
     os = {'eXR'}
 
-    def run(self):
+    def _run(self):
         """
         It performs commit operation
         RP/0/RP0/CPU0:Deploy#install commit

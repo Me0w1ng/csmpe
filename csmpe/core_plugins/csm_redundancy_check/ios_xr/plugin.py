@@ -38,7 +38,7 @@ class Plugin(CSMPlugin):
     platforms = {'ASR9K', 'CRS'}
     phases = {'Pre-Upgrade', 'Pre-Activate'}
 
-    def run(self):
+    def _run(self):
         """
         RP/0/RP0/CPU0:CRS-X-Deploy2#admin show redundancy location all
         Tue May 17 21:00:15.863 UTC

@@ -36,7 +36,7 @@ class Plugin(CSMPlugin):
     phases = {'Remove All Inactive'}
     os = {'eXR'}
 
-    def run(self):
+    def _run(self):
 
         cmd = 'install remove inactive all'
 

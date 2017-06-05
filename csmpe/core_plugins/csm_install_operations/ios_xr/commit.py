@@ -41,11 +41,11 @@ class Plugin(CSMPlugin):
     phases = {'Commit'}
     os = {'XR'}
 
-    def run(self):
+    def _run(self):
         """
         It performs commit operation
         """
-
+        """
         failed_oper = r'Install operation (\d+) failed'
         completed_with_failure = 'Install operation (\d+) completed with failure'
         success_oper = r'Install operation (\d+) completed successfully'
@@ -78,3 +78,5 @@ class Plugin(CSMPlugin):
         # Refresh package and inventory information
         get_package(self.ctx)
         get_inventory(self.ctx)
+        """
+        self.ctx.info("Install Commit completes.")

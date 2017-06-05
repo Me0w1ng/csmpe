@@ -39,8 +39,8 @@ import textwrap
 import urlparse
 
 from csmpe.context import InstallContext
-from csmpe.csm_pm import CSMPluginManager
-from csmpe.csm_pm import install_phases
+from csmpe.managers import get_csm_plugin_manager
+from csmpe.managers.base import install_phases
 
 _PLATFORMS = ["ASR9K", "NCS4K", "NCS6K", "CRS", "ASR900"]
 _OS = ["IOS", "XR", "eXR", "XE"]
@@ -111,7 +111,7 @@ def cli():
 @click.option("--brief", is_flag=True,
               help="Display brief information about installed plugins.")
 def plugin_list(platform, phase, os, detail, brief):
-    pm = CSMPluginManager(None, invoke_on_load=False)
+    pm = get_csm_plugin_manager(None, invoke_on_load=False)
     pm.set_phase_filter(phase)
     pm.set_platform_filter(platform)
     pm.set_os_filter(os)
@@ -171,7 +171,7 @@ def plugin_run(url, phase, cmd, log_dir, package, repository_url, plugin_name):
     if cmd:
         ctx.custom_commands = list(cmd)
 
-    pm = CSMPluginManager(ctx)
+    pm = get_csm_plugin_manager(ctx)
     pm.set_name_filter(plugin_name)
     results = pm.dispatch("run")
 

@@ -36,7 +36,7 @@ class Plugin(CSMPlugin):
     platforms = {'ASR9K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'ASR900', 'N6K', 'IOS-XRv'}
     phases = {'Pre-Upgrade', 'Post-Upgrade', 'Migration-Audit', 'Pre-Migrate', 'Migrate', 'Post-Migrate'}
 
-    def run(self):
+    def _run(self):
         command_list = self.ctx.custom_commands
         if command_list:
             for cmd in command_list:

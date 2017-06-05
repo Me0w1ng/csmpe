@@ -36,7 +36,7 @@ class Plugin(CSMPlugin):
     platforms = {'ASR9K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOS-XRv'}
     phases = {'Pre-Upgrade', "Pre-Activate", "Pre-Deactivate"}
 
-    def run(self):
+    def _run(self):
         """
         RP/0/RSP0/CPU0:R3#cfs check
         Tue May 17 09:56:43.720 UTC

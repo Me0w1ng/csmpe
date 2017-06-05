@@ -114,7 +114,7 @@ class Plugin(CSMPlugin):
 
         return True
 
-    def run(self):
+    def _run(self):
 
         file_systems = get_filesystems(self.ctx)
 
