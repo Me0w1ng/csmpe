@@ -36,7 +36,7 @@ from csmpe.core_plugins.csm_install_operations.utils import get_cmd_for_install_
 class Plugin(CSMPlugin):
     """This plugin deactivates packages on the device."""
     name = "Install Deactivate Plugin"
-    platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOS-XRv'}
+    platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
     phases = {'Deactivate'}
     os = {'eXR'}
 
