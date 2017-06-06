@@ -39,6 +39,9 @@ install_phases = ['Pre-Upgrade', 'Pre-Add', 'Add', 'Pre-Activate', 'Activate', '
 
 @six.add_metaclass(abc.ABCMeta)
 class CSMPluginManager(object):
+    """
+    Abstract plugin manager defined to load and dispatch plugins.
+    """
 
     def __init__(self, plugin_ctx=None):
         """ This is the constructor of an abstract plugin manager. The constructor can be overridden by the subclass
