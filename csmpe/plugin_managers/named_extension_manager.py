@@ -27,43 +27,70 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-from stevedore.dispatch import DispatchExtensionManager
+from stevedore.named import NamedExtensionManager
 from stevedore.exception import NoMatches
 
-from csmpe.managers.base import CSMPluginManager, plugin_namespace
+from csmpe.plugin_managers.base import CSMPluginManager, plugin_namespace
+from csmpe.plugin_managers.dispatch_extension_manager import DispatchExtensionManager
 
-auto_pre_phases = ["Add", "Activate", "Deactivate"]
 
-
-class CSMPluginDispatchExtensionManager(CSMPluginManager):
+class CSMPluginNamedExtensionManager(CSMPluginManager):
     """
-    This plugin manager uses stevedore's DispatchExtensionManager internally to dispatch
-     all plugins that match the family, os and phase specified in the plugin context.
-     The execution of the plugins are in no particular order.
+    This plugin manager executes plugins in the order specified in the plugin context.
+    It first uses stevedore's DispatchExtensionManager internally to filter plugins that match
+    the family, os, phase and plugin names specified in the plugin context.
+    Then it provides the extension names of the filtered plugins to stevedore's NamedExtensionManager,
+    in order to execute the filtered plugins in specified order.
     """
 
     def __init__(self, plugin_ctx=None, invoke_on_load=True):
-        super(CSMPluginDispatchExtensionManager, self).__init__(plugin_ctx)
+        super(CSMPluginNamedExtensionManager, self).__init__(plugin_ctx)
+
+        self._phase = self._ctx.phase
 
         self.load(invoke_on_load=invoke_on_load)
 
     def load(self, invoke_on_load=True):
-        self._manager = DispatchExtensionManager(
+
+        ext_manager = DispatchExtensionManager(
             plugin_namespace,
             self._check_plugin,
-            invoke_on_load=invoke_on_load,
+            invoke_on_load=False,
             invoke_args=(self._ctx,),
             propagate_map_exceptions=True,
-            on_load_failure_callback=self._on_load_failure,
+            on_load_failure_callback=self._on_load_failure
         )
-        self._build_plugin_list()
+        plugin_name_to_extension_name = self._build_plugin_list(ext_manager)
+
+        plugins_missing = []
+        ordered_extension_names = []
+        for plugin_name in self.plugin_execution_order:
+            if plugin_name not in plugin_name_to_extension_name:
+                plugins_missing.append(plugin_name)
+            elif not plugins_missing:
+                ordered_extension_names.append(plugin_name_to_extension_name[plugin_name])
+        if plugins_missing:
+            self._ctx.error("Missing the following selected plugin(s): {}".format(", ".join(plugins_missing)))
+            return
+
+        self._manager = NamedExtensionManager(
+            plugin_namespace,
+            ordered_extension_names,
+            invoke_on_load=invoke_on_load,
+            invoke_args=(self._ctx,),
+            name_order=True,
+            propagate_map_exceptions=True,
+            on_load_failure_callback=self._on_load_failure,
+            on_missing_entrypoints_callback=self._on_missing_entrypoints
+        )
 
     def __getitem__(self, item):
         return self._manager.__getitem__(item)
 
-    def _build_plugin_list(self):
+    def _build_plugin_list(self, ext_manager):
         self.plugins = {}
-        for ext in self._manager:
+        plugin_name_to_extension_name = dict()
+        for ext in ext_manager:
             self.plugins[ext.name] = {
                 #  'package_name': ext.entry_point.dist.project_name,
                 'package_name': ext.entry_point.module_name.split(".")[0],
@@ -73,27 +100,26 @@ class CSMPluginDispatchExtensionManager(CSMPluginManager):
                 'platforms': ext.plugin.platforms,
                 'os': ext.plugin.os
             }
+            if ext.plugin.name in plugin_name_to_extension_name:
+                self._ctx.warning("Found more than one plugin with name {} at {}.".format(ext.plugin.name,
+                                                                                          ext.entry_point.module_name) +
+                                  "This duplicate plugin will not be dispatched. " +
+                                  "Please ensure unique plugin name to avoid confusion.")
+            else:
+                plugin_name_to_extension_name[ext.plugin.name] = ext.name
+        return plugin_name_to_extension_name
 
     def dispatch(self, func):
         results = []
-        current_phase = self._ctx.phase
-        if self._ctx.phase in auto_pre_phases:
-            phase = "Pre-{}".format(self._ctx.phase)
-            self.set_phase_filter(phase)
-            self._ctx.info("Phase: {}".format(self._phase))
-            try:
-                results = self._manager.map_method(self._filter_func, func)
-            except NoMatches:
-                self._ctx.warning("No {} plugins found".format(phase))
-            self._ctx.current_plugin = None
-
-        self.set_phase_filter(current_phase)
         self._ctx.info("Phase: {}".format(self._phase))
         try:
-            results += self._manager.map_method(self._filter_func, func)
+            results += self._manager.map_method(func)
         except NoMatches:
             self._ctx.post_status("No plugins found for phase {}".format(self._phase))
             self._ctx.error("No plugins found for phase {}".format(self._phase))
 
         self.finalize()
         return results
+
+    def _on_missing_entrypoints(self, extensions_missing):
+        self._ctx.warning("Plugin load error: missing the following extension(s): {}".format(", ".join(extensions_missing)))

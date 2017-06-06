@@ -1,6 +1,6 @@
 from csmpe.context import PluginContext
-from csmpe.managers.dispatch_extension_manager import CSMPluginDispatchExtensionManager   # NOQA
-from csmpe.managers.named_extension_manager import CSMPluginNamedExtensionManager   # NOQA
+from csmpe.plugin_managers.dispatch_extension_manager import CSMPluginDispatchExtensionManager   # NOQA
+from csmpe.plugin_managers.named_extension_manager import CSMPluginNamedExtensionManager   # NOQA
 
 __version__ = '1.0.1'
 

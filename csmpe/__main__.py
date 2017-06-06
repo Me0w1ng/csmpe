@@ -39,8 +39,8 @@ import textwrap
 import urlparse
 
 from csmpe.context import InstallContext
-from csmpe.managers import get_csm_plugin_manager
-from csmpe.managers.base import install_phases
+from csmpe.plugin_managers import get_csm_plugin_manager
+from csmpe.plugin_managers.base import install_phases
 
 _PLATFORMS = ["ASR9K", "NCS4K", "NCS6K", "CRS", "ASR900"]
 _OS = ["IOS", "XR", "eXR", "XE"]
