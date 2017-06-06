@@ -34,7 +34,7 @@ plugin_namespace = "csm.plugin"
 
 install_phases = ['Pre-Upgrade', 'Pre-Add', 'Add', 'Pre-Activate', 'Activate', 'Pre-Deactivate',
                   'Deactivate', 'Pre-Remove', 'Remove', 'Remove All Inactive', 'Commit', 'Get-Inventory',
-                  'Migration-Audit', 'Pre-Migrate', 'Migrate', 'Post-Migrate', 'Post-Upgrade', 'FPD-Upgrade', 'Commit-Monitor']
+                  'Migration-Audit', 'Pre-Migrate', 'Migrate', 'Post-Migrate', 'Post-Upgrade', 'FPD-Upgrade']
 
 
 @six.add_metaclass(abc.ABCMeta)
