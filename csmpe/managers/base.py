@@ -27,9 +27,8 @@
 # =============================================================================
 
 import abc
-import pkginfo
-
 import six
+import pkginfo
 
 plugin_namespace = "csm.plugin"
 
@@ -37,14 +36,13 @@ install_phases = ['Pre-Upgrade', 'Pre-Add', 'Add', 'Pre-Activate', 'Activate', '
                   'Deactivate', 'Pre-Remove', 'Remove', 'Remove All Inactive', 'Commit', 'Get-Inventory',
                   'Migration-Audit', 'Pre-Migrate', 'Migrate', 'Post-Migrate', 'Post-Upgrade', 'FPD-Upgrade', 'Commit-Monitor']
 
-auto_pre_phases = ["Add", "Activate", "Deactivate"]
-
 
 @six.add_metaclass(abc.ABCMeta)
 class CSMPluginManager(object):
 
-    def __init__(self, plugin_ctx=None, invoke_on_load=True):
-        """ This is a constructor of a plugin manager. The constructor can be overridden by the plugin code.
+    def __init__(self, plugin_ctx=None):
+        """ This is the constructor of an abstract plugin manager. The constructor can be overridden by the subclass
+        manager implementations.
 
         :param ctx: The plugin context object :class:`csmpe.PluginContext`
         :return: None
@@ -63,15 +61,18 @@ class CSMPluginManager(object):
 
         self._phase = None
         self._name = None
-
+        # plugin_execution_order is a list of plugin names
+        # For MOP jobs, plugin_execution_order is specified in the context to indicate which plugins
+        # should execute and the order of execution.
+        # For regular jobs, plugin_execution_order is not specified.
         self.plugin_execution_order = self._ctx.plugin_execution_order
 
     @abc.abstractmethod
     def load(self, invoke_on_load=True):
         """
-        load the plugin manager
-        :param invoke_on_load: Boolean. Whether or not to invoke plugin once loaded.
-        :return:
+        Create the manager instance and load plugins
+        :param invoke_on_load: Boolean indicating whether or not to invoke plugins once loaded.
+        :return: None
         """
 
     @abc.abstractmethod
@@ -79,8 +80,9 @@ class CSMPluginManager(object):
         """
         This method is a entry point for Plugin Engine to be called.
         Must be implemented by the subclass manager implementation.
+        It dispatches the loaded plugins.
 
-        :param: func: function name to start plugin execution
+        :param: func: string - function name in plugin class that starts the plugin execution
         :return: None
         """
 
@@ -91,6 +93,7 @@ class CSMPluginManager(object):
         self._ctx.finalize()
 
     def _filter_func(self, ext, *args, **kwargs):
+        """Filters extension"""
         if self._platform and bool(ext.plugin.platforms) and self._platform not in ext.plugin.platforms:
             return False
         if self._phase and self._phase not in ext.plugin.phases:
@@ -101,7 +104,7 @@ class CSMPluginManager(object):
         # plugin does not match
         if self._os and bool(ext.plugin.os) and self._os not in ext.plugin.os:
             return False
-        if self.plugin_execution_order and ext.entry_point.module_name not in self.plugin_execution_order:
+        if self.plugin_execution_order and ext.plugin.name not in self.plugin_execution_order:
             return False
         return True
 

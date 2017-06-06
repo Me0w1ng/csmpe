@@ -27,18 +27,23 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-import pkginfo
 from stevedore.dispatch import DispatchExtensionManager
-from stevedore.named import NamedExtensionManager
 from stevedore.exception import NoMatches
 
-from csmpe.managers.base import CSMPluginManager, plugin_namespace, auto_pre_phases
+from csmpe.managers.base import CSMPluginManager, plugin_namespace
+
+auto_pre_phases = ["Add", "Activate", "Deactivate"]
 
 
 class CSMPluginDispatchExtensionManager(CSMPluginManager):
+    """
+    This plugin manager uses stevedore's DispatchExtensionManager internally to dispatch
+     all plugins that match the family, os and phase specified in the plugin context.
+     The execution of the plugins are in no particular order.
+    """
 
     def __init__(self, plugin_ctx=None, invoke_on_load=True):
-        super(CSMPluginDispatchExtensionManager, self).__init__(plugin_ctx, invoke_on_load)
+        super(CSMPluginDispatchExtensionManager, self).__init__(plugin_ctx)
 
         self.load(invoke_on_load=invoke_on_load)
 
@@ -70,7 +75,6 @@ class CSMPluginDispatchExtensionManager(CSMPluginManager):
             }
 
     def dispatch(self, func):
-
         results = []
         current_phase = self._ctx.phase
         if self._ctx.phase in auto_pre_phases:

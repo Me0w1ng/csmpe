@@ -168,7 +168,8 @@ class PluginContext(object):
     @property
     def plugin_execution_order(self):
         """
-        :return: list containing the order of execution of plugins if specified by user
+        :return: value is either None or a list of strings representing the order of execution of plugins.
+                Each string in the list is the name of a plugin.
         """
         try:
             return self._csm.plugin_execution_order

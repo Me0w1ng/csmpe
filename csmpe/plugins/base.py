@@ -76,6 +76,7 @@ class CSMPlugin(object):
         self.ctx.info("Dispatching: '{}'".format(self.name))
         self.ctx.post_status(self.name)
         self.ctx.current_plugin = self.name
+
         self._run()
 
     @abc.abstractmethod
@@ -83,6 +84,5 @@ class CSMPlugin(object):
         """
         Must be implemented by the plugin code.
 
-        :param: None
         :return: None
         """
