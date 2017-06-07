@@ -127,6 +127,7 @@ def plugin_list(platform, phase, os, detail, brief):
 
     print_plugin_info(pm, detail, brief)
 
+
 run_help_message = "Run specific plugin on the device." +\
     " Optionally, you can specify PLUGIN_NAMES in the end." +\
     " Just wrap each plugin name in quotes. Plugin names should be separated by space." +\
