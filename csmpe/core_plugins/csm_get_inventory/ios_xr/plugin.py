@@ -30,7 +30,7 @@ from csmpe.plugins import CSMPlugin
 class Plugin(CSMPlugin):
     """This plugin retrieves software information from the device."""
     name = "Get Inventory Plugin"
-    platforms = {'ASR9K', 'CRS', 'IOS-XRv'}
+    platforms = {'ASR9K', 'CRS'}
     phases = {'Get-Inventory'}
     os = {'XR'}
 
