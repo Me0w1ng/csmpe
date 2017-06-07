@@ -48,6 +48,14 @@ class CSMPluginNamedExtensionManager(CSMPluginManager):
 
         self._phase = self._ctx.phase
 
+        # plugin_execution_order is a list of plugin names
+        # For MOP jobs, plugin_execution_order is specified in the context to indicate which plugins
+        # should execute and the order of execution.
+        # For regular jobs, plugin_execution_order is not specified.
+        self.plugin_execution_order = self._ctx.plugin_execution_order
+
+        self.set_name_filter(self.plugin_execution_order)
+
         self.load(invoke_on_load=invoke_on_load)
 
     def load(self, invoke_on_load=True):
@@ -88,7 +96,6 @@ class CSMPluginNamedExtensionManager(CSMPluginManager):
         return self._manager.__getitem__(item)
 
     def _build_plugin_list(self, ext_manager):
-        self.plugins = {}
         plugin_name_to_extension_name = dict()
         for ext in ext_manager:
             self.plugins[ext.name] = {

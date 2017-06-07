@@ -62,7 +62,6 @@ class CSMPluginDispatchExtensionManager(CSMPluginManager):
         return self._manager.__getitem__(item)
 
     def _build_plugin_list(self):
-        self.plugins = {}
         for ext in self._manager:
             self.plugins[ext.name] = {
                 #  'package_name': ext.entry_point.dist.project_name,

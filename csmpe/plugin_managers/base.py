@@ -64,11 +64,9 @@ class CSMPluginManager(object):
 
         self._phase = None
         self._name = None
-        # plugin_execution_order is a list of plugin names
-        # For MOP jobs, plugin_execution_order is specified in the context to indicate which plugins
-        # should execute and the order of execution.
-        # For regular jobs, plugin_execution_order is not specified.
-        self.plugin_execution_order = self._ctx.plugin_execution_order
+
+        # plugins contains info of loaded plugins. This should be built after loading the plugins.
+        self.plugins = {}
 
     @abc.abstractmethod
     def load(self, invoke_on_load=True):
@@ -106,8 +104,6 @@ class CSMPluginManager(object):
         # if detected os is set and plugin os set is not empty and detected os is not in plugin os then
         # plugin does not match
         if self._os and bool(ext.plugin.os) and self._os not in ext.plugin.os:
-            return False
-        if self.plugin_execution_order and ext.plugin.name not in self.plugin_execution_order:
             return False
         return True
 
