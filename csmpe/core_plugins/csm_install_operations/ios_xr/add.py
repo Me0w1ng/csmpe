@@ -69,7 +69,7 @@ class Plugin(CSMPlugin):
 
         install_add_remove(self.ctx, cmd, has_tar=has_tar)
 
-    def run(self):
+    def _run(self):
         server_repository_url = self.ctx.server_repository_url
 
         if server_repository_url is None:

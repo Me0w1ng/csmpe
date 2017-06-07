@@ -124,7 +124,7 @@ class Plugin(CSMPlugin):
 
         return True
 
-    def run(self):
+    def _run(self):
 
         log_and_post_status(self.ctx, "Waiting for all nodes to come to FINAL Band.")
         if not wait_for_final_band(self.ctx):

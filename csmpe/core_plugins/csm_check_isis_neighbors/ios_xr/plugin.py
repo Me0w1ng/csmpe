@@ -36,7 +36,7 @@ class Plugin(CSMPlugin):
     platforms = {'ASR9K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOS-XRv'}
     phases = {'Pre-Upgrade', 'Post-Upgrade'}
 
-    def run(self):
+    def _run(self):
         """
         RP/0/RP0/CPU0:#show isis neighbor summary
         Thu May 19 18:06:11.239 UTC

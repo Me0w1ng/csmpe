@@ -35,7 +35,7 @@ class Plugin(CSMPlugin):
     phases = {'Pre-Upgrade', 'Post-Upgrade'}
     os = {'XR'}
 
-    def run(self):
+    def _run(self):
         # show platform can take more than 1 minute after router reload. Issue No. 47
         output = self.ctx.send("admin show platform", timeout=600)
         inventory = parse_show_platform(self.ctx, output)

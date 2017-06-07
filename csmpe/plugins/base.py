@@ -71,12 +71,18 @@ class CSMPlugin(object):
         """
         self.ctx = ctx
 
-    @abc.abstractmethod
     def run(self):
+        self.ctx.current_plugin = None
+        self.ctx.info("Dispatching: '{}'".format(self.name))
+        self.ctx.post_status(self.name)
+        self.ctx.current_plugin = self.name
+
+        self._run()
+
+    @abc.abstractmethod
+    def _run(self):
         """
-        This method is a entry point for Plugin Engine to be called when plugin is dispatched.
         Must be implemented by the plugin code.
 
-        :param: None
         :return: None
         """

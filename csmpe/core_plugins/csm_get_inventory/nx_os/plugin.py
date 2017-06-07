@@ -34,7 +34,7 @@ class Plugin(CSMPlugin):
     phases = {'Get-Inventory'}
     os = {'NX-OS'}
 
-    def run(self):
+    def _run(self):
         get_package(self.ctx)
 
 

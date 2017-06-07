@@ -166,7 +166,7 @@ class Plugin(CSMPlugin):
             return 1
         return 0
 
-    def run(self):
+    def _run(self):
 
         software_version_tuple = self.ctx.load_job_data('hardware_audit_version')
         if software_version_tuple:

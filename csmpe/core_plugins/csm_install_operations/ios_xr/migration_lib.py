@@ -202,7 +202,7 @@ def run_additional_custom_commands(ctx, additional_commands):
         ctx.custom_commands = list(additional_commands)
         try:
             cmd_capture_plugin = CmdCapturePlugin(ctx)
-            cmd_capture_plugin.run()
+            cmd_capture_plugin._run()
         except PluginError as e:
             ctx.warning("Failed to capture output of a command. Error: {}".format(e))
 

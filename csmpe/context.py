@@ -165,6 +165,18 @@ class PluginContext(object):
             pass
             # raise AssertionError("Requested action not provided")
 
+    @property
+    def plugin_execution_order(self):
+        """
+        :return: value is either None or a list of strings representing the order of execution of plugins.
+                Each string in the list is the name of a plugin.
+        """
+        try:
+            return self._csm.plugin_execution_order
+        except AttributeError:
+            pass
+            # raise AssertionError("Plugin execution order not provided")
+
     def _device_detect(self):
         """Connect to device using condoor"""
         self.info("Phase: Connecting")

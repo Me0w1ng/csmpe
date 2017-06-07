@@ -81,7 +81,7 @@ class Plugin(CSMPlugin):
                                                                                           packages_to_activate))))
                 return " ".join(map(str, packages_to_activate))
 
-    def run(self):
+    def _run(self):
         """
         Performs install activate operation
         """

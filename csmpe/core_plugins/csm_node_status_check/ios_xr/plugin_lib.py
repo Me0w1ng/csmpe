@@ -73,14 +73,13 @@ def parse_show_platform(ctx, output):
     0/RP1/CPU0    RP(Standby)       N/A                IOS XR RUN      PWR,NSHUT,MON
 
     """
-    host = ctx.get_host
     inventory = {}
-    if host.family == 'ASR9K':
+    if ctx.family == 'ASR9K':
         sl = ['Node', 'Type', 'State', 'Config State']
-    elif host.family == 'CRS':
+    elif ctx.family == 'CRS':
         sl = ['Node', 'Type', 'PLIM', 'State', 'Config State']
     else:
-        ctx.warning("Unsupported platform {}".format(host.family))
+        ctx.warning("Unsupported platform {}".format(ctx.family))
         return None
     dl = {}
 
@@ -104,7 +103,7 @@ def parse_show_platform(ctx, output):
             if not re.search('CPU\d+$', node):
                 continue
 
-            if host.family == 'ASR9K':
+            if ctx.family == 'ASR9K':
                 node_type = line[dl['Type']:dl['State']].strip()
             else:   # CRS
                 node_type = line[dl['Type']:dl['PLIM']].strip()

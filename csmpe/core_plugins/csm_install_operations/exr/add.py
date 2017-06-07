@@ -98,7 +98,7 @@ class Plugin(CSMPlugin):
 
         observe_install_add_remove(self.ctx, output, has_tar=has_tar)
 
-    def run(self):
+    def _run(self):
         check_ncs6k_release(self.ctx)
         check_ncs4k_release(self.ctx)
 

@@ -40,7 +40,7 @@ class Plugin(CSMPlugin):
     phases = {'Activate'}
     os = {'IOS'}
 
-    def run(self):
+    def _run(self):
         """
         Performs install activate operation
         """

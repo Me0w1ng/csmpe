@@ -62,7 +62,7 @@ class Plugin(CSMPlugin):
                 if line and line[:6] == "Error:":
                     self.ctx.error(output)
 
-    def run(self):
+    def _run(self):
         try:
             packages = self.ctx.software_packages
         except AttributeError:

@@ -72,7 +72,7 @@ class Plugin(CSMPlugin):
                                                                                             packages_to_deactivate))))
                 return " ".join(map(str, packages_to_deactivate))
 
-    def run(self):
+    def _run(self):
         """
         Performs install deactivate operation
         RP/0/RP0/CPU0:Deploy#install deactivate ncs6k-5.2.5.CSCuz65240-1.0.0

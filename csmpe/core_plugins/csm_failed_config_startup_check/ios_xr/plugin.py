@@ -37,7 +37,7 @@ class Plugin(CSMPlugin):
     platforms = {'ASR9K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOS-XRv'}
     phases = {'Post-Activate', 'Post-Upgrade'}
 
-    def run(self):
+    def _run(self):
         output = self.ctx.send("show configuration failed startup")
         lines = output.split("\n", 100)
         if len(lines) < 6:

@@ -38,7 +38,7 @@ class Plugin(CSMPlugin):
     phases = {'Remove All Inactive'}
     os = {'XR'}
 
-    def run(self):
+    def _run(self):
 
         cmd = 'admin install remove inactive async'
 

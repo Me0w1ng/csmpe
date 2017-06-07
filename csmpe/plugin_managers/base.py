@@ -1,7 +1,6 @@
 # =============================================================================
-# CSMPluginManager
 #
-# Copyright (c)  2016, Cisco Systems
+# Copyright (c) 2016, Cisco Systems
 # All rights reserved.
 #
 # # Author: Klaudiusz Staniek
@@ -27,24 +26,31 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
+import abc
+import six
 import pkginfo
-from stevedore.dispatch import DispatchExtensionManager
-from stevedore.exception import NoMatches
 
-
-from context import PluginContext
+plugin_namespace = "csm.plugin"
 
 install_phases = ['Pre-Upgrade', 'Pre-Add', 'Add', 'Pre-Activate', 'Activate', 'Pre-Deactivate',
                   'Deactivate', 'Pre-Remove', 'Remove', 'Remove All Inactive', 'Commit', 'Get-Inventory',
                   'Migration-Audit', 'Pre-Migrate', 'Migrate', 'Post-Migrate', 'Post-Upgrade', 'FPD-Upgrade']
 
-auto_pre_phases = ["Add", "Activate", "Deactivate"]
 
-
+@six.add_metaclass(abc.ABCMeta)
 class CSMPluginManager(object):
+    """
+    Abstract plugin manager defined to load and dispatch plugins.
+    """
 
-    def __init__(self, ctx=None, invoke_on_load=True):
-        self._ctx = PluginContext(ctx)
+    def __init__(self, plugin_ctx=None):
+        """ This is the constructor of an abstract plugin manager. The constructor can be overridden by the subclass
+        manager implementations.
+
+        :param ctx: The plugin context object :class:`csmpe.PluginContext`
+        :return: None
+        """
+        self._ctx = plugin_ctx
         # The context contains device information after discovery phase
         # There is no need to load plugins which does not match the family and os
         try:
@@ -59,36 +65,36 @@ class CSMPluginManager(object):
         self._phase = None
         self._name = None
 
-        self.load(invoke_on_load=invoke_on_load)
-
-    def load(self, invoke_on_load=True):
-        self._manager = DispatchExtensionManager(
-            "csm.plugin",
-            self._check_plugin,
-            invoke_on_load=invoke_on_load,
-            invoke_args=(self._ctx,),
-            propagate_map_exceptions=True,
-            on_load_failure_callback=self._on_load_failure,
-        )
-        self._build_plugin_list()
-
-    def __getitem__(self, item):
-        return self._manager.__getitem__(item)
-
-    def _build_plugin_list(self):
+        # plugins contains info of loaded plugins. This should be built after loading the plugins.
         self.plugins = {}
-        for ext in self._manager:
-            self.plugins[ext.name] = {
-                #  'package_name': ext.entry_point.dist.project_name,
-                'package_name': ext.entry_point.module_name.split(".")[0],
-                'name': ext.plugin.name,
-                'description': ext.plugin.__doc__,
-                'phases': ext.plugin.phases,
-                'platforms': ext.plugin.platforms,
-                'os': ext.plugin.os
-            }
+
+    @abc.abstractmethod
+    def load(self, invoke_on_load=True):
+        """
+        Create the manager instance and load plugins
+        :param invoke_on_load: Boolean indicating whether or not to invoke plugins once loaded.
+        :return: None
+        """
+
+    @abc.abstractmethod
+    def dispatch(self, func):
+        """
+        This method is a entry point for Plugin Engine to be called.
+        Must be implemented by the subclass manager implementation.
+        It dispatches the loaded plugins.
+
+        :param: func: string - function name in plugin class that starts the plugin execution
+        :return: None
+        """
+
+    def finalize(self):
+        self._ctx.current_plugin = None
+        self._ctx.success = True
+        self._ctx.info("CSM Plugin Manager Finished")
+        self._ctx.finalize()
 
     def _filter_func(self, ext, *args, **kwargs):
+        """Filters extension"""
         if self._platform and bool(ext.plugin.platforms) and self._platform not in ext.plugin.platforms:
             return False
         if self._phase and self._phase not in ext.plugin.phases:
@@ -100,15 +106,6 @@ class CSMPluginManager(object):
         if self._os and bool(ext.plugin.os) and self._os not in ext.plugin.os:
             return False
         return True
-
-    def _dispatch(self, ext, *args, **kwargs):
-        if self._filter_func(ext):
-            self._ctx.current_plugin = None
-            self._ctx.info("Dispatching: '{}'".format(ext.plugin.name))
-            self._ctx.post_status(ext.plugin.name)
-            self._ctx.current_plugin = ext.plugin.name
-            return True
-        return False
 
     def _on_load_failure(self, manager, entry_point, exc):
         self._ctx.warning("Plugin load error: {}".format(entry_point))
@@ -134,34 +131,6 @@ class CSMPluginManager(object):
 
     def _get_package_names(self):
         return self.get_package_metadata().keys()
-
-    def dispatch(self, func):
-
-        results = []
-        current_phase = self._ctx.phase
-        if self._ctx.phase in auto_pre_phases:
-            phase = "Pre-{}".format(self._ctx.phase)
-            self.set_phase_filter(phase)
-            self._ctx.info("Phase: {}".format(self._phase))
-            try:
-                results = self._manager.map_method(self._dispatch, func)
-            except NoMatches:
-                self._ctx.warning("No {} plugins found".format(phase))
-            self._ctx.current_plugin = None
-
-        self.set_phase_filter(current_phase)
-        self._ctx.info("Phase: {}".format(self._phase))
-        try:
-            results += self._manager.map_method(self._dispatch, func)
-        except NoMatches:
-            self._ctx.post_status("No plugins found for phase {}".format(self._phase))
-            self._ctx.error("No plugins found for phase {}".format(self._phase))
-
-        self._ctx.current_plugin = None
-        self._ctx.success = True
-        self._ctx.info("CSM Plugin Manager Finished")
-        self._ctx.finalize()
-        return results
 
     def set_platform_filter(self, platform):
         self._platform = platform

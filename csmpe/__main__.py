@@ -39,8 +39,8 @@ import textwrap
 import urlparse
 
 from csmpe.context import InstallContext
-from csmpe.csm_pm import CSMPluginManager
-from csmpe.csm_pm import install_phases
+from csmpe.plugin_managers import get_csm_plugin_manager
+from csmpe.plugin_managers.base import install_phases
 
 _PLATFORMS = ["ASR9K", "NCS4K", "NCS6K", "CRS", "ASR900"]
 _OS = ["IOS", "XR", "eXR", "XE"]
@@ -111,7 +111,7 @@ def cli():
 @click.option("--brief", is_flag=True,
               help="Display brief information about installed plugins.")
 def plugin_list(platform, phase, os, detail, brief):
-    pm = CSMPluginManager(None, invoke_on_load=False)
+    pm = get_csm_plugin_manager(None, invoke_on_load=False)
     pm.set_phase_filter(phase)
     pm.set_platform_filter(platform)
     pm.set_os_filter(os)
@@ -127,8 +127,15 @@ def plugin_list(platform, phase, os, detail, brief):
 
     print_plugin_info(pm, detail, brief)
 
+run_help_message = "Run specific plugin on the device." +\
+    " Optionally, you can specify PLUGIN_NAMES in the end." +\
+    " Just wrap each plugin name in quotes. Plugin names should be separated by space." +\
+    " Example 1: 'Node Status Check Plugin'." +\
+    " Example 2: 'Node Status Check Plugin' 'Node Redundancy Check Plugin' 'ISIS Neighbor Check Plugin'." +\
+    " If you want the plugins to be executed in the specified order, make sure to also set the --mop flag."
 
-@cli.command("run", help="Run specific plugin on the device.", short_help="Run plugin")
+
+@cli.command("run", help=run_help_message, short_help="Run plugin")
 @click.option("--url", multiple=True, required=True, envvar='CSMPLUGIN_URLS', type=URL(),
               help='The connection url to the host (i.e. telnet://user:pass@hostname). '
                    'The --url option can be repeated to define multiple jumphost urls. '
@@ -143,8 +150,17 @@ def plugin_list(platform, phase, os, detail, brief):
               help="Package for install operations. This package option can be repeated to provide multiple packages.")
 @click.option("--repository_url", default=None,
               help="The package repository URL. (i.e. tftp://server/dir")
-@click.argument("plugin_name", required=False, default=None)
-def plugin_run(url, phase, cmd, log_dir, package, repository_url, plugin_name):
+@click.option("--mop", required=False, is_flag=True, default=False,
+              help='When this flag is set, a list of plugin name(s) must be provided '
+                   'in the end of the command to define the order of execution of the '
+                   'specified plugins. When this flag is not set, if any plugin name '
+                   'is provided in the end, the specified plugin(s) will be executed '
+                   'in no particular order.')
+@click.argument("plugin_names", required=False, default=None, nargs=-1)
+def plugin_run(url, phase, cmd, log_dir, package, repository_url, mop, plugin_names):
+
+    if mop and not plugin_names:
+        raise click.BadParameter("plugin names must be specified in the end of the command when --mop is set.")
 
     ctx = InstallContext()
     ctx.hostname = "Hostname"
@@ -171,8 +187,12 @@ def plugin_run(url, phase, cmd, log_dir, package, repository_url, plugin_name):
     if cmd:
         ctx.custom_commands = list(cmd)
 
-    pm = CSMPluginManager(ctx)
-    pm.set_name_filter(plugin_name)
+    if mop:
+        ctx.plugin_execution_order = list(plugin_names)
+
+    pm = get_csm_plugin_manager(ctx)
+    pm.set_name_filter(set(plugin_names))
+
     results = pm.dispatch("run")
 
     click.echo("\n Plugin execution finished.\n")
