@@ -26,9 +26,6 @@
 import re
 import time
 
-plugin_ctx = None
-
-
 install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
 
 
@@ -77,11 +74,6 @@ def send_newline(fsm_ctx):
     fsm_ctx.ctrl.sendline('\r\n')
     fsm_ctx.ctrl.sendline('\r\n')
     return True
-
-
-def issu_error_state(fsm_ctx):
-    plugin_ctx.warning("Error in ISSU. Please see session.log for details")
-    return False
 
 
 def wait_for_reload(ctx):
@@ -141,7 +133,6 @@ def wait_for_reload(ctx):
 
 def install_activate_write_memory(ctx, cmd, hostname):
     """
-
     PAN-5201-ASR903#write memory
     Building configuration...
     [OK]
@@ -151,23 +142,18 @@ def install_activate_write_memory(ctx, cmd, hostname):
     Warning: Attempting to overwrite an NVRAM configuration previously written
     by a different version of the system image.
     Overwrite the previous NVRAM configuration?[confirm]
-
     """
-    global plugin_ctx
-    plugin_ctx = ctx
 
     # Seeing this message without the reboot prompt indicates a non-reload situation
-    Build_config = re.compile("\[OK\]")
+    build_config = re.compile("\[OK\]")
+    overwrite_warning = re.compile("Overwrite the previous NVRAM configuration\?\[confirm\]")
+    host_prompt = re.compile(hostname)
 
-    Overwrite_warning = re.compile("Overwrite the previous NVRAM configuration\?\[confirm\]")
-
-    Host_prompt = re.compile(hostname)
-
-    events = [Host_prompt, Overwrite_warning, Build_config]
+    events = [host_prompt, overwrite_warning, build_config]
     transitions = [
-        (Overwrite_warning, [0], 1, send_newline, 1200),
-        (Build_config, [0, 1], 2, None, 1200),
-        (Host_prompt, [0, 1, 2], -1, None, 1200),
+        (overwrite_warning, [0], 1, send_newline, 1200),
+        (build_config, [0, 1], 2, None, 1200),
+        (host_prompt, [0, 1, 2], -1, None, 1200),
     ]
 
     if not ctx.run_fsm("write memory", cmd, events, transitions, timeout=1200):

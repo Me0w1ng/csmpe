@@ -28,15 +28,16 @@
 import re
 import time
 import itertools
-from condoor import ConnectionError, CommandError
+
+from condoor import ConnectionError
+from condoor import CommandError
+from functools import partial
 from csmpe.core_plugins.csm_node_status_check.ios_xr.plugin_lib import parse_show_platform
 
 install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
 
-plugin_ctx = None
 
-
-def send_yes(fsm_ctx):
+def send_yes(plugin_ctx, fsm_ctx):
     plugin_ctx.send('Y')
     return True
 
@@ -255,6 +256,7 @@ def install_add_remove(ctx, cmd, has_tar=False):
 
     op_success = "The install operation will continue asynchronously"
     failed_oper = r'Install operation {} failed'.format(op_id)
+
     if op_success in output:
         watch_operation(ctx, op_id=op_id)
         output = ctx.send("admin show install log {} detail".format(op_id))
@@ -348,9 +350,6 @@ def install_remove_all(ctx, cmd, hostname):
     Error:     - re-issue the command when the current operation has completed.
     """
 
-    global plugin_ctx
-    plugin_ctx = ctx
-
     # no op_id is returned from XR for install remove inactive
     # need to figure out the last op_id first
 
@@ -372,18 +371,18 @@ def install_remove_all(ctx, cmd, hostname):
     # Expected Operation ID
     op_id += 1
 
-    operr = "Install operation {} failed at".format(op_id)
-    Error1 = re.compile("Error:     - re-issue the command when the current operation has completed.")
-    Error2 = re.compile(operr)
-    Proceed_removing = re.compile("\[confirm\]")
-    Host_prompt = re.compile(hostname)
+    oper_error = "Install operation {} failed at".format(op_id)
+    error1 = re.compile("Error:     - re-issue the command when the current operation has completed.")
+    error2 = re.compile(oper_error)
+    proceed_removing = re.compile("\[confirm\]")
+    host_prompt = re.compile(hostname)
 
-    events = [Host_prompt, Error1, Error2, Proceed_removing]
+    events = [host_prompt, error1, error2, proceed_removing]
     transitions = [
-        (Error1, [0], -1, CommandError("Another install command is currently in operation", hostname), 1800),
-        (Error2, [0], -1, CommandError("No packages can be removed", hostname), 1800),
-        (Proceed_removing, [0], 2, send_yes, 1800),
-        (Host_prompt, [2], -1, None, 1800),
+        (error1, [0], -1, CommandError("Another install command is currently in operation", hostname), 1800),
+        (error2, [0], -1, CommandError("No packages can be removed", hostname), 1800),
+        (proceed_removing, [0], 2, partial(send_yes, ctx), 1800),
+        (host_prompt, [2], -1, None, 1800),
     ]
 
     if not ctx.run_fsm("Remove Inactive All", cmd, events, transitions, timeout=1800):

@@ -25,16 +25,15 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 from functools import partial
-import itertools
-import re
-import time
 from condoor import ConnectionError, CommandError
 from csmpe.core_plugins.csm_node_status_check.exr.plugin_lib import parse_show_platform
 from csmpe.core_plugins.csm_install_operations.actions import a_error
 
-install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
+import itertools
+import re
+import time
 
-plugin_ctx = None
+install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
 
 
 def log_install_errors(ctx, output):
@@ -321,12 +320,11 @@ def report_install_status(ctx, op_id):
     ctx.info("Operation {} finished successfully".format(op_id))
 
 
-def handle_aborted(fsm_ctx):
+def handle_aborted(plugin_ctx, fsm_ctx):
     """
     :param ctx: FSM Context
     :return: True if successful other False
     """
-    global plugin_ctx
 
     report_install_status(ctx=plugin_ctx, op_id=get_op_id(fsm_ctx.ctrl.before))
 
@@ -334,13 +332,11 @@ def handle_aborted(fsm_ctx):
     return False
 
 
-def handle_non_reload_activate_deactivate(fsm_ctx):
+def handle_non_reload_activate_deactivate(plugin_ctx, fsm_ctx):
     """
     :param ctx: FSM Context
     :return: True if successful other False
     """
-    global plugin_ctx
-
     op_id = get_op_id(fsm_ctx.ctrl.before)
     if op_id == -1:
         return False
@@ -350,13 +346,11 @@ def handle_non_reload_activate_deactivate(fsm_ctx):
     return True
 
 
-def handle_reload_activate_deactivate(fsm_ctx):
+def handle_reload_activate_deactivate(plugin_ctx, fsm_ctx):
     """
     :param ctx: FSM Context
     :return: True if successful other False
     """
-    global plugin_ctx
-
     op_id = get_op_id(fsm_ctx.ctrl.before)
     if op_id == -1:
         return False
@@ -377,18 +371,16 @@ def handle_reload_activate_deactivate(fsm_ctx):
     return True
 
 
-def no_impact_warning(fsm_ctx):
+def no_impact_warning(plugin_ctx, fsm_ctx):
     plugin_ctx.warning("This was a NO IMPACT OPERATION. Packages are already active on device.")
     return True
 
 
-def handle_not_start(fsm_ctx):
+def handle_not_start(plugin_ctx, fsm_ctx):
     """
     :param ctx: FSM Context
     :return: False
     """
-    global plugin_ctx
-
     plugin_ctx.error("Could not start this install operation because an install operation is still in progress")
     return False
 
@@ -464,10 +456,7 @@ def install_activate_deactivate(ctx, cmd):
     RP/0/RSP0/CPU0:ios#Jun 09 15:53:51 Install operation 27 finished successfully
 
     """
-    global plugin_ctx
-    plugin_ctx = ctx
-
-    ABORTED = re.compile("aborted")
+    aborted = re.compile("aborted")
 
     # REBOOT_PROMP for eXR reload response:
     # This install operation will reload the sdr, continue?
@@ -477,26 +466,26 @@ def install_activate_deactivate(ctx, cmd):
     #  [yes/no]:[yes]
 
     # Seeing this message without the reboot prompt indicates a non-reload situation
-    CONTINUE_IN_BACKGROUND = re.compile("Install operation will continue in the background")
-    REBOOT_PROMPT = re.compile("This install operation will (?:reboot|reload) the sdr, continue")
-    RELOAD_PROMPT = re.compile("This install operation will reload the system, continue")
-    RUN_PROMPT = re.compile("#")
-    NO_IMPACT = re.compile("NO IMPACT OPERATION")
-    ERROR = re.compile(re.escape("ERROR! there was an SU/ISSU done. please perform install commit before "
+    continue_in_background = re.compile("Install operation will continue in the background")
+    reboot_prompt = re.compile("This install operation will (?:reboot|reload) the sdr, continue")
+    reload_prompt = re.compile("This install operation will reload the system, continue")
+    run_prompt = re.compile("#")
+    no_impact = re.compile("NO IMPACT OPERATION")
+    error = re.compile(re.escape("ERROR! there was an SU/ISSU done. please perform install commit before "
                                  "proceeding with any other prepare/activate/deactivate operation"))
-    NOT_START = re.compile("Could not start this install operation")
+    not_start = re.compile("Could not start this install operation")
 
     #                  0                    1              2           3          4         5          6
-    events = [CONTINUE_IN_BACKGROUND, REBOOT_PROMPT, RELOAD_PROMPT, ABORTED, NO_IMPACT, RUN_PROMPT, ERROR, NOT_START]
+    events = [continue_in_background, reboot_prompt, reload_prompt, aborted, no_impact, run_prompt, error, not_start]
     transitions = [
-        (CONTINUE_IN_BACKGROUND, [0], -1, handle_non_reload_activate_deactivate, 300),
-        (REBOOT_PROMPT, [0], -1, handle_reload_activate_deactivate, 300),
-        (RELOAD_PROMPT, [0], -1, handle_reload_activate_deactivate, 300),
-        (NO_IMPACT, [0], -1, no_impact_warning, 60),
-        (RUN_PROMPT, [0], -1, handle_non_reload_activate_deactivate, 300),
-        (ABORTED, [0], -1, handle_aborted, 300),
-        (ERROR, [0], -1, partial(a_error, ctx), 0),
-        (NOT_START, [0], -1, handle_not_start, 300),
+        (continue_in_background, [0], -1, partial(handle_non_reload_activate_deactivate, ctx), 300),
+        (reboot_prompt, [0], -1, partial(handle_reload_activate_deactivate, ctx), 300),
+        (reload_prompt, [0], -1, partial(handle_reload_activate_deactivate, ctx), 300),
+        (no_impact, [0], -1, partial(no_impact_warning, ctx), 60),
+        (run_prompt, [0], -1, partial(handle_non_reload_activate_deactivate, ctx), 300),
+        (aborted, [0], -1, partial(handle_aborted, ctx), 300),
+        (error, [0], -1, partial(a_error, ctx), 0),
+        (not_start, [0], -1, partial(handle_not_start, ctx), 300),
     ]
 
     if not ctx.run_fsm("ACTIVATE-OR-DEACTIVATE", cmd, events, transitions, timeout=300):
@@ -550,20 +539,20 @@ def observe_install_remove_all(ctx, cmd, prompt):
     # Expected Operation ID
     op_id += 1
 
-    oper_err = "Install operation {} aborted".format(op_id)
+    oper_error = "Install operation {} aborted".format(op_id)
     oper_success = "Install operation {} finished successfully".format(op_id)
-    Error1 = re.compile("Could not start this install operation. Install operation")
-    Error2 = re.compile(oper_err)
-    Proceed_removing = re.compile(oper_success)
-    Host_prompt = re.compile(prompt)
+    error1 = re.compile("Could not start this install operation. Install operation")
+    error2 = re.compile(oper_error)
+    proceed_removing = re.compile(oper_success)
+    host_prompt = re.compile(prompt)
 
-    events = [Host_prompt, Error1, Error2, Proceed_removing]
+    events = [host_prompt, error1, error2, proceed_removing]
     transitions = [
-        (Error1, [0], -1, CommandError("Another install command is currently in operation",
+        (error1, [0], -1, CommandError("Another install command is currently in operation",
                                        ctx._connection.hostname), 1800),
-        (Error2, [0], -1, CommandError("No packages can be removed", ctx._connection.hostname), 1800),
-        (Proceed_removing, [0], -1, None, 1800),
-        (Host_prompt, [0], -1, None, 1800),
+        (error2, [0], -1, CommandError("No packages can be removed", ctx._connection.hostname), 1800),
+        (proceed_removing, [0], -1, None, 1800),
+        (host_prompt, [0], -1, None, 1800),
     ]
 
     if not ctx.run_fsm("Remove Inactive All", cmd, events, transitions, timeout=1800):
