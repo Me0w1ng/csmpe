@@ -138,13 +138,13 @@ def install_activate_write_memory(ctx, cmd):
     """
 
     # Seeing this message without the reboot prompt indicates a non-reload situation
-    build_config = re.compile("\[OK\]")
-    overwrite_warning = re.compile("Overwrite the previous NVRAM configuration\?\[confirm\]")
+    BUILD_CONFIG = re.compile("\[OK\]")
+    OVERWRITE_WARNING = re.compile("Overwrite the previous NVRAM configuration\?\[confirm\]")
 
-    events = [overwrite_warning, build_config]
+    events = [OVERWRITE_WARNING, BUILD_CONFIG]
     transitions = [
-        (overwrite_warning, [0], 1, send_newline, 1200),
-        (build_config, [0, 1], -1, None, 1200),
+        (OVERWRITE_WARNING, [0], 1, send_newline, 1200),
+        (BUILD_CONFIG, [0, 1], -1, None, 1200),
     ]
 
     if not ctx.run_fsm("write memory", cmd, events, transitions, timeout=1200):
@@ -249,29 +249,29 @@ def install_activate_issu(ctx, cmd):
     """
 
     # Seeing a message without STAGE 4 is an error
-    phase_one = re.compile("Starting disk space verification")
-    stage_one = re.compile("STAGE 1: Installing software on standby RP")
-    stage_two = re.compile("STAGE 2: Restarting standby RP")
-    stage_three = re.compile("STAGE 3: Installing sipspa package on local RP")
-    stage_four = re.compile("STAGE 4: Installing software on active RP")
-    load_on_reboot = re.compile("SUCCESS: Software provisioned.  New software will load on reboot")
-    missing_conf = re.compile("SYSTEM IS NOT BOOTED VIA PACKAGE FILE")
-    failed = re.compile("FAILED:")
-    connection_closed = re.compile("Connection closed by foreign host")
+    PHASE_ONE = re.compile("Starting disk space verification")
+    STAGE_ONE = re.compile("STAGE 1: Installing software on standby RP")
+    STAGE_TWO = re.compile("STAGE 2: Restarting standby RP")
+    STAGE_THREE = re.compile("STAGE 3: Installing sipspa package on local RP")
+    STAGE_FOUR = re.compile("STAGE 4: Installing software on active RP")
+    LOAD_ON_REBOOT = re.compile("SUCCESS: Software provisioned.  New software will load on reboot")
+    MISSING_CONF = re.compile("SYSTEM IS NOT BOOTED VIA PACKAGE FILE")
+    FAILED = re.compile("FAILED:")
+    CONNECTION_CLOSED = re.compile("Connection closed by foreign host")
     #            0          1          2          3             4            5
-    events = [phase_one, stage_one, stage_two, stage_three, stage_four, load_on_reboot,
-              missing_conf, failed, connection_closed]
+    events = [PHASE_ONE, STAGE_ONE, STAGE_TWO, STAGE_THREE, STAGE_FOUR, LOAD_ON_REBOOT,
+              MISSING_CONF, FAILED, CONNECTION_CLOSED]
     #            6            7            8
     transitions = [
-        (phase_one, [0], 1, None, 1800),
-        (stage_one, [0, 1], 2, None, 1800),
-        (stage_two, [2], 3, None, 1800),
-        (stage_three, [3], 4, None, 1800),
-        (stage_four, [4], 5, None, 1800),
-        (load_on_reboot, [5], -1, None, 1800),
-        (missing_conf, [0, 1, 2, 3, 4, 5], -1, partial(issu_error_state, ctx), 60),
-        (failed, [0, 1, 2, 3, 4, 5], -1, partial(issu_error_state, ctx), 60),
-        (connection_closed, [1, 2, 3, 4], -1, partial(issu_connection_closed, ctx), 4200)
+        (PHASE_ONE, [0], 1, None, 1800),
+        (STAGE_ONE, [0, 1], 2, None, 1800),
+        (STAGE_TWO, [2], 3, None, 1800),
+        (STAGE_THREE, [3], 4, None, 1800),
+        (STAGE_FOUR, [4], 5, None, 1800),
+        (LOAD_ON_REBOOT, [5], -1, None, 1800),
+        (MISSING_CONF, [0, 1, 2, 3, 4, 5], -1, partial(issu_error_state, ctx), 60),
+        (FAILED, [0, 1, 2, 3, 4, 5], -1, partial(issu_error_state, ctx), 60),
+        (CONNECTION_CLOSED, [1, 2, 3, 4], -1, partial(issu_connection_closed, ctx), 4200)
     ]
 
     if not ctx.run_fsm("ISSU", cmd, events, transitions, timeout=4200):

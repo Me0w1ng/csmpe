@@ -145,15 +145,15 @@ def install_activate_write_memory(ctx, cmd, hostname):
     """
 
     # Seeing this message without the reboot prompt indicates a non-reload situation
-    build_config = re.compile("\[OK\]")
-    overwrite_warning = re.compile("Overwrite the previous NVRAM configuration\?\[confirm\]")
-    host_prompt = re.compile(hostname)
+    BUILD_CONFIG = re.compile("\[OK\]")
+    OVERWRITE_WARNING = re.compile("Overwrite the previous NVRAM configuration\?\[confirm\]")
+    HOST_PROMPT = re.compile(hostname)
 
-    events = [host_prompt, overwrite_warning, build_config]
+    events = [HOST_PROMPT, OVERWRITE_WARNING, BUILD_CONFIG]
     transitions = [
-        (overwrite_warning, [0], 1, send_newline, 1200),
-        (build_config, [0, 1], 2, None, 1200),
-        (host_prompt, [0, 1, 2], -1, None, 1200),
+        (OVERWRITE_WARNING, [0], 1, send_newline, 1200),
+        (BUILD_CONFIG, [0, 1], 2, None, 1200),
+        (HOST_PROMPT, [0, 1, 2], -1, None, 1200),
     ]
 
     if not ctx.run_fsm("write memory", cmd, events, transitions, timeout=1200):

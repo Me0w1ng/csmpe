@@ -371,18 +371,18 @@ def install_remove_all(ctx, cmd, hostname):
     # Expected Operation ID
     op_id += 1
 
-    oper_error = "Install operation {} failed at".format(op_id)
-    error1 = re.compile("Error:     - re-issue the command when the current operation has completed.")
-    error2 = re.compile(oper_error)
-    proceed_removing = re.compile("\[confirm\]")
-    host_prompt = re.compile(hostname)
+    OPER_ERROR = "Install operation {} failed at".format(op_id)
+    ERROR1 = re.compile("Error:     - re-issue the command when the current operation has completed.")
+    ERROR2 = re.compile(OPER_ERROR)
+    PROCEED_REMOVING = re.compile("\[confirm\]")
+    HOST_PROMPT = re.compile(hostname)
 
-    events = [host_prompt, error1, error2, proceed_removing]
+    events = [HOST_PROMPT, ERROR1, ERROR2, PROCEED_REMOVING]
     transitions = [
-        (error1, [0], -1, CommandError("Another install command is currently in operation", hostname), 1800),
-        (error2, [0], -1, CommandError("No packages can be removed", hostname), 1800),
-        (proceed_removing, [0], 2, partial(send_yes, ctx), 1800),
-        (host_prompt, [2], -1, None, 1800),
+        (ERROR1, [0], -1, CommandError("Another install command is currently in operation", hostname), 1800),
+        (ERROR2, [0], -1, CommandError("No packages can be removed", hostname), 1800),
+        (PROCEED_REMOVING, [0], 2, partial(send_yes, ctx), 1800),
+        (HOST_PROMPT, [2], -1, None, 1800),
     ]
 
     if not ctx.run_fsm("Remove Inactive All", cmd, events, transitions, timeout=1800):
