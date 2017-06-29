@@ -210,7 +210,7 @@ def wait_for_reload(ctx):
 
     ctx.info("Device connected successfully")
 
-    timeout = 3600
+    timeout = 7200
     poll_time = 30
     time_waited = 0
     xr_run = "IOS XR RUN"
