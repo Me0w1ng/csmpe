@@ -27,8 +27,8 @@
 # =============================================================================
 
 from csmpe.plugins import CSMPlugin
-from fpd_upgd_lib import fpd_needs_upgd, fpd_needs_reload, fpd_check_status, hw_fpd_upgd, \
-    hw_fpd_reload, wait_for_fpd_upgd
+from fpd_upgd_lib import fpd_is_current, fpd_needs_upgd, fpd_needs_reload, fpd_check_status, \
+    hw_fpd_upgd, hw_fpd_reload, wait_for_fpd_upgd
 from install import wait_for_reload
 from csmpe.core_plugins.csm_get_inventory.exr.plugin import get_package, get_inventory
 from csmpe.core_plugins.csm_install_operations.utils import update_device_info_udi
@@ -45,6 +45,10 @@ class Plugin(CSMPlugin):
 
         self.ctx.info("FPD-Upgrade Pending")
         self.ctx.post_status("FPD-Upgrade Pending")
+
+        if fpd_is_current(self.ctx):
+            self.ctx.info("All FPD devices are CURRENT. Nothing to be upgraded.")
+            return True
 
         if fpd_needs_upgd(self.ctx):
             if not hw_fpd_upgd(self.ctx):
@@ -72,5 +76,7 @@ class Plugin(CSMPlugin):
 
         if fpd_check_status(self.ctx):
             self.ctx.info("FPD-Upgrade Successfully")
+            return True
         else:
             self.ctx.error("FPD-Upgrade Completed but the status of one or more nodes is not Current or N/A")
+            return False
