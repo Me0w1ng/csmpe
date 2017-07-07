@@ -103,74 +103,6 @@ def fpd_needs_upgd(ctx):
     return need_upgd
 
 
-def fpd_is_current(ctx):
-    """
-    :param ctx
-    :return: True or False
-
-    Platform: NCS5500
-    RP/0/RP0/CPU0:freta1.55#show hw-module fpd
-                                                                   FPD Versions
-                                                                   =================
-    Location   Card type        HWver FPD device       ATR Status   Running Programd
-    ------------------------------------------------------------------------------
-    0/0       NC55-18H18F       1.0   MIFPGA               CURRENT    0.03    0.03
-    0/0       NC55-18H18F       1.0   Bootloader           CURRENT    1.11    1.11
-    0/0       NC55-18H18F       1.0   IOFPGA               CURRENT    0.20    0.20
-    0/1       NC55-24X100G-SE   1.0   MIFPGA               CURRENT    0.03    0.03
-    0/1       NC55-24X100G-SE   1.0   Bootloader           CURRENT    1.11    1.11
-    0/1       NC55-24X100G-SE   1.0   IOFPGA               CURRENT    0.12    0.12
-    0/7       NC55-36X100G-S    1.0   MIFPGA               CURRENT    0.06    0.06
-    0/7       NC55-36X100G-S    1.0   Bootloader           CURRENT    1.11    1.11
-    0/7       NC55-36X100G-S    1.0   IOFPGA               CURRENT    0.09    0.09
-    0/RP0     NC55-RP           1.1   Bootloader           RLOAD REQ  9.21    9.23
-    0/RP0     NC55-RP           1.1   IOFPGA               RLOAD REQ  0.08    0.09
-    0/RP1     NC55-RP           1.1   Bootloader           RLOAD REQ  9.21    9.23
-    0/RP1     NC55-RP           1.1   IOFPGA               RLOAD REQ  0.08    0.09
-    0/FC0     NC55-5508-FC      1.0   Bootloader           CURRENT    1.70    1.70
-    0/FC0     NC55-5508-FC      1.0   IOFPGA               RLOAD REQ  0.15    0.16
-    0/FC1     NC55-5508-FC      1.0   Bootloader           RLOAD REQ  1.65    1.70
-    0/FC1     NC55-5508-FC      1.0   IOFPGA               RLOAD REQ  0.13    0.16
-    0/FC3     NC55-5508-FC      1.0   Bootloader           RLOAD REQ  1.65    1.70
-    0/FC3     NC55-5508-FC      1.0   IOFPGA               RLOAD REQ  0.13    0.16
-    0/FC5     NC55-5508-FC      1.0   Bootloader           RLOAD REQ  1.65    1.70
-    0/FC5     NC55-5508-FC      1.0   IOFPGA               RLOAD REQ  0.13    0.16
-    0/SC0     NC55-SC           1.4   Bootloader           RLOAD REQ  1.65    1.70
-    0/SC0     NC55-SC           1.4   IOFPGA               RLOAD REQ  0.07    0.08
-    0/SC1     NC55-SC           1.4   Bootloader           RLOAD REQ  1.65    1.70
-    0/SC1     NC55-SC           1.4   IOFPGA               RLOAD REQ  0.07    0.08
-    """
-
-    is_current = True
-    sl = ['Status', 'Running']
-    dl = {}
-
-    output = ctx.send("show hw-module fpd", timeout=600)
-    lines = output.split('\n')
-    lines = [x for x in lines if x]
-    for line in lines:
-        line = line.strip()
-
-        if line[0:8] == 'Location':
-            for s in sl:
-                n = line.find(s)
-                if n != -1:
-                    dl[str(s)] = n
-                else:
-                    ctx.error("unrecognized show hw-module fpd header {}".format(line))
-                    return False
-
-        if line[0].isdigit():
-            status = line[dl['Status']:dl['Running']].strip()
-            if 'N/A' in status:
-                continue
-            if 'CURRENT' not in status:
-                is_current = False
-                break
-
-    return is_current
-
-
 def fpd_needs_reload(ctx):
     """
     :param ctx
@@ -303,6 +235,40 @@ def fpd_check_status(ctx):
     0/PT0     PWR-3KW-AC-V2     3.0   PM3-EM-PriMCU        N/A        3.06    3.06
     0/PT0     PWR-3KW-AC-V2     3.0   PM3-EM-Sec54vMCU     CURRENT    3.12    3.12
     0/PT0     PWR-3KW-AC-V2     3.0   PM3-EM-Sec5vMCU      CURRENT    3.18    3.18
+
+     Platform: NCS1K
+    RP/0/RP0/CPU0:PROD_19#show hw-module fpd
+
+                                                                   FPD Versions
+                                                                   =================
+    Location   Card type        HWver FPD device       ATR Status   Running Programd
+    ------------------------------------------------------------------------------
+    0/0       NCS1002-K9        1.2   CDSP_PORT_05         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_06         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_12         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_13         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_19         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_20         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_26         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_27         CURRENT    3.76    3.76
+    0/0       NCS1002-K9              CFP2_PORT_05         NOT READY
+    0/0       NCS1002-K9        2.1   CFP2_PORT_06         CURRENT    5.23    5.23
+    0/0       NCS1002-K9              CFP2_PORT_12         NOT READY
+    0/0       NCS1002-K9        2.1   CFP2_PORT_13         CURRENT    5.23    5.23
+    0/0       NCS1002-K9              CFP2_PORT_19         NOT READY
+    0/0       NCS1002-K9              CFP2_PORT_20         NOT READY
+    0/0       NCS1002-K9              CFP2_PORT_26         NOT READY
+    0/0       NCS1002-K9        2.1   CFP2_PORT_27         CURRENT    5.23    5.23
+    0/0       NCS1002-K9        0.1   CTRL_BKP_LOW     B   CURRENT            2.23
+    0/0       NCS1002-K9        0.1   CTRL_BKP_UP      B   CURRENT            2.23
+    0/0       NCS1002-K9        0.1   CTRL_FPGA_LOW        CURRENT    2.23    2.23
+    0/0       NCS1002-K9        0.1   CTRL_FPGA_UP         CURRENT    2.23    2.23
+    0/RP0     NCS1K-CNTLR       0.1   BIOS_Backup      BS  CURRENT           13.70
+    0/RP0     NCS1K-CNTLR       0.1   BIOS_Primary      S  CURRENT   13.70   13.70
+    0/RP0     NCS1K-CNTLR       0.1   Daisy_Duke_BKP   BS  CURRENT            0.15
+    0/RP0     NCS1K-CNTLR       0.1   Daisy_Duke_FPGA   S  CURRENT    0.17    0.17
+    0/PM0     NCS1K-2KW-AC      0.0   PO-PriMCU            CURRENT
+    0/PM1     NCS1K-2KW-AC      0.0   PO-PriMCU            CURRENT    4.00    4.00
     """
 
     current_status = True
@@ -330,6 +296,10 @@ def fpd_check_status(ctx):
                 ctx.warning('FPD Status: {}'.format(line))
                 continue
             if 'CURRENT' not in status:
+                if 'NOT READY' in status:
+                    version = line[dl['Running']:].strip()
+                    if not version:
+                        continue
                 ctx.warning('FPD Status: {}'.format(line))
                 current_status = False
                 break
