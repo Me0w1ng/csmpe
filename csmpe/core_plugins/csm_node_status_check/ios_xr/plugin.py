@@ -32,7 +32,7 @@ class Plugin(CSMPlugin):
     """This plugin checks the states of all nodes"""
     name = "Node Status Check Plugin"
     platforms = {'ASR9K', 'CRS'}
-    phases = {'Pre-Upgrade', 'Post-Upgrade'}
+    phases = {'Pre-Check', 'Post-Check'}
     os = {'XR'}
 
     def _run(self):

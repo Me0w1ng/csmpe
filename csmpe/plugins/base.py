@@ -45,7 +45,7 @@ class CSMPlugin(object):
 
     #: The set of strings representing the install phases during which the plugin will be dispatched.
     #: Empty set means that plugin will NEVER be executed. The currently supported values are:
-    #: *Pre-Upgrade*, *Pre-Add*, *Add*, *Pre-Activate*, *Pre-Deactivate*, *Deactivate*,
+    #: *Pre-Check*, *Pre-Add*, *Add*, *Pre-Activate*, *Pre-Deactivate*, *Deactivate*,
     #: *Remove*, *Commit*
     phases = set()
 

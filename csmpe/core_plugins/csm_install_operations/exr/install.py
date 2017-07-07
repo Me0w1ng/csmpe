@@ -25,16 +25,15 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 from functools import partial
-import itertools
-import re
-import time
 from condoor import ConnectionError, CommandError
 from csmpe.core_plugins.csm_node_status_check.exr.plugin_lib import parse_show_platform
 from csmpe.core_plugins.csm_install_operations.actions import a_error
 
-install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
+import itertools
+import re
+import time
 
-plugin_ctx = None
+install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
 
 
 def log_install_errors(ctx, output):
@@ -211,7 +210,7 @@ def wait_for_reload(ctx):
 
     ctx.info("Device connected successfully")
 
-    timeout = 3600
+    timeout = 7200
     poll_time = 30
     time_waited = 0
     xr_run = "IOS XR RUN"
@@ -321,12 +320,11 @@ def report_install_status(ctx, op_id):
     ctx.info("Operation {} finished successfully".format(op_id))
 
 
-def handle_aborted(fsm_ctx):
+def handle_aborted(plugin_ctx, fsm_ctx):
     """
     :param ctx: FSM Context
     :return: True if successful other False
     """
-    global plugin_ctx
 
     report_install_status(ctx=plugin_ctx, op_id=get_op_id(fsm_ctx.ctrl.before))
 
@@ -334,13 +332,11 @@ def handle_aborted(fsm_ctx):
     return False
 
 
-def handle_non_reload_activate_deactivate(fsm_ctx):
+def handle_non_reload_activate_deactivate(plugin_ctx, fsm_ctx):
     """
     :param ctx: FSM Context
     :return: True if successful other False
     """
-    global plugin_ctx
-
     op_id = get_op_id(fsm_ctx.ctrl.before)
     if op_id == -1:
         return False
@@ -350,13 +346,11 @@ def handle_non_reload_activate_deactivate(fsm_ctx):
     return True
 
 
-def handle_reload_activate_deactivate(fsm_ctx):
+def handle_reload_activate_deactivate(plugin_ctx, fsm_ctx):
     """
     :param ctx: FSM Context
     :return: True if successful other False
     """
-    global plugin_ctx
-
     op_id = get_op_id(fsm_ctx.ctrl.before)
     if op_id == -1:
         return False
@@ -377,18 +371,16 @@ def handle_reload_activate_deactivate(fsm_ctx):
     return True
 
 
-def no_impact_warning(fsm_ctx):
+def no_impact_warning(plugin_ctx, fsm_ctx):
     plugin_ctx.warning("This was a NO IMPACT OPERATION. Packages are already active on device.")
     return True
 
 
-def handle_not_start(fsm_ctx):
+def handle_not_start(plugin_ctx, fsm_ctx):
     """
     :param ctx: FSM Context
     :return: False
     """
-    global plugin_ctx
-
     plugin_ctx.error("Could not start this install operation because an install operation is still in progress")
     return False
 
@@ -464,9 +456,6 @@ def install_activate_deactivate(ctx, cmd):
     RP/0/RSP0/CPU0:ios#Jun 09 15:53:51 Install operation 27 finished successfully
 
     """
-    global plugin_ctx
-    plugin_ctx = ctx
-
     ABORTED = re.compile("aborted")
 
     # REBOOT_PROMP for eXR reload response:
@@ -489,14 +478,14 @@ def install_activate_deactivate(ctx, cmd):
     #                  0                    1              2           3          4         5          6
     events = [CONTINUE_IN_BACKGROUND, REBOOT_PROMPT, RELOAD_PROMPT, ABORTED, NO_IMPACT, RUN_PROMPT, ERROR, NOT_START]
     transitions = [
-        (CONTINUE_IN_BACKGROUND, [0], -1, handle_non_reload_activate_deactivate, 300),
-        (REBOOT_PROMPT, [0], -1, handle_reload_activate_deactivate, 300),
-        (RELOAD_PROMPT, [0], -1, handle_reload_activate_deactivate, 300),
-        (NO_IMPACT, [0], -1, no_impact_warning, 60),
-        (RUN_PROMPT, [0], -1, handle_non_reload_activate_deactivate, 300),
-        (ABORTED, [0], -1, handle_aborted, 300),
+        (CONTINUE_IN_BACKGROUND, [0], -1, partial(handle_non_reload_activate_deactivate, ctx), 300),
+        (REBOOT_PROMPT, [0], -1, partial(handle_reload_activate_deactivate, ctx), 300),
+        (RELOAD_PROMPT, [0], -1, partial(handle_reload_activate_deactivate, ctx), 300),
+        (NO_IMPACT, [0], -1, partial(no_impact_warning, ctx), 60),
+        (RUN_PROMPT, [0], -1, partial(handle_non_reload_activate_deactivate, ctx), 300),
+        (ABORTED, [0], -1, partial(handle_aborted, ctx), 300),
         (ERROR, [0], -1, partial(a_error, ctx), 0),
-        (NOT_START, [0], -1, handle_not_start, 300),
+        (NOT_START, [0], -1, partial(handle_not_start, ctx), 300),
     ]
 
     if not ctx.run_fsm("ACTIVATE-OR-DEACTIVATE", cmd, events, transitions, timeout=300):
@@ -550,20 +539,20 @@ def observe_install_remove_all(ctx, cmd, prompt):
     # Expected Operation ID
     op_id += 1
 
-    oper_err = "Install operation {} aborted".format(op_id)
-    oper_success = "Install operation {} finished successfully".format(op_id)
-    Error1 = re.compile("Could not start this install operation. Install operation")
-    Error2 = re.compile(oper_err)
-    Proceed_removing = re.compile(oper_success)
-    Host_prompt = re.compile(prompt)
+    OPER_ERROR = "Install operation {} aborted".format(op_id)
+    OPER_SUCCESS = "Install operation {} finished successfully".format(op_id)
+    ERROR1 = re.compile("Could not start this install operation. Install operation")
+    ERROR2 = re.compile(OPER_ERROR)
+    PROCEED_REMOVING = re.compile(OPER_SUCCESS)
+    HOST_PROMPT = re.compile(prompt)
 
-    events = [Host_prompt, Error1, Error2, Proceed_removing]
+    events = [HOST_PROMPT, ERROR1, ERROR2, PROCEED_REMOVING]
     transitions = [
-        (Error1, [0], -1, CommandError("Another install command is currently in operation",
+        (ERROR1, [0], -1, CommandError("Another install command is currently in operation",
                                        ctx._connection.hostname), 1800),
-        (Error2, [0], -1, CommandError("No packages can be removed", ctx._connection.hostname), 1800),
-        (Proceed_removing, [0], -1, None, 1800),
-        (Host_prompt, [0], -1, None, 1800),
+        (ERROR2, [0], -1, CommandError("No packages can be removed", ctx._connection.hostname), 1800),
+        (PROCEED_REMOVING, [0], -1, None, 1800),
+        (HOST_PROMPT, [0], -1, None, 1800),
     ]
 
     if not ctx.run_fsm("Remove Inactive All", cmd, events, transitions, timeout=1800):
@@ -586,7 +575,7 @@ def observe_install_remove_all(ctx, cmd, prompt):
         try:
             try:
                 # this is to catch the successful operation as soon as possible
-                ctx.send("", wait_for_string=oper_success, timeout=20)
+                ctx.send("", wait_for_string=OPER_SUCCESS, timeout=20)
                 finish = True
             except ctx.CommandTimeoutError:
                 pass
@@ -616,7 +605,7 @@ def observe_install_remove_all(ctx, cmd, prompt):
     output = ctx.send(cmd_show_install_log, timeout=600)
     ctx.info(output)
 
-    if oper_success in output:
+    if OPER_SUCCESS in output:
         message = "Remove All Inactive Package(s) Successfully"
         ctx.info(message)
         ctx.post_status(message)

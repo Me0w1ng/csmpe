@@ -187,7 +187,7 @@ class PluginContext(object):
         # Use force discovery until we sort out all cache issues.
         self.connect(force_discovery=True)
         """
-        if self.phase in ["Get-Inventory", "Post-Upgrade"]:
+        if self.phase in ["Get-Inventory", "Post-Check"]:
             self.connect(force_discovery=True)
         else:
             self.connect()

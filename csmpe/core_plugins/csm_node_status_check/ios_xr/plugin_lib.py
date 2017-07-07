@@ -89,13 +89,19 @@ def parse_show_platform(ctx, output):
         line = line.strip()
 
         if line[0:4] == 'Node':
-            for s in sl:
-                n = line.find(s)
-                if n != -1:
-                    dl[s] = n
-                else:
-                    ctx.warning("unrecognized show platform header {}".format(line))
-                    return None
+            if '\t' in line and ctx.family == 'ASR9K':
+                dl['Node'] = 0
+                dl['Type'] = 16
+                dl['State'] = 42
+                dl['Config State'] = 59
+            else:
+                for s in sl:
+                    n = line.find(s)
+                    if n != -1:
+                        dl[s] = n
+                    else:
+                        ctx.warning("unrecognized show platform header {}".format(line))
+                        return None
             continue
 
         if line[0].isdigit():

@@ -32,9 +32,9 @@ import pkginfo
 
 plugin_namespace = "csm.plugin"
 
-install_phases = ['Pre-Upgrade', 'Pre-Add', 'Add', 'Pre-Activate', 'Activate', 'Pre-Deactivate',
+install_phases = ['Pre-Check', 'Pre-Add', 'Add', 'Pre-Activate', 'Activate', 'Pre-Deactivate',
                   'Deactivate', 'Pre-Remove', 'Remove', 'Remove All Inactive', 'Commit', 'Get-Inventory',
-                  'Migration-Audit', 'Pre-Migrate', 'Migrate', 'Post-Migrate', 'Post-Upgrade', 'FPD-Upgrade']
+                  'Migration-Audit', 'Pre-Migrate', 'Migrate', 'Post-Migrate', 'Post-Check', 'FPD-Upgrade']
 
 
 @six.add_metaclass(abc.ABCMeta)

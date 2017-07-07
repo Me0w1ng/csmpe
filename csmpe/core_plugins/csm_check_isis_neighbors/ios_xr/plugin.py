@@ -34,7 +34,7 @@ class Plugin(CSMPlugin):
     """This plugin checks the ISIS neighbor."""
     name = "ISIS Neighbor Check Plugin"
     platforms = {'ASR9K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
-    phases = {'Pre-Upgrade', 'Post-Upgrade'}
+    phases = {'Pre-Check', 'Post-Check'}
 
     def _run(self):
         """
@@ -97,7 +97,7 @@ class Plugin(CSMPlugin):
                 if filename:
                     self.ctx.info("The '{}' command output saved to {}".format(cmd, filename))
 
-                if self.ctx.phase == "Pre-Upgrade":
+                if self.ctx.phase == "Pre-Check":
                     self.ctx.save_data("isis_neighbors", isis_neighbor_info)
                     if filename:
                         # store the full_path to command output under the cmd key
@@ -106,22 +106,22 @@ class Plugin(CSMPlugin):
             else:
                 self.ctx.info("No ISIS protocol instance active")
 
-            if self.ctx.phase == "Post-Upgrade":
+            if self.ctx.phase == "Post-Check":
                 self.compare_data("isis_neighbors", isis_neighbor_info)
 
     def compare_data(self, storage_key, current_data):
         levels = ["L1", "L2", "L1L2"]
         previous_data, timestamp = self.ctx.load_data(storage_key)
         if previous_data is None:
-            self.ctx.warning("No data stored from Pre-Upgrade phase. Can't compare.")
+            self.ctx.warning("No data stored from Pre-Check phase. Can't compare.")
             return
 
         if previous_data:
-            self.ctx.info("Pre-Upgrade phase data available for comparison")
-            self.ctx.info("Pre-Upgrade data collected on {}".format(
+            self.ctx.info("Pre-Check phase data available for comparison")
+            self.ctx.info("Pre-Check data collected on {}".format(
                 datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d %H:%M:%S')))
             if timestamp < time() - (60 * 60 * 2):  # two hours
-                self.ctx.warning("Pre-Upgrade phase data older than 2 hours")
+                self.ctx.warning("Pre-Check phase data older than 2 hours")
 
             for previous_instance, previous_state_dict in previous_data.items():
                 try:
@@ -146,5 +146,5 @@ class Plugin(CSMPlugin):
                     self.ctx.info("Number of ISIS neighbors for instance '{}' is the "
                                   "same as during pre-install check".format(previous_instance))
         else:
-            self.ctx.warning("No data stored from Pre-Upgrade phase")
+            self.ctx.warning("No data stored from Pre-Check phase")
             return
