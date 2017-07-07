@@ -40,7 +40,7 @@ class Plugin(CSMPlugin):
 
     Console access is needed.
     """
-    name = "Migration Audit Plugin"
+    name = "Migration Audit"
     platforms = {'ASR9K'}
     phases = {'Migration-Audit'}
 

@@ -32,7 +32,7 @@ from csmpe.core_plugins.csm_get_inventory.ios_xe.plugin import get_package, get_
 
 class Plugin(CSMPlugin):
     """This plugin adds packages from repository to the device."""
-    name = "Install Add Plugin"
+    name = "Install Add"
     platforms = {'ASR900'}
     phases = {'Add'}
     os = {'XE'}

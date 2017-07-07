@@ -43,7 +43,7 @@ class Plugin(CSMPlugin):
     will be reloaded after the upgrade.
     Console access is needed.
     """
-    name = "Post-Migrate Plugin"
+    name = "Post-Migrate"
     platforms = {'ASR9K'}
     phases = {'Post-Migrate'}
 

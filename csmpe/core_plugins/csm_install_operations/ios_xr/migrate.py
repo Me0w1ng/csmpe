@@ -77,7 +77,7 @@ class Plugin(CSMPlugin):
     device to boot eXR image.
     Console access is needed.
     """
-    name = "Migrate Plugin"
+    name = "Migrate"
     platforms = {'ASR9K'}
     phases = {'Migrate'}
 

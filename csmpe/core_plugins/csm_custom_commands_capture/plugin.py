@@ -32,7 +32,7 @@ from condoor.exceptions import CommandSyntaxError
 
 class Plugin(CSMPlugin):
     """This plugin captures custom commands and stores in the log directory."""
-    name = "Custom Commands Capture Plugin"
+    name = "Custom Commands Capture"
     platforms = {'ASR9K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'ASR900', 'N6K', 'IOSXRv-9K', 'IOSXRv-X64'}
     phases = {'Pre-Check', 'Post-Check', 'Migration-Audit', 'Pre-Migrate', 'Migrate', 'Post-Migrate'}
 

@@ -31,7 +31,7 @@ from install import remove_exist_image
 
 class Plugin(CSMPlugin):
     """This plugin removes inactive packages from the device."""
-    name = "Install Remove Plugin"
+    name = "Install Remove"
     platforms = {'ASR900'}
     phases = {'Remove'}
     os = {'IOS'}

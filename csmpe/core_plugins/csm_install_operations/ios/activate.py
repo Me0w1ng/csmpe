@@ -35,7 +35,7 @@ from csmpe.core_plugins.csm_install_operations.utils import update_device_info_u
 
 class Plugin(CSMPlugin):
     """This plugin Activates packages on the device."""
-    name = "Install Activate Plugin"
+    name = "Install Activate"
     platforms = {'ASR900'}
     phases = {'Activate'}
     os = {'IOS'}

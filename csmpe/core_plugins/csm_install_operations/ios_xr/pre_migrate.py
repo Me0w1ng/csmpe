@@ -80,7 +80,7 @@ class Plugin(CSMPlugin):
 
     Console access is needed.
     """
-    name = "Pre-Migrate Plugin"
+    name = "Pre-Migrate"
     platforms = {'ASR9K'}
     phases = {'Pre-Migrate'}
     os = {'XR'}

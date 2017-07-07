@@ -36,7 +36,7 @@ from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_
 
 class Plugin(CSMPlugin):
     """This plugin Activates packages on the device."""
-    name = "Install Commit Plugin"
+    name = "Install Commit"
     platforms = {'ASR9K', 'CRS'}
     phases = {'Commit'}
     os = {'XR'}

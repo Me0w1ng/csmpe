@@ -32,7 +32,7 @@ from csmpe.plugins import CSMPlugin
 
 class Plugin(CSMPlugin):
     """This plugin captures device configuration and stores in the log directory."""
-    name = "Config Capture Plugin"
+    name = "Config Capture"
     platforms = {'ASR9K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'ASR900', 'N6K', 'IOSXRv-9K', 'IOSXRv-X64'}
     phases = {'Pre-Check', 'Post-Check'}
 

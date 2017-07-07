@@ -34,7 +34,7 @@ from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_
 
 class Plugin(CSMPlugin):
     """This plugin removes inactive packages from the device."""
-    name = "Install Remove Plugin"
+    name = "Install Remove"
     platforms = {'ASR9K', 'CRS'}
     phases = {'Remove'}
     os = {'XR'}

@@ -40,7 +40,7 @@ from utils import check_pkg_conf
 
 class Plugin(CSMPlugin):
     """This plugin performs pre-activate tasks."""
-    name = "Install Pre-Activate Plugin"
+    name = "Install Pre-Activate"
     platforms = {'ASR900'}
     phases = {'Pre-Activate'}
     os = {'XE'}
