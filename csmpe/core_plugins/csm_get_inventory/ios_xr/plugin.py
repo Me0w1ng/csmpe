@@ -41,7 +41,7 @@ class Plugin(CSMPlugin):
 
 def get_inventory(ctx):
     # saved the output of "admin show inventory"
-    output = ctx.send("admin show inventory")
+    output = ctx.send("admin show inventory", timeout=3600)
     ctx.save_data("cli_show_inventory", output)
 
 

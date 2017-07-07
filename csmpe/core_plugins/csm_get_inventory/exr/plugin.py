@@ -94,12 +94,12 @@ def get_output_in_admin_mode(ctx, cmd, admin=True):
         command = cmd
 
     x = 0
-    output = ctx.send(cmd)
+    output = ctx.send(cmd, timeout=3600)
     while x < 60:
         if 'Please try command later' in output:
             x += 1
             time.sleep(10)
-            output = ctx.send(cmd)
+            output = ctx.send(cmd, timeout=3600)
         else:
             break
 
