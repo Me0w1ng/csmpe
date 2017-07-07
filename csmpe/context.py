@@ -172,10 +172,12 @@ class PluginContext(object):
                 Each string in the list is the name of a plugin.
         """
         try:
-            return self._csm.plugin_execution_order
+            if self._csm:
+                return self._csm.plugin_execution_order
         except AttributeError:
             pass
             # raise AssertionError("Plugin execution order not provided")
+        return None
 
     def _device_detect(self):
         """Connect to device using condoor"""

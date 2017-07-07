@@ -99,6 +99,15 @@ def cli():
     pass
 
 
+def filter_plugins(platform=None, phase=None, os=None):
+    pm = get_csm_plugin_manager(None, load_plugins=False,  invoke_on_load=False)
+    pm.set_phase_filter(phase)
+    pm.set_platform_filter(platform)
+    pm.set_os_filter(os)
+    pm.load(invoke_on_load=False)
+    return pm
+
+
 @cli.command("list", help="List all the plugins available.", short_help="List plugins")
 @click.option("--platform", type=click.Choice(_PLATFORMS),
               help="Supported platform.")
@@ -111,12 +120,8 @@ def cli():
 @click.option("--brief", is_flag=True,
               help="Display brief information about installed plugins.")
 def plugin_list(platform, phase, os, detail, brief):
-    pm = get_csm_plugin_manager(None, invoke_on_load=False)
-    pm.set_phase_filter(phase)
-    pm.set_platform_filter(platform)
-    pm.set_os_filter(os)
-    pm.load(invoke_on_load=False)
 
+    pm = filter_plugins(platform, phase, os)
     click.echo("List of installed plugins:\n")
     if platform:
         click.echo("Plugins for platform: {}".format(platform))

@@ -54,16 +54,16 @@ class CSMPluginManager(object):
         # The context contains device information after discovery phase
         # There is no need to load plugins which does not match the family and os
         try:
-            self._platform = self._ctx.family
+            self._platform_list = [self._ctx.family]
         except AttributeError:
-            self._platform = None
+            self._platform_list = None
         try:
-            self._os = self._ctx.os_type
+            self._os_list = [self._ctx.os_type]
         except AttributeError:
-            self._os = None
+            self._os_list = None
 
-        self._phase = None
-        self._name = None
+        self._phase_list = None
+        self._name_set = None
 
         # plugins contains info of loaded plugins. This should be built after loading the plugins.
         self.plugins = {}
@@ -95,16 +95,22 @@ class CSMPluginManager(object):
 
     def _filter_func(self, ext, *args, **kwargs):
         """Filters extension"""
-        if self._platform and bool(ext.plugin.platforms) and self._platform not in ext.plugin.platforms:
+        if self._platform_list and bool(ext.plugin.platforms) and not self.is_every_list_item_in_set(self._platform_list, ext.plugin.platforms):
             return False
-        if self._phase and self._phase not in ext.plugin.phases:
+        if self._phase_list and not self.is_every_list_item_in_set(self._phase_list, ext.plugin.phases):
             return False
-        if self._name and ext.plugin.name not in self._name:
+        if self._name_set and ext.plugin.name not in self._name_set:
             return False
         # if detected os is set and plugin os set is not empty and detected os is not in plugin os then
         # plugin does not match
-        if self._os and bool(ext.plugin.os) and self._os not in ext.plugin.os:
+        if self._os_list and bool(ext.plugin.os) and not self.is_every_list_item_in_set(self._os_list, ext.plugin.os):
             return False
+        return True
+
+    def is_every_list_item_in_set(self, item_list, set):
+        for item in item_list:
+            if item not in set:
+                return False
         return True
 
     def _on_load_failure(self, manager, entry_point, exc):
@@ -133,20 +139,29 @@ class CSMPluginManager(object):
         return self.get_package_metadata().keys()
 
     def set_platform_filter(self, platform):
-        self._platform = platform
+        self._platform_list = self.make_list(platform)
 
     def set_phase_filter(self, phase):
-        self._phase = phase
+        self._phase_list = self.make_list(phase)
 
     def set_os_filter(self, os):
-        self._os = os
+        self._os_list = self.make_list(os)
 
     def set_name_filter(self, name):
         if isinstance(name, str) or isinstance(name, unicode):
-            self._name = {name}
+            self._name_set = {name}
         elif isinstance(name, list):
-            self._name = set(name)
+            self._name_set = set(name)
         elif isinstance(name, set):
-            self._name = name
+            self._name_set = name
         else:
-            self._name = None
+            self._name_set = None
+
+    def make_list(self, arg):
+        if isinstance(arg, str) or isinstance(arg, unicode):
+            return [arg]
+        elif isinstance(arg, list):
+            return arg
+        elif isinstance(arg, set):
+            return list(arg)
+        return None

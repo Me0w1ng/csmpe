@@ -42,10 +42,11 @@ class CSMPluginDispatchExtensionManager(CSMPluginManager):
      The execution of the plugins are in no particular order.
     """
 
-    def __init__(self, plugin_ctx=None, invoke_on_load=True):
+    def __init__(self, plugin_ctx=None, load_plugins=True, invoke_on_load=True):
         super(CSMPluginDispatchExtensionManager, self).__init__(plugin_ctx)
 
-        self.load(invoke_on_load=invoke_on_load)
+        if load_plugins:
+            self.load(invoke_on_load=invoke_on_load)
 
     def load(self, invoke_on_load=True):
         self._manager = DispatchExtensionManager(
@@ -79,7 +80,7 @@ class CSMPluginDispatchExtensionManager(CSMPluginManager):
         if self._ctx.phase in auto_pre_phases:
             phase = "Pre-{}".format(self._ctx.phase)
             self.set_phase_filter(phase)
-            self._ctx.info("Phase: {}".format(self._phase))
+            self._ctx.info("Phase: {}".format(self._phase_list[0] if len(self._phase_list) == 1 else self._phase_list))
             try:
                 results = self._manager.map_method(self._filter_func, func)
             except NoMatches:
@@ -87,12 +88,12 @@ class CSMPluginDispatchExtensionManager(CSMPluginManager):
             self._ctx.current_plugin = None
 
         self.set_phase_filter(current_phase)
-        self._ctx.info("Phase: {}".format(self._phase))
+        self._ctx.info("Phase: {}".format(self._phase_list[0] if len(self._phase_list) == 1 else self._phase_list))
         try:
             results += self._manager.map_method(self._filter_func, func)
         except NoMatches:
-            self._ctx.post_status("No plugins found for phase {}".format(self._phase))
-            self._ctx.error("No plugins found for phase {}".format(self._phase))
+            self._ctx.post_status("No plugins found for phase {}".format(self._phase_list))
+            self._ctx.error("No plugins found for phase {}".format(self._phase_list))
 
         self.finalize()
         return results

@@ -43,10 +43,10 @@ class CSMPluginNamedExtensionManager(CSMPluginManager):
     in order to execute the filtered plugins in specified order.
     """
 
-    def __init__(self, plugin_ctx=None, invoke_on_load=True):
+    def __init__(self, plugin_ctx=None, load_plugins=True, invoke_on_load=True):
         super(CSMPluginNamedExtensionManager, self).__init__(plugin_ctx)
 
-        self._phase = self._ctx.phase
+        self.set_phase_filter(self._ctx.phase)
 
         # plugin_execution_order is a list of plugin names
         # For MOP jobs, plugin_execution_order is specified in the context to indicate which plugins
@@ -56,7 +56,8 @@ class CSMPluginNamedExtensionManager(CSMPluginManager):
 
         self.set_name_filter(self.plugin_execution_order)
 
-        self.load(invoke_on_load=invoke_on_load)
+        if load_plugins:
+            self.load(invoke_on_load=invoke_on_load)
 
     def load(self, invoke_on_load=True):
 
@@ -118,12 +119,12 @@ class CSMPluginNamedExtensionManager(CSMPluginManager):
 
     def dispatch(self, func):
         results = []
-        self._ctx.info("Phase: {}".format(self._phase))
+        self._ctx.info("Phase: {}".format(self._phase_list[0] if len(self._phase_list) == 1 else self._phase_list))
         try:
             results += self._manager.map_method(func)
         except NoMatches:
-            self._ctx.post_status("No plugins found for phase {}".format(self._phase))
-            self._ctx.error("No plugins found for phase {}".format(self._phase))
+            self._ctx.post_status("No plugins found for phase {}".format(self._phase_list))
+            self._ctx.error("No plugins found for phase {}".format(self._phase_list))
 
         self.finalize()
         return results
