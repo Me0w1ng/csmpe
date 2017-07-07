@@ -11,7 +11,7 @@ The Plugin code can be executed outside the CSM Server code using the CLI script
 
 Together with CSM Plugin Engine a several core plugins have been bundled providing
 the minimal functionality required for CSM Server handling the install operations and
-the basic Pre-Upgrade and Post-Upgrade checking.
+the basic Pre-Check and Post-Check checking.
 
 
 The custom plugins can be structured and installed as any other standard python modules.

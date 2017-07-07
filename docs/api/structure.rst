@@ -89,7 +89,7 @@ The sample plugin code is shown below:
         """This is a sample plugin"""
         name = "Sample Plugin"
         platforms = {'ASR9K'}
-        phases = {'Pre-Upgrade'}
+        phases = {'Pre-Check'}
         os = {'IOS XR's}
 
         def run(self):

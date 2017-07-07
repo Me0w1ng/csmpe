@@ -32,7 +32,7 @@ class Plugin(CSMPlugin):
     """This plugin checks the states of all nodes"""
     name = "Node Status Check Plugin"
     platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
-    phases = {'Pre-Upgrade', 'Post-Upgrade'}
+    phases = {'Pre-Check', 'Post-Check'}
     os = {'eXR'}
 
     def _run(self):

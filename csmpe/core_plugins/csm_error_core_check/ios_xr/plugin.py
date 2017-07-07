@@ -32,7 +32,7 @@ class Plugin(CSMPlugin):
     """This plugin checks system logs against any errors, traceback of crash information."""
     name = "Core Error Check Plugin"
     platforms = {'ASR9K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
-    phases = {'Post-Upgrade'}
+    phases = {'Post-Check'}
 
     # matching any errors, core and traceback
     _string_to_check_re = re.compile(

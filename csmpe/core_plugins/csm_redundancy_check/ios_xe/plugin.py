@@ -37,7 +37,7 @@ class Plugin(CSMPlugin):
     """
     name = "Node Redundancy Check Plugin"
     platforms = {'ASR900'}
-    phases = {'Pre-Upgrade', 'Post-Upgrade'}
+    phases = {'Pre-Check', 'Post-Check'}
 
     def _run(self):
         """
