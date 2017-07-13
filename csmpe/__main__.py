@@ -100,7 +100,7 @@ def cli():
 
 
 def filter_plugins(platform=None, phase=None, os=None):
-    pm = get_csm_plugin_manager(None, load_plugins=False,  invoke_on_load=False)
+    pm = get_csm_plugin_manager(None, load_plugins=False, invoke_on_load=False)
     pm.set_phase_filter(phase)
     pm.set_platform_filter(platform)
     pm.set_os_filter(os)
