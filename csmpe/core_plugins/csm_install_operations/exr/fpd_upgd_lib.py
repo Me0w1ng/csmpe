@@ -139,6 +139,40 @@ def fpd_needs_reload(ctx):
     0/SC0     NC55-SC           1.4   IOFPGA               RLOAD REQ  0.07    0.08
     0/SC1     NC55-SC           1.4   Bootloader           RLOAD REQ  1.65    1.70
     0/SC1     NC55-SC           1.4   IOFPGA               RLOAD REQ  0.07    0.08
+
+    Platform: NCS1K
+    RP/0/RP0/CPU0:PROD_19#show hw fpd
+    Fri Jul 14 02:56:06.415 IST
+                                                                   FPD Versions
+                                                                   =================
+    Location   Card type        HWver FPD device       ATR Status   Running Programd
+    ------------------------------------------------------------------------------
+    0/0       NCS1002-K9        1.2   CDSP_PORT_05         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_06         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_12         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_13         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_19         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_20         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_26         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_27         CURRENT    3.76    3.76
+    0/0       NCS1002-K9              CFP2_PORT_05         NOT READY
+    0/0       NCS1002-K9        2.1   CFP2_PORT_06         CURRENT    5.23    5.23
+    0/0       NCS1002-K9              CFP2_PORT_12         NOT READY
+    0/0       NCS1002-K9        2.1   CFP2_PORT_13         CURRENT    5.23    5.23
+    0/0       NCS1002-K9              CFP2_PORT_19         NOT READY
+    0/0       NCS1002-K9              CFP2_PORT_20         NOT READY
+    0/0       NCS1002-K9              CFP2_PORT_26         NOT READY
+    0/0       NCS1002-K9        2.1   CFP2_PORT_27         CURRENT    5.23    5.23
+    0/0       NCS1002-K9        0.1   CTRL_BKP_LOW     B   CURRENT            2.23
+    0/0       NCS1002-K9        0.1   CTRL_BKP_UP      B   CURRENT            2.23
+    0/0       NCS1002-K9        0.1   CTRL_FPGA_LOW        CURRENT    2.23    2.23
+    0/0       NCS1002-K9        0.1   CTRL_FPGA_UP         CURRENT    2.23    2.23
+    0/RP0     NCS1K-CNTLR       0.1   BIOS_Backup      BS  RLOAD REQ         13.70
+    0/RP0     NCS1K-CNTLR       0.1   BIOS_Primary      S  RLOAD REQ 13.40   13.70
+    0/RP0     NCS1K-CNTLR       0.1   Daisy_Duke_BKP   BS  CURRENT            0.15
+    0/RP0     NCS1K-CNTLR       0.1   Daisy_Duke_FPGA   S  RLOAD REQ  0.15    0.17
+    0/PM0     NCS1K-2KW-AC      0.0   PO-PriMCU            CURRENT
+    0/PM1     NCS1K-2KW-AC      0.0   PO-PriMCU            CURRENT    4.00    4.00
     """
 
     reload_ready = True
@@ -164,6 +198,10 @@ def fpd_needs_reload(ctx):
             status = line[dl['Status']:dl['Running']].strip()
             if 'N/A' in status:
                 continue
+            if 'NOT READY' in status:
+                version = line[dl['Running']:].strip()
+                if not version:
+                    continue
             if 'CURRENT' not in status and 'RLOAD REQ' not in status:
                 reload_ready = False
                 break
@@ -236,7 +274,7 @@ def fpd_check_status(ctx):
     0/PT0     PWR-3KW-AC-V2     3.0   PM3-EM-Sec54vMCU     CURRENT    3.12    3.12
     0/PT0     PWR-3KW-AC-V2     3.0   PM3-EM-Sec5vMCU      CURRENT    3.18    3.18
 
-     Platform: NCS1K
+    Platform: NCS1K
     RP/0/RP0/CPU0:PROD_19#show hw-module fpd
 
                                                                    FPD Versions
