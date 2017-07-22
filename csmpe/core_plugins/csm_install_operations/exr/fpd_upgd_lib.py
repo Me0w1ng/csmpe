@@ -36,7 +36,7 @@ def send_yes(fsm_ctx):
     return True
 
 
-def fpd_needs_upgd(ctx):
+def fpd_needs_upgd(ctx, fpd_location, fpd_type):
 
     """
     :param ctx
@@ -75,8 +75,8 @@ def fpd_needs_upgd(ctx):
     0/SC1     NC55-SC           1.4   IOFPGA               NEED UPGD  0.07    0.07
     """
 
-    need_upgd = False
-    sl = ['Status', 'Running']
+    need_upgd = []
+    sl = ['Card', 'FPD', 'ATR', 'Status', 'Running']
     dl = {}
 
     output = ctx.send("show hw-module fpd", timeout=600)
@@ -89,6 +89,8 @@ def fpd_needs_upgd(ctx):
             for s in sl:
                 n = line.find(s)
                 if n != -1:
+                    if s == 'Card':
+                        n -= 1
                     dl[str(s)] = n
                 else:
                     ctx.error("unrecognized show hw-module fpd header {}".format(line))
@@ -96,14 +98,36 @@ def fpd_needs_upgd(ctx):
 
         if line[0].isdigit():
             status = line[dl['Status']:dl['Running']].strip()
-            if 'NEED UPGD'in status:
-                need_upgd = True
-                break
+            location = line[0:dl['Card']].strip()
+            type = line[dl['FPD']:dl['ATR']].strip()
+            if fpd_location == 'all' and fpd_type == 'all':
+                if 'NEED UPGD'in status:
+                    need_upgd.append(location)
+            elif fpd_location and not fpd_type:
+                if location == fpd_location:
+                    if 'NEED UPGD'in status:
+                        need_upgd.append(location)
+                else:
+                    continue
+            elif not fpd_location and fpd_type:
+                if type == fpd_type:
+                    if 'NEED UPGD' in status:
+                        need_upgd.append(location)
+                else:
+                    continue
+            else:
+                if location == fpd_location and type == fpd_type:
+                    if 'NEED UPGD' in status:
+                        need_upgd.append(location)
+                        break
+                else:
+                    continue
 
+    need_upgd = list(set(need_upgd))
     return need_upgd
 
 
-def fpd_is_current(ctx):
+def fpd_is_current(ctx, fpd_location, fpd_type):
     """
     :param ctx
     :return: True or False
@@ -142,7 +166,7 @@ def fpd_is_current(ctx):
     """
 
     is_current = True
-    sl = ['Status', 'Running']
+    sl = ['Card', 'FPD', 'ATR', 'Status', 'Running']
     dl = {}
 
     output = ctx.send("show hw-module fpd", timeout=600)
@@ -155,6 +179,8 @@ def fpd_is_current(ctx):
             for s in sl:
                 n = line.find(s)
                 if n != -1:
+                    if s == 'Card':
+                        n -= 1
                     dl[str(s)] = n
                 else:
                     ctx.error("unrecognized show hw-module fpd header {}".format(line))
@@ -162,16 +188,40 @@ def fpd_is_current(ctx):
 
         if line[0].isdigit():
             status = line[dl['Status']:dl['Running']].strip()
+            location = line[0:dl['Card']].strip()
+            type = line[dl['FPD']:dl['ATR']].strip()
             if 'N/A' in status:
                 continue
-            if 'CURRENT' not in status:
-                is_current = False
-                break
+            if fpd_location == 'all' and fpd_type == 'all':
+                if 'CURRENT' not in status:
+                    is_current = False
+                    break
+            elif fpd_location and not fpd_type:
+                if location == fpd_location:
+                    if 'CURRENT' not in status:
+                        is_current = False
+                        break
+                else:
+                    continue
+            elif not fpd_location and fpd_type:
+                if type == fpd_type:
+                    if 'CURRENT' not in status:
+                        is_current = False
+                        break
+                else:
+                    continue
+            else:
+                if location == fpd_location and type == fpd_type:
+                    if 'CURRENT' not in status:
+                        is_current = False
+                        break
+                else:
+                    continue
 
     return is_current
 
 
-def fpd_needs_reload(ctx):
+def fpd_needs_reload(ctx, fpd_location, fpd_type):
     """
     :param ctx
     :return: True or False
@@ -207,10 +257,44 @@ def fpd_needs_reload(ctx):
     0/SC0     NC55-SC           1.4   IOFPGA               RLOAD REQ  0.07    0.08
     0/SC1     NC55-SC           1.4   Bootloader           RLOAD REQ  1.65    1.70
     0/SC1     NC55-SC           1.4   IOFPGA               RLOAD REQ  0.07    0.08
+
+    Platform: NCS1K
+    RP/0/RP0/CPU0:PROD_19#show hw fpd
+    Fri Jul 14 02:56:06.415 IST
+                                                                   FPD Versions
+                                                                   =================
+    Location   Card type        HWver FPD device       ATR Status   Running Programd
+    ------------------------------------------------------------------------------
+    0/0       NCS1002-K9        1.2   CDSP_PORT_05         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_06         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_12         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_13         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_19         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_20         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_26         CURRENT    3.76    3.76
+    0/0       NCS1002-K9        1.2   CDSP_PORT_27         CURRENT    3.76    3.76
+    0/0       NCS1002-K9              CFP2_PORT_05         NOT READY
+    0/0       NCS1002-K9        2.1   CFP2_PORT_06         CURRENT    5.23    5.23
+    0/0       NCS1002-K9              CFP2_PORT_12         NOT READY
+    0/0       NCS1002-K9        2.1   CFP2_PORT_13         CURRENT    5.23    5.23
+    0/0       NCS1002-K9              CFP2_PORT_19         NOT READY
+    0/0       NCS1002-K9              CFP2_PORT_20         NOT READY
+    0/0       NCS1002-K9              CFP2_PORT_26         NOT READY
+    0/0       NCS1002-K9        2.1   CFP2_PORT_27         CURRENT    5.23    5.23
+    0/0       NCS1002-K9        0.1   CTRL_BKP_LOW     B   CURRENT            2.23
+    0/0       NCS1002-K9        0.1   CTRL_BKP_UP      B   CURRENT            2.23
+    0/0       NCS1002-K9        0.1   CTRL_FPGA_LOW        CURRENT    2.23    2.23
+    0/0       NCS1002-K9        0.1   CTRL_FPGA_UP         CURRENT    2.23    2.23
+    0/RP0     NCS1K-CNTLR       0.1   BIOS_Backup      BS  RLOAD REQ         13.70
+    0/RP0     NCS1K-CNTLR       0.1   BIOS_Primary      S  RLOAD REQ 13.40   13.70
+    0/RP0     NCS1K-CNTLR       0.1   Daisy_Duke_BKP   BS  CURRENT            0.15
+    0/RP0     NCS1K-CNTLR       0.1   Daisy_Duke_FPGA   S  RLOAD REQ  0.15    0.17
+    0/PM0     NCS1K-2KW-AC      0.0   PO-PriMCU            CURRENT
+    0/PM1     NCS1K-2KW-AC      0.0   PO-PriMCU            CURRENT    4.00    4.00
     """
 
     reload_ready = True
-    sl = ['Status', 'Running']
+    sl = ['Card', 'FPD', 'ATR', 'Status', 'Running']
     dl = {}
 
     output = ctx.send("show hw-module fpd", timeout=600)
@@ -223,6 +307,8 @@ def fpd_needs_reload(ctx):
             for s in sl:
                 n = line.find(s)
                 if n != -1:
+                    if s == 'Card':
+                        n -= 1
                     dl[str(s)] = n
                 else:
                     ctx.error("unrecognized show hw-module fpd header {}".format(line))
@@ -230,16 +316,38 @@ def fpd_needs_reload(ctx):
 
         if line[0].isdigit():
             status = line[dl['Status']:dl['Running']].strip()
+            location = line[0:dl['Card']].strip()
+            type = line[dl['FPD']:dl['ATR']].strip()
             if 'N/A' in status:
                 continue
-            if 'CURRENT' not in status and 'RLOAD REQ' not in status:
-                reload_ready = False
-                break
+            # take care of NSR1K CFP2 exception
+            if 'NOT READY' in status:
+                version = line[dl['Running']:].strip()
+                if not version:
+                    continue
+            if fpd_location == 'all' and fpd_type == 'all':
+                if 'CURRENT' not in status and 'RLOAD REQ' not in status:
+                    reload_ready = False
+                    break
+            elif fpd_location and fpd_type == 'all':
+                if location == fpd_location:
+                    if 'CURRENT' not in status and 'RLOAD REQ' not in status:
+                        reload_ready = False
+                        break
+                else:
+                    continue
+            else:
+                if location == fpd_location and type == fpd_type:
+                    if 'CURRENT' not in status and 'RLOAD REQ' not in status:
+                        reload_ready = False
+                        break
+                else:
+                    continue
 
     return reload_ready
 
 
-def fpd_check_status(ctx):
+def fpd_check_status(ctx, fpd_location, fpd_type):
     """
     :param ctx
     :return: True or False
@@ -306,7 +414,7 @@ def fpd_check_status(ctx):
     """
 
     current_status = True
-    sl = ['Status', 'Running']
+    sl = ['Card', 'FPD', 'ATR', 'Status', 'Running']
     dl = {}
 
     output = ctx.send("show hw-module fpd", timeout=600)
@@ -319,6 +427,8 @@ def fpd_check_status(ctx):
             for s in sl:
                 n = line.find(s)
                 if n != -1:
+                    if s == 'Card':
+                        n -= 1
                     dl[str(s)] = n
                 else:
                     ctx.error("unrecognized show hw-module fpd header {}".format(line))
@@ -326,18 +436,47 @@ def fpd_check_status(ctx):
 
         if line[0].isdigit():
             status = line[dl['Status']:dl['Running']].strip()
+            location = line[0:dl['Card']].strip()
+            type = line[dl['FPD']:dl['ATR']].strip()
             if 'N/A' in status:
                 ctx.warning('FPD Status: {}'.format(line))
                 continue
-            if 'CURRENT' not in status:
-                ctx.warning('FPD Status: {}'.format(line))
-                current_status = False
-                break
+            # take care of NSR1K CFP2 exception
+            if 'NOT READY' in status:
+                version = line[dl['Running']:].strip()
+                if not version:
+                    continue
+            if fpd_location == 'all' and fpd_type == 'all':
+                if 'CURRENT' not in status:
+                    ctx.warning('FPD Status: {}'.format(line))
+                    current_status = False
+                    break
+            elif fpd_location and not fpd_type:
+                if location == fpd_location:
+                    if 'CURRENT' not in status:
+                        current_status = False
+                        break
+                else:
+                    continue
+            elif not fpd_location and fpd_type:
+                if type == fpd_type:
+                    if 'CURRENT' not in status:
+                        current_status = False
+                        break
+                else:
+                    continue
+            else:
+                if location == fpd_location and type == fpd_type:
+                    if 'CURRENT' not in status:
+                        current_status = False
+                        break
+                else:
+                    continue
 
     return current_status
 
 
-def hw_fpd_upgd(ctx):
+def hw_fpd_upgd(ctx, location, type):
     """
     :param ctx
     :return: True or False
@@ -348,7 +487,8 @@ def hw_fpd_upgd(ctx):
     upgrade command issued (use "show hw-module fpd" to check upgrade status)
     """
 
-    output = ctx.send('upgrade hw-module location all fpd all')
+    cmd = 'upgrade hw-module location ' + location + ' fpd ' + type
+    output = ctx.send(cmd)
 
     if 'upgrade command issued' in output:
         return True
@@ -356,7 +496,7 @@ def hw_fpd_upgd(ctx):
         return False
 
 
-def hw_fpd_reload(ctx):
+def hw_fpd_reload(ctx, location):
     """
     :param ctx
     :return: True or False
@@ -377,7 +517,7 @@ def hw_fpd_reload(ctx):
     global plugin_ctx
     plugin_ctx = ctx
 
-    cmd = 'admin hw-module location all reload'
+    cmd = 'admin hw-module location ' + location + ' reload'
 
     # Seeing this message without the reboot prompt indicates a non-reload situation
     RELOAD_MODULE = re.compile("Reload hardware module \? \[no,yes\]")
@@ -389,14 +529,14 @@ def hw_fpd_reload(ctx):
         (HOST_PROMPT, [1], -1, None, 120)
     ]
 
-    if not ctx.run_fsm("hw-module reload all", cmd, events, transitions, timeout=120):
+    if not ctx.run_fsm("hw-module reload", cmd, events, transitions, timeout=120):
         ctx.warning("Failed: {}".format(cmd))
         return False
 
     return True
 
 
-def wait_for_fpd_upgd(ctx):
+def wait_for_fpd_upgd(ctx, location, type):
     """
     :param ctx
     :return: True or False
@@ -416,8 +556,8 @@ def wait_for_fpd_upgd(ctx):
         # Wait till all nodes are in CURRENT or RLOAD REQ
         time.sleep(poll_time)
 
-        if fpd_needs_reload(ctx):
-            ctx.info("All nodes in desired state")
+        if fpd_needs_reload(ctx, location, type):
+            ctx.info("Location = {}, FPD device = {} in desired state.".format(location, type))
             elapsed = time.time() - begin
             ctx.info("Overall fpd upgrade time: {} minute(s) {:.0f} second(s)".format(elapsed // 60, elapsed % 60))
             return True
