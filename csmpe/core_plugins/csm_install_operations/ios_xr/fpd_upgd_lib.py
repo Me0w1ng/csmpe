@@ -56,7 +56,7 @@ def fpd_package_installed(ctx):
         return True
 
 
-def fpd_needs_upgd(ctx, location):
+def fpd_needs_upgd(ctx, location, fpd_type):
     """
     :param ctx
     :param location
@@ -84,6 +84,8 @@ def fpd_needs_upgd(ctx, location):
     """
 
     need_upgd = False
+    sl = ['Subtype', 'Inst', 'Dng']
+    dl = {}
     check = False
     cmd = 'admin show hw-module fpd location ' + location
 
@@ -96,25 +98,35 @@ def fpd_needs_upgd(ctx, location):
             break
 
         if line[0:8] == 'Location':
-            n = line.find('Dng')
-            if n == -1:
-                ctx.error("unrecognized admin show hw-module fpd location header {}".format(line))
-                return False
-            else:
-                continue
+            for s in sl:
+                n = line.find(s)
+                if n != -1:
+                    dl[str(s)] = n
+                else:
+                    ctx.error("unrecognized show hw-module fpd header {}".format(line))
+                    return False
+            continue
 
         if check:
-            if 'Yes' in line[n:]:
-                need_upgd = True
-                break
+            type = line[dl['Subtype']:dl['Inst']].strip()
+            if type == fpd_type or fpd_type == 'all':
+                if 'Yes' in line[dl['Dng']:]:
+                    need_upgd = True
+                    break
+                else:
+                    continue
             else:
                 continue
 
         if line[0].isdigit():
             check = True
-            if 'Yes' in line[n:]:
-                need_upgd = True
-                break
+            type = line[dl['Subtype']:dl['Inst']].strip()
+            if type == fpd_type or fpd_type == 'all':
+                if 'Yes' in line[dl['Dng']:]:
+                    need_upgd = True
+                    break
+                else:
+                    continue
             else:
                 continue
 
@@ -209,7 +221,7 @@ def fpd_locations(ctx):
     return locations
 
 
-def hw_fpd_upgd(ctx, location):
+def hw_fpd_upgd(ctx, location, type):
     """
     :param ctx
     :param location
@@ -324,7 +336,7 @@ def hw_fpd_upgd(ctx, location):
     global plugin_ctx
     plugin_ctx = ctx
 
-    cmd = 'admin upgrade hw-module fpd all location ' + location
+    cmd = 'admin upgrade hw-module fpd ' + type + ' location ' + location
 
     # There can be two different prompts
     CONTINUE_YES = re.compile("Continue\? \[confirm\]")
@@ -347,7 +359,7 @@ def hw_fpd_upgd(ctx, location):
     return True
 
 
-def fpd_check_status(ctx, locations):
+def fpd_check_status(ctx, location, type):
     """
     :param ctx
     :param locations
@@ -409,18 +421,17 @@ def fpd_check_status(ctx, locations):
     """
 
     upgd_result = True
-    for location in locations:
-        if fpd_needs_upgd(ctx, location):
-            upgd_result = False
-            cmd = 'admin show hw-module fpd location ' + location
-            output = ctx.send(cmd)
-            ctx.warning("FPD Upgrade result for {}".format(cmd))
-            ctx.warning("{}".format(output))
+    if fpd_needs_upgd(ctx, location, type):
+        upgd_result = False
+        cmd = 'admin show hw-module fpd location ' + location
+        output = ctx.send(cmd)
+        ctx.warning("FPD Upgrade result for {}".format(cmd))
+        ctx.warning("{}".format(output))
 
     return upgd_result
 
 
-def hw_fpd_reload(ctx, location='all'):
+def hw_fpd_reload(ctx, location):
     """
     :param ctx
     :param location:
