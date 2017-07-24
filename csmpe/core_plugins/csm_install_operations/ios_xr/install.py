@@ -138,6 +138,8 @@ def wait_for_reload(ctx):
     """
     begin = time.time()
     if not ctx.is_console:
+        # wait a little bit before disconnect so that newline character can reach the router
+        time.sleep(5)
         ctx.disconnect()
         ctx.post_status("Waiting for device boot to reconnect")
         ctx.info("Waiting for device boot to reconnect")
