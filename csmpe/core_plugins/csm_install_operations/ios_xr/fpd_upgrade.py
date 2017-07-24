@@ -30,7 +30,7 @@ import time
 
 from csmpe.plugins import CSMPlugin
 from fpd_upgd_lib import fpd_locations, fpd_needs_upgd, hw_fpd_upgd, \
-    fpd_package_installed, fpd_check_status, hw_fpd_reload, active_rsp_location
+    fpd_package_installed, fpd_check_status, hw_fpd_reload
 from install import wait_for_reload
 from csmpe.core_plugins.csm_get_inventory.exr.plugin import get_package, get_inventory
 from csmpe.core_plugins.csm_install_operations.utils import update_device_info_udi
@@ -55,16 +55,34 @@ class Plugin(CSMPlugin):
                            "Please install and activate the FPD package on device first.")
             return False
 
+        fpd_location = self.ctx.load_job_data('fpd_location')[0]
+        fpd_type = self.ctx.load_job_data('fpd_type')[0]
+
+        self.ctx.info("fpd_location = {}".format(fpd_location))
+        self.ctx.info("fpd_type = {}".format(fpd_type))
+
+        if not fpd_location:
+            fpd_location = 'all'
+        if not fpd_type:
+            fpd_type = 'all'
+
+        # case 1: both fpd_location and fpd_type are none.
+        # case 2: only fpd_location is specified
+        # case 3: only fpd_type is specified
+        # case 4: both fpd_location and fpd_type are specified
+
         locations = fpd_locations(self.ctx)
-        active_location = active_rsp_location(self.ctx)
 
         upgd_result = True
         begin = time.time()
         for location in locations:
-            if fpd_needs_upgd(self.ctx, location):
-                need_reload = True
-                if not hw_fpd_upgd(self.ctx, location):
-                    upgd_result = False
+            if location == fpd_location or fpd_location == 'all':
+                if fpd_needs_upgd(self.ctx, location, fpd_type):
+                    need_reload = True
+                    if not hw_fpd_upgd(self.ctx, location, fpd_type):
+                        upgd_result = False
+            else:
+                continue
 
         if not need_reload:
             self.ctx.info("All FPD devices are current. Nothing to be upgraded.")
@@ -75,37 +93,14 @@ class Plugin(CSMPlugin):
 
         self.ctx.info("Reloading the host")
 
-        if not hw_fpd_reload(self.ctx):
-            self.ctx.error("Encountered error when attempting to reload device.")
-            return False
+        if not hw_fpd_reload(self.ctx, fpd_location):
+            self.ctx.warning("Encountered error when attempting to reload device.")
 
         self.ctx.info("Wait for the host reload to complete")
         success = wait_for_reload(self.ctx)
         if not success:
             self.ctx.error("Reload or boot failure")
             return False
-
-        if fpd_needs_upgd(self.ctx, active_location):
-            if not hw_fpd_upgd(self.ctx, active_location):
-                upgd_result = False
-            if not hw_fpd_reload(self.ctx, location=active_location):
-                self.ctx.error("Encountered error when attempting to reload device.")
-                return False
-            success = wait_for_reload(self.ctx)
-            if not success:
-                self.ctx.error("Reload or boot failure")
-                return False
-        time.sleep(30)
-        if fpd_needs_upgd(self.ctx, active_location):
-            if not hw_fpd_upgd(self.ctx, active_location):
-                upgd_result = False
-            if not hw_fpd_reload(self.ctx, location=active_location):
-                self.ctx.error("Encountered error when attempting to reload device.")
-                return False
-            success = wait_for_reload(self.ctx)
-            if not success:
-                self.ctx.error("Reload or boot failure")
-                return False
 
         self.ctx.info("Refreshing package and inventory information")
         self.ctx.post_status("Refreshing package and inventory information")
@@ -115,7 +110,15 @@ class Plugin(CSMPlugin):
 
         update_device_info_udi(self.ctx)
 
-        if upgd_result and fpd_check_status(self.ctx, locations):
+        if upgd_result:
+            for location in locations:
+                if location == fpd_location or fpd_location == 'all':
+                    if not fpd_check_status(self.ctx, location, fpd_type):
+                        upgd_result = False
+                else:
+                    continue
+
+        if upgd_result:
             self.ctx.info("FPD-Upgrade Successfully")
             return True
         else:
