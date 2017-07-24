@@ -51,8 +51,10 @@ subversion_re = re.compile("(CSC|sp|fp).*(?P<SUBVERSION>\d+\.\d+\.\d+?)")
 
 class SoftwarePackage(object):
     def __init__(self, package_name):
-        # External Name: asr9k-asr9000v-nV-px.pie-6.1.2
-        # Internal Name: asr9k-9000v-nV-px-6.1.2
+        # Special logic to handle these two packages.
+        # External Names:                           Internal Names:
+        #     asr9k-asr9000v-nV-px.pie-6.1.2        asr9k-9000v-nV-px-6.1.2
+        #     asr9k-services-infra-px.pie-6.1.2     asr9k-services-infra-6.1.2
         if 'asr9000v' in package_name:
             package_name = package_name.replace('asr9000v', '9000v')
         elif 'services-infra-px' in package_name:
@@ -71,7 +73,7 @@ class SoftwarePackage(object):
     @property
     def package_type(self):
         for package_type in package_types:
-            if "-" + package_type + "-" in self.package_name:
+            if "-" + package_type in self.package_name:
                 return package_type
         else:
             return None
