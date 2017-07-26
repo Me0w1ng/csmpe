@@ -30,16 +30,11 @@ import time
 import itertools
 
 from condoor import ConnectionError
-from condoor import CommandError
 from functools import partial
 from csmpe.core_plugins.csm_node_status_check.ios_xr.plugin_lib import parse_show_platform
+from csmpe.core_plugins.csm_install_operations.actions import send_yes, a_get_opid, a_no_package, a_install_in_progress
 
 install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
-
-
-def send_yes(plugin_ctx, fsm_ctx):
-    plugin_ctx.send('Y')
-    return True
 
 
 def log_install_errors(ctx, output):
@@ -214,7 +209,7 @@ def watch_install(ctx, cmd, op_id=0):
                 result = re.search('Install operation (\d+) \'', output)
                 if result:
                     op_id = result.group(1)
-                    watch_operation(ctx, op_id)
+                    watch_operation(ctx, int(op_id))
                     output = ctx.send("admin show install log {} detail".format(op_id))
                 else:
                     log_install_errors(ctx, output)
@@ -251,6 +246,7 @@ def install_add_remove(ctx, cmd, has_tar=False):
     result = re.search('Install operation (\d+) \'', output)
     if result:
         op_id = result.group(1)
+        op_id = int(op_id)
     else:
         log_install_errors(ctx, output)
         ctx.error("Operation failed")
@@ -288,6 +284,7 @@ def install_activate_deactivate(ctx, cmd):
     result = re.search('Install operation (\d+) \'', output)
     if result:
         op_id = result.group(1)
+        op_id = int(op_id)
     else:
         log_install_errors(ctx, output)
         ctx.error("Operation failed")
@@ -352,38 +349,18 @@ def install_remove_all(ctx, cmd, hostname):
     Error:     - re-issue the command when the current operation has completed.
     """
 
-    # no op_id is returned from XR for install remove inactive
-    # need to figure out the last op_id first
-
-    cmd_show_install_log_reverse = \
-        'admin show install log reverse | utility egrep "Install operation [0-9]+ started"'
-    output = ctx.send(cmd_show_install_log_reverse, timeout=300)
-
-    if 'No log information' in output:
-        op_id = 0
-    else:
-        result = re.search('Install operation (\d+) started', output)
-        if result:
-            op_id = int(result.group(1))
-        else:
-            log_install_errors(ctx, output)
-            ctx.error("Operation ID not found by admin show install log reverse")
-            return
-
-    # Expected Operation ID
-    op_id += 1
-
-    OPER_ERROR = "Install operation {} failed at".format(op_id)
+    INSTALL_OPID = re.compile("install remove inactive")
     ERROR1 = re.compile("Error:     - re-issue the command when the current operation has completed.")
-    ERROR2 = re.compile(OPER_ERROR)
+    ERROR2 = re.compile("Install operation \d+ failed at")
     PROCEED_REMOVING = re.compile("\[confirm\]")
     HOST_PROMPT = re.compile(hostname)
 
-    events = [HOST_PROMPT, ERROR1, ERROR2, PROCEED_REMOVING]
+    events = [INSTALL_OPID, ERROR1, ERROR2, PROCEED_REMOVING, HOST_PROMPT]
     transitions = [
-        (ERROR1, [0], -1, CommandError("Another install command is currently in operation", hostname), 1800),
-        (ERROR2, [0], -1, CommandError("No packages can be removed", hostname), 1800),
-        (PROCEED_REMOVING, [0], 2, partial(send_yes, ctx), 1800),
+        (INSTALL_OPID, [0], 1, partial(a_get_opid, ctx), 1800),
+        (ERROR1, [0], -1, partial(a_install_in_progress, ctx), 1800),
+        (ERROR2, [1], -1, partial(a_no_package, ctx), 1800),
+        (PROCEED_REMOVING, [1], 2, partial(send_yes, ctx), 1800),
         (HOST_PROMPT, [2], -1, None, 1800),
     ]
 
@@ -394,6 +371,9 @@ def install_remove_all(ctx, cmd, hostname):
     ctx.info(message)
     ctx.post_status(message)
 
+    op_id = ctx.op_id
+    ctx.info("Install operation ID = {}".format(op_id))
+
     last_status = None
     no_install = r"There are no install requests in operation"
     op_progress = r"The operation is (\d+)% complete"
@@ -401,6 +381,7 @@ def install_remove_all(ctx, cmd, hostname):
     op_success = "Install operation {} completed successfully".format(op_id)
     propeller = itertools.cycle(["|", "/", "-", "\\", "|", "/", "-", "\\"])
 
+    output = ''
     finish = False
     time_tried = 0
     op_id = str(op_id)
