@@ -55,6 +55,19 @@ def parse_show_platform(ctx, output):
     0/PS0/M1/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
     0/PS0/M2/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
 
+    C12K:
+    RP/0/7/CPU0:GSR-PE19#admin show platform
+    Node		    Type		    PLIM		    State		    Config State
+    -----------------------------------------------------------------------------
+    0/0/CPU0        L3LC Eng 5      Jacket Card     IOS XR RUN      PWR,NSHUT,MON
+    0/1/CPU0        L3LC Eng 5+     Jacket Card     IOS XR RUN      PWR,NSHUT,MON
+    0/1/0           SPA             SPA-10X1GE-V2   READY           PWR,NSHUT
+    0/1/1           SPA             SPA-1XCHOC48/DS READY           PWR,NSHUT
+    0/3/CPU0        L3LC Eng 5+     Jacket Card     IOS XR RUN      PWR,NSHUT,MON
+    0/3/0           SPA             SPA-10X1GE-V2   READY           PWR,NSHUT
+    0/5/CPU0        L3LC Eng 3      OC12-ATM-4      IOS XR RUN      PWR,NSHUT,MON
+    0/6/CPU0        L3LC Eng 5      Jacket Card     IOS XR RUN      PWR,NSHUT,MON
+
     CRS:
     Node          Type              PLIM               State           Config State
     ------------- ----------------- ------------------ --------------- ---------------
@@ -77,7 +90,7 @@ def parse_show_platform(ctx, output):
     inventory = {}
     if host.family == 'ASR9K':
         sl = ['Node', 'Type', 'State', 'Config State']
-    elif host.family == 'CRS':
+    elif host.family == 'CRS' or host.family == 'C12K':
         sl = ['Node', 'Type', 'PLIM', 'State', 'Config State']
     else:
         ctx.warning("Unsupported platform {}".format(host.family))

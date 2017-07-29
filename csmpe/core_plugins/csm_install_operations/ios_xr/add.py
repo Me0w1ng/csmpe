@@ -34,7 +34,7 @@ from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_
 class Plugin(CSMPlugin):
     """This plugin adds packages from repository to the device."""
     name = "Install Add Plugin"
-    platforms = {'ASR9K', 'CRS'}
+    platforms = {'ASR9K', 'C12K', 'CRS'}
     phases = {'Add'}
     os = {'XR'}
 
