@@ -183,14 +183,14 @@ class PluginContext(object):
     @property
     def plugin_data(self):
         try:
-            return self.mop_specs[self.plugin_number-1]['data']
+            return self.mop_specs[self.plugin_number - 1]['data']
         except IndexError:
             return None
 
     @property
     def plugin_description(self):
         try:
-            return self.mop_specs[self.plugin_number-1]['description']
+            return self.mop_specs[self.plugin_number - 1]['description']
         except (IndexError, KeyError):
             return None
 
