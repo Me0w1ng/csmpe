@@ -74,9 +74,6 @@ class CSMPlugin(object):
     def run(self, data=None):
         self.ctx.current_plugin = None
         self.ctx.info("Dispatching: '{}#{}'".format(self.name, self.ctx.plugin_number))
-        if self.ctx.plugin_description:
-            self.ctx.info("Description: {}".format(self.ctx.plugin_description))
-        self.ctx.info("Data: {}".format(self.ctx.plugin_data))
         self.ctx.post_status(self.name)
         self.ctx.current_plugin = self.name
         self._run()

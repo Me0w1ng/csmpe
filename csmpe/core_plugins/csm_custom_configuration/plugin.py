@@ -36,5 +36,13 @@ class Plugin(CSMPlugin):
     phases = {'Pre-Check', 'Post-Check'}
 
     def _run(self):
-        print("Plugin: {}".format(self.ctx.current_plugin))
+        configlet = self.ctx.plugin_data.get('configlet', None)
+        plane = self.ctx.plugin_data.get('plane', 'sdr')
+        if configlet:
+            description = self.ctx.plugin_data.get('description')
+            if description:
+                description = ': ' + description
+            self.ctx.config(configlet=configlet, plane=plane)
+            self.ctx.info("Configuration applied{}.".format(description))
+
         return True

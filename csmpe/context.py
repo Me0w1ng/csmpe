@@ -77,7 +77,7 @@ class Host(object):
                                      "server_repository_url", "software_packages", "hostname", "log_directory",
                                      "migration_directory", "get_server", "get_host", "mop_specs"))
 @delegate("_connection", ("connect", "disconnect", "reconnect", "discovery", "send", "run_fsm", "reload"),
-          ("family", "prompt", "os_type", "os_version", "is_console"))
+          ("family", "prompt", "os_type", "os_version", "is_console", "config"))
 class PluginContext(object):
     """ This is a class passed to the constructor during plugin instantiation.
     Thi class provides the API for the plugins to allow the communication with the CMS Server and device.
@@ -184,15 +184,8 @@ class PluginContext(object):
     def plugin_data(self):
         try:
             return self.mop_specs[self.plugin_number - 1]['data']
-        except IndexError:
-            return None
-
-    @property
-    def plugin_description(self):
-        try:
-            return self.mop_specs[self.plugin_number - 1]['description']
         except (IndexError, KeyError):
-            return None
+            return {}
 
     def _device_detect(self):
         """Connect to device using condoor"""

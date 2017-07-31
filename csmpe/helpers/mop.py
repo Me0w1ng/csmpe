@@ -33,12 +33,7 @@ class MopFile(dict):
     def __init__(self, file):
         dict.__init__(self, yaml.load(file))
         self.data = dict()
-        for item in self['mop']:
-            self.data[item['plugin_name']] = item['data']
 
     def plugin_names(self):
         for item in self['mop']:
             yield item['plugin_name']
-
-    def plugin_data(self, plugin_name):
-        return self.data[plugin_name]
