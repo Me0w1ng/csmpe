@@ -71,13 +71,13 @@ class CSMPlugin(object):
         """
         self.ctx = ctx
 
-    def run(self):
+    def run(self, data=None):
         self.ctx.current_plugin = None
-        self.ctx.info("Dispatching: '{}'".format(self.name))
+        self.ctx.info("Dispatching: '{}#{}'".format(self.name, self.ctx.plugin_number))
         self.ctx.post_status(self.name)
         self.ctx.current_plugin = self.name
-
         self._run()
+        self.ctx.plugin_number += 1
 
     @abc.abstractmethod
     def _run(self):

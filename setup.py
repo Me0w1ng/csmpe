@@ -121,6 +121,8 @@ setup(
             '{} = csmpe.core_plugins.csm_install_operations.ios.add:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.ios.activate:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.ios.remove:Plugin'.format(uuid4()),
+
+            '{} = csmpe.core_plugins.csm_custom_configuration.plugin:Plugin'.format(uuid4()),
         ],
     },
     classifiers=[
