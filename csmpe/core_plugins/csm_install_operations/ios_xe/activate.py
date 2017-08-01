@@ -45,7 +45,7 @@ from utils import installed_package_name
 class Plugin(CSMPlugin):
     """This plugin Activates packages on the device."""
     name = "Install Activate Plugin"
-    platforms = {'ASR900'}
+    platforms = {'ASR900', 'ASR1K'}
     phases = {'Activate'}
     os = {'XE'}
 

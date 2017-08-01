@@ -33,7 +33,7 @@ from utils import number_of_rsp
 class Plugin(CSMPlugin):
     """This plugin removes inactive packages from the device."""
     name = "Install Remove Plugin"
-    platforms = {'ASR900'}
+    platforms = {'ASR900', 'ASR1K'}
     phases = {'Remove'}
     os = {'XE'}
 
