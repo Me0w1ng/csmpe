@@ -41,7 +41,7 @@ from utils import check_pkg_conf
 class Plugin(CSMPlugin):
     """This plugin performs pre-activate tasks."""
     name = "Install Pre-Activate Plugin"
-    platforms = {'ASR900'}
+    platforms = {'ASR900', 'ASR1K'}
     phases = {'Pre-Activate'}
     os = {'XE'}
 
@@ -57,7 +57,7 @@ class Plugin(CSMPlugin):
             return
 
         pkg = ''.join(packages)
-        con_platforms = ['ASR-902', 'ASR-920']
+        con_platforms = ['ASR-902', 'ASR-920', 'ASR1002', 'ASR1006']
         sub_platforms = ['ASR-903', 'ASR-907']
         rsp_count = 1
         folder = 'bootflash:'
@@ -69,8 +69,10 @@ class Plugin(CSMPlugin):
         supported_imgs['asr903'] = ['asr900', 'asr903']
         supported_imgs['asr907'] = ['asr900', 'asr903']
         supported_imgs['asr920'] = ['asr920']
+        supported_imgs['asr1002'] = ['asr1000']
+        supported_imgs['asr1006'] = ['asr1000']
 
-        m = re.search('ASR-(\d+)', self.ctx._connection.platform)
+        m = re.search('ASR-?(\d+)', self.ctx._connection.platform)
         if m:
             device_family = m.group(1)
             device_family = 'asr' + device_family
@@ -92,11 +94,11 @@ class Plugin(CSMPlugin):
 
         output = self.ctx.send("show version | include RSP")
         if output:
-            m = re.search('(RSP\d)', output)
+            m = re.search('(RS?P\d)', output)
             if m:
                 curr_rsp = m.group(0).lower()
 
-            m = re.search('(rsp\d)', pkg)
+            m = re.search('(rs?p\d)', pkg)
             if m:
                 pkg_rsp = m.group(0)
 
