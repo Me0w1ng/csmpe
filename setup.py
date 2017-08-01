@@ -37,6 +37,7 @@ install_requires = [
     "pkginfo==1.4.1",
     "click",
     "condoor>=1.0.2",
+    "textfsm==0.3.2",
 ]
 
 
