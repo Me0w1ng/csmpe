@@ -37,8 +37,6 @@ install_requires = [
     "pkginfo==1.4.1",
     "click",
     "condoor>=1.0.2",
-    "sphinx",
-    "sphinx_rtd_theme",
 ]
 
 
