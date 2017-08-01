@@ -36,7 +36,7 @@ from utils import get_filesystems
 class Plugin(CSMPlugin):
     """This plugin captures custom commands and stores in the log directory."""
     name = "Disk Space Check Plugin"
-    platforms = {'ASR9K', 'C12K', 'CRS'}
+    platforms = {'ASR9K', 'XR12K', 'CRS'}
     phases = {'Pre-Add'}
     os = {'XR'}
 

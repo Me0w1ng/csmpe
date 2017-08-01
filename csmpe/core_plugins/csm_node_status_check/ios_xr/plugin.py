@@ -31,7 +31,7 @@ from plugin_lib import parse_show_platform
 class Plugin(CSMPlugin):
     """This plugin checks the states of all nodes"""
     name = "Node Status Check Plugin"
-    platforms = {'ASR9K', 'C12K', 'CRS'}
+    platforms = {'ASR9K', 'XR12K', 'CRS'}
     phases = {'Pre-Upgrade', 'Post-Upgrade'}
     os = {'XR'}
 
@@ -48,8 +48,10 @@ class Plugin(CSMPlugin):
             'DISABLED',
             'UNPOWERED',
             'ADMIN DOWN',
+            'PWD',
             'NOT ALLOW ONLIN',  # This is not spelling error
         ]
+
         for key, value in inventory.items():
             if 'CPU' in key:
                 if value['state'] not in valid_state:
