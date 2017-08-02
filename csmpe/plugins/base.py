@@ -27,8 +27,9 @@
 # =============================================================================
 
 import abc
-
 import six
+
+plugins_need_no_connection = {"External Script Executor"}
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -57,6 +58,8 @@ class CSMPlugin(object):
     #: Empty set means plugin will be executed regardless of the detected operating system.
     os = set()
 
+    data_from_csm = []
+
     def __init__(self, ctx):
         """ This is a constructor of a plugin object. The constructor can be overridden by the plugin code.
         The CSM Plugin Engine passes the :class:`csmpe.InstallContext` object
@@ -77,6 +80,11 @@ class CSMPlugin(object):
         self.ctx.post_status(self.name)
         self.ctx.current_plugin = self.name
 
+        if not self.ctx.connection and self.name not in plugins_need_no_connection:
+            self.ctx.init_connection()
+
+        self.set_attributes_with_data(self.data_from_csm)
+
         self._run()
 
     @abc.abstractmethod
@@ -86,3 +94,11 @@ class CSMPlugin(object):
 
         :return: None
         """
+
+    def set_attributes_with_data(self, data_from_csm):
+        for attribute in data_from_csm:
+            value = self.ctx.load_job_data(attribute)[0]
+            if not value:
+                setattr(self, attribute, "")
+            else:
+                setattr(self, attribute, value)

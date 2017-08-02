@@ -86,20 +86,23 @@ class PluginContext(object):
         self._csm = csm
         self._log_handler = None
         self.current_plugin = ""
-        if csm is not None:
-            self._connection = condoor.Connection(
-                self._csm.hostname,
-                self._csm.host_urls,
-                log_dir=self._csm.log_directory
-            )
+        self._connection = None
+        if self._csm:
             self._set_logging(hostname=self._csm.hostname, log_dir=self._csm.log_directory, log_level=logging.DEBUG)
-            self._connection.msg_callback = self._post_and_log
-            self._connection.error_msg_callback = self._error_callback
-
-            self._device_detect()
+            self.init_connection()
         else:
-            self._connection = None
             self._set_logging()
+
+    def init_connection(self):
+        self._connection = condoor.Connection(
+            self._csm.hostname,
+            self._csm.host_urls,
+            log_dir=self._csm.log_directory
+        )
+        self._connection.msg_callback = self._post_and_log
+        self._connection.error_msg_callback = self._error_callback
+
+        self._device_detect()
 
     def _post_and_log(self, message):
         self.info(message)
@@ -178,6 +181,14 @@ class PluginContext(object):
             pass
             # raise AssertionError("Plugin execution order not provided")
         return None
+
+    @property
+    def connection(self):
+        return self._connection
+
+    @connection.setter
+    def connection(self, value):
+        self._connection = value
 
     def _device_detect(self):
         """Connect to device using condoor"""

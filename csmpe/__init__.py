@@ -7,5 +7,7 @@ __version__ = '1.0.2'
 
 def get_available_plugins(platform=None, phase=None, os=None):
     pm = filter_plugins(platform, phase, os)
-    plugin_names = set([details['name'] for details in pm.plugins.values()])
-    return sorted(plugin_names)
+    plugin_to_data = dict()
+    for details in pm.plugins.values():
+        plugin_to_data[details['name']] = details['csm_data']
+    return plugin_to_data

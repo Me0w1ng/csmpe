@@ -1,7 +1,6 @@
 from csmpe.context import PluginContext
 from csmpe.plugin_managers.dispatch_extension_manager import CSMPluginDispatchExtensionManager   # NOQA
 from csmpe.plugin_managers.named_extension_manager import CSMPluginNamedExtensionManager   # NOQA
-
 __version__ = '1.0.1'
 
 
@@ -10,3 +9,16 @@ def get_csm_plugin_manager(ctx, load_plugins=True, invoke_on_load=True):
     if plugin_context.plugin_execution_order:
         return CSMPluginNamedExtensionManager(plugin_context, load_plugins, invoke_on_load)
     return CSMPluginDispatchExtensionManager(plugin_context, load_plugins, invoke_on_load)
+
+    """
+    try:
+        if ctx:
+            if ctx.plugin_execution_order:
+                if ctx.plugin_execution_order[0] in plugins_need_no_connection:
+                    return CSMPluginNamedExtensionManager(PluginContext(), load_plugins, invoke_on_load)
+                else:
+                    return CSMPluginNamedExtensionManager(PluginContext(ctx), load_plugins, invoke_on_load)
+        return CSMPluginDispatchExtensionManager(PluginContext(ctx), load_plugins, invoke_on_load)
+    except AttributeError:
+        raise
+    """
