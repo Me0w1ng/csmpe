@@ -80,7 +80,7 @@ class TestSoftwarePackage(TestCase):
         sp = plib.SoftwarePackage.from_package_list(pkglist)
         self.assertEqual(len(sp), 1)
 
-    def test_intercection(self):
+    def test_intersection(self):
         packages1 = ["disk0:asr9k-mini-px-4.3.2",
                     "asr9k-px-5.3.3.CSCux61372-0.0.5.d.pie",
                     "disk0:asr9k-px-5.3.3.09I.CSCus12345-1.0.0",
