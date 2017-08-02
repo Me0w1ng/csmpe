@@ -25,9 +25,10 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 from functools import partial
-from condoor import ConnectionError, CommandError
+from condoor import ConnectionError
 from csmpe.core_plugins.csm_node_status_check.exr.plugin_lib import parse_show_platform
 from csmpe.core_plugins.csm_install_operations.actions import a_error
+from csmpe.core_plugins.csm_install_operations.actions import a_get_opid, a_no_package, a_install_in_progress
 
 import itertools
 import re
@@ -522,37 +523,19 @@ def observe_install_remove_all(ctx, cmd, prompt):
     # no op_id is returned from XR for install remove inactive
     # need to figure out the last op_id first
 
-    cmd_show_install_log_reverse = 'show install log reverse | utility egrep "Install operation [0-9]+ started"'
-    output = ctx.send(cmd_show_install_log_reverse, timeout=300)
-
-    if 'No install operation' in output:
-        op_id = 0
-    else:
-        result = re.search('Install operation (\d+) started', output)
-        if result:
-            op_id = int(result.group(1))
-        else:
-            log_install_errors(ctx, output)
-            ctx.error("Operation ID not found by show install log reverse")
-            return
-
-    # Expected Operation ID
-    op_id += 1
-
-    OPER_ERROR = "Install operation {} aborted".format(op_id)
-    OPER_SUCCESS = "Install operation {} finished successfully".format(op_id)
+    INSTALL_OPID = re.compile("install remove inactive")
     ERROR1 = re.compile("Could not start this install operation. Install operation")
-    ERROR2 = re.compile(OPER_ERROR)
-    PROCEED_REMOVING = re.compile(OPER_SUCCESS)
+    ERROR2 = re.compile("Install operation \d+ aborted")
+    PROCEED_REMOVING = re.compile("Install operation \d+ finished successfully")
     HOST_PROMPT = re.compile(prompt)
 
-    events = [HOST_PROMPT, ERROR1, ERROR2, PROCEED_REMOVING]
+    events = [INSTALL_OPID, ERROR1, ERROR2, PROCEED_REMOVING, HOST_PROMPT]
     transitions = [
-        (ERROR1, [0], -1, CommandError("Another install command is currently in operation",
-                                       ctx._connection.hostname), 1800),
-        (ERROR2, [0], -1, CommandError("No packages can be removed", ctx._connection.hostname), 1800),
-        (PROCEED_REMOVING, [0], -1, None, 1800),
-        (HOST_PROMPT, [0], -1, None, 1800),
+        (INSTALL_OPID, [0], 1, partial(a_get_opid, ctx), 1800),
+        (ERROR1, [0], -1, partial(a_install_in_progress, ctx), 1800),
+        (ERROR2, [1], -1, partial(a_no_package, ctx), 1800),
+        (PROCEED_REMOVING, [1], -1, None, 1800),
+        (HOST_PROMPT, [1], -1, None, 1800),
     ]
 
     if not ctx.run_fsm("Remove Inactive All", cmd, events, transitions, timeout=1800):
@@ -562,12 +545,17 @@ def observe_install_remove_all(ctx, cmd, prompt):
     ctx.info(message)
     ctx.post_status(message)
 
+    op_id = ctx.op_id
+    ctx.info("Install operation ID = {}".format(op_id))
+    OPER_SUCCESS = "Install operation {} finished successfully".format(op_id)
+
     last_status = None
     no_install = r"No install operation in progress"
     op_progress = r"The install operation {} is (\d+)% complete".format(op_id)
     cmd_show_install_request = "show install request"
     propeller = itertools.cycle(["|", "/", "-", "\\", "|", "/", "-", "\\"])
 
+    output = ''
     finish = False
     time_tried = 0
     op_id = str(op_id)

@@ -122,7 +122,7 @@ class CSMPluginNamedExtensionManager(CSMPluginManager):
         results = []
         self._ctx.info("Phase: {}".format(self._phase_list[0] if len(self._phase_list) == 1 else self._phase_list))
         try:
-            results += self._manager.map_method(func)
+            results += self._manager.map_method(func, data={})
         except NoMatches:
             self._ctx.post_status("No plugins found for phase {}".format(self._phase_list))
             self._ctx.error("No plugins found for phase {}".format(self._phase_list))

@@ -74,9 +74,9 @@ class CSMPlugin(object):
         """
         self.ctx = ctx
 
-    def run(self):
+    def run(self, data=None):
         self.ctx.current_plugin = None
-        self.ctx.info("Dispatching: '{}'".format(self.name))
+        self.ctx.info("Dispatching: '{}#{}'".format(self.name, self.ctx.plugin_number))
         self.ctx.post_status(self.name)
         self.ctx.current_plugin = self.name
 
@@ -86,6 +86,7 @@ class CSMPlugin(object):
         self.set_attributes_with_data(self.data_from_csm)
 
         self._run()
+        self.ctx.plugin_number += 1
 
     @abc.abstractmethod
     def _run(self):
@@ -97,7 +98,7 @@ class CSMPlugin(object):
 
     def set_attributes_with_data(self, data_from_csm):
         for attribute in data_from_csm:
-            value = self.ctx.load_job_data(attribute)[0]
+            value = self.ctx.plugin_data.get(attribute, "")
             if not value:
                 setattr(self, attribute, "")
             else:

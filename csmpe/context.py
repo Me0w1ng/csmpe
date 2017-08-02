@@ -75,9 +75,9 @@ class Host(object):
 
 @delegate("_csm", ("post_status",), ("custom_commands", "success", "get_operation_id", "set_operation_id",
                                      "server_repository_url", "software_packages", "hostname", "log_directory",
-                                     "migration_directory", "get_server", "get_host"))
+                                     "migration_directory", "get_server", "get_host", "mop_specs"))
 @delegate("_connection", ("connect", "disconnect", "reconnect", "discovery", "send", "run_fsm", "reload"),
-          ("family", "prompt", "os_type", "os_version", "is_console"))
+          ("family", "prompt", "os_type", "os_version", "is_console", "config"))
 class PluginContext(object):
     """ This is a class passed to the constructor during plugin instantiation.
     Thi class provides the API for the plugins to allow the communication with the CMS Server and device.
@@ -86,11 +86,13 @@ class PluginContext(object):
         self._csm = csm
         self._log_handler = None
         self.current_plugin = ""
-        self._connection = None
-        if self._csm:
+        self.plugin_number = 1
+
+        if csm is not None:
             self._set_logging(hostname=self._csm.hostname, log_dir=self._csm.log_directory, log_level=logging.DEBUG)
             self.init_connection()
         else:
+            self._connection = None
             self._set_logging()
 
     def init_connection(self):
@@ -190,6 +192,12 @@ class PluginContext(object):
     def connection(self, value):
         self._connection = value
 
+    def plugin_data(self):
+        try:
+            return self.mop_specs[self.plugin_number - 1]['data']
+        except (IndexError, KeyError):
+            return {}
+
     def _device_detect(self):
         """Connect to device using condoor"""
         self.info("Phase: Connecting")
@@ -260,7 +268,7 @@ class PluginContext(object):
             if isinstance(result, list):
                 return tuple(result)
             else:
-                return result, None
+                return result
         return None, None
 
     # Storage API

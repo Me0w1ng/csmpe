@@ -122,8 +122,8 @@ import re
 platforms = ['asr9k', 'ncs1k', 'ncs4k', 'ncs5k', 'ncs5500', 'ncs6k', 'xrv9k']
 
 
-version_dict = {"asr9k ncs1k ncs5k ncs5500 xrv9k":  # 61117I or 611 or 6.1.1.17I or 6.1.1
-                re.compile("(?P<VERSION>(\d+\d+\d+(\d+\w+)?)|(\d+\.\d+\.\d+(\.\d+\w+)?)(?!\.\d)(?!-))"),
+version_dict = {"asr9k ncs1k ncs5k ncs5500 xrv9k":  # r61117I or r611 or 6.1.1.17I or 6.1.1
+                re.compile("(?P<VERSION>(r\d+\d+\d+(\d+\w+)?)|(\d+\.\d+\.\d+(\.\d+\w+)?)(?!\.\d)(?!-))"),
                 "ncs4k ncs6k":                      # 5.2.4 or 5.2.4.47I
                 re.compile("(?P<VERSION>\d+\.\d+\.\d+(\.\d+\w+)?)"),
                 }

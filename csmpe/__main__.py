@@ -41,6 +41,7 @@ import urlparse
 from csmpe.context import InstallContext
 from csmpe.plugin_managers import get_csm_plugin_manager
 from csmpe.plugin_managers.base import install_phases
+from csmpe.helpers.mop import MopFile
 
 _PLATFORMS = ["ASR9K", "NCS4K", "NCS6K", "CRS", "ASR900"]
 _OS = ["IOS", "XR", "eXR", "XE"]
@@ -100,7 +101,7 @@ def cli():
 
 
 def filter_plugins(platform=None, phase=None, os=None):
-    pm = get_csm_plugin_manager(None, load_plugins=False,  invoke_on_load=False)
+    pm = get_csm_plugin_manager(None, load_plugins=False, invoke_on_load=False)
     pm.set_phase_filter(phase)
     pm.set_platform_filter(platform)
     pm.set_os_filter(os)
@@ -156,6 +157,8 @@ run_help_message = "Run specific plugin on the device." +\
               help="Package for install operations. This package option can be repeated to provide multiple packages.")
 @click.option("--repository_url", default=None,
               help="The package repository URL. (i.e. tftp://server/dir")
+@click.option("--mopfile", required=False, type=click.File("r"),
+              help='The filename with the MOP definition')
 @click.option("--mop", required=False, is_flag=True, default=False,
               help='When this flag is set, a list of plugin name(s) must be provided '
                    'in the end of the command to define the order of execution of the '
@@ -163,7 +166,7 @@ run_help_message = "Run specific plugin on the device." +\
                    'is provided in the end, the specified plugin(s) will be executed '
                    'in no particular order.')
 @click.argument("plugin_names", required=False, default=None, nargs=-1)
-def plugin_run(url, phase, cmd, log_dir, package, repository_url, mop, plugin_names):
+def plugin_run(url, phase, cmd, log_dir, package, repository_url, mopfile, mop, plugin_names):
 
     if mop and not plugin_names:
         raise click.BadParameter("plugin names must be specified in the end of the command when --mop is set.")
@@ -195,6 +198,12 @@ def plugin_run(url, phase, cmd, log_dir, package, repository_url, mop, plugin_na
 
     if mop:
         ctx.plugin_execution_order = list(plugin_names)
+
+    if mopfile:
+        mop = MopFile(mopfile)
+        plugin_names = list(mop.plugin_names())
+        ctx.plugin_execution_order = mop.plugin_names()
+        ctx.mop_specs = mop['mop']
 
     pm = get_csm_plugin_manager(ctx)
     pm.set_name_filter(set(plugin_names))

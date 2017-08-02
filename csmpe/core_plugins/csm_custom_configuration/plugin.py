@@ -1,6 +1,6 @@
 # =============================================================================
 #
-# Copyright (c) 2016, Cisco Systems
+# Copyright (c) 2017, Cisco Systems
 # All rights reserved.
 #
 # # Author: Klaudiusz Staniek
@@ -25,34 +25,24 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
-from unittest import TestCase
 
-from csmpe.context import InstallContext, PluginContext
-from csmpe.plugin_managers import get_csm_plugin_manager
+from csmpe.plugins import CSMPlugin
 
 
-class TestPluginContext(TestCase):
-    def test_save_load_data(self):
-        """Test if the data is stored properly in the context."""
-        ctx = InstallContext()
-        plugin_context = PluginContext()
-        # associate InstallContext outside constructor to avoid auto connect.
-        plugin_context._csm = ctx
+class Plugin(CSMPlugin):
+    """This plugin configures the device."""
+    name = "Custom Configuration"
+    platforms = {'ASR9K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'ASR900', 'N6K', 'IOSXRv-9K', 'IOSXRv-X64'}
+    phases = {'Pre-Check', 'Post-Check'}
 
-        data1 = {"key1": 1, "key2": {
-            "key3": "test"
-        }}
-        plugin_context.save_data('test_data', data1)
-        data2, timestamp = plugin_context.load_data('test_data')
-        self.assertDictEqual(data1, data2, "Loaded data different then saved.")
+    def _run(self):
+        configlet = self.ctx.plugin_data.get('configlet', None)
+        plane = self.ctx.plugin_data.get('plane', 'sdr')
+        if configlet:
+            description = self.ctx.plugin_data.get('description')
+            if description:
+                description = ': ' + description
+            self.ctx.config(configlet=configlet, plane=plane)
+            self.ctx.info("Configuration applied{}.".format(description))
 
-    def test_save_load_data_no_key(self):
-        """Test if the data is None when no key."""
-        ctx = InstallContext()
-        plugin_context = PluginContext()
-        # associate InstallContext outside constructor to avoid auto connect.
-        plugin_context._csm = ctx
-
-        data, timestamp = plugin_context.load_data('no_key')
-        self.assertIsNone(data, "No key does not return None")
-
+        return True
