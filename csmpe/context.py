@@ -257,7 +257,7 @@ class PluginContext(object):
             if isinstance(result, list):
                 return tuple(result)
             else:
-                return result, None
+                return result
         return None, None
 
     # Storage API
