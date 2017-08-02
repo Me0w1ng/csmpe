@@ -1,0 +1,15 @@
+Value IPAddr ((?:[0-9]{1,3}\.){3}[0-9]{1,3}(?:\/(?:[0-9]|[1-2][0-9]|3[0-2]))?)
+Value GR ([Y|N])
+Value NSR ([Y|N])
+Value Uptime (\S+)
+Value Discovery4 (\d+)
+Value Discovery6 (\d+)
+Value Addresses4 (\d+)
+Value Addresses6 (\d+)
+Value Labels4 (\d+)
+Value Labels6 (\d+)
+
+Start
+  ^${IPAddr}:\d+\s+${GR}\s+${NSR}\s+${Uptime}\s+${Discovery4}\s+${Discovery6}\s+${Addresses4}\s+${Addresses6}\s+${Labels4}\s+${Labels6} -> Record
+
+EOF

@@ -115,7 +115,7 @@ ncs5500-mini-x.iso-6.0.1                                      ncs5500-xr-6.0.1
 ncs5500-mpls-te-rsvp-2.0.0.0-r601.x86_64.rpm-6.0.1            ncs5500-mpls-te-rsvp-2.0.0.0-r601
 ncs5500-mpls-2.0.0.0-r601.x86_64.rpm-6.0.1                    ncs5500-mpls-2.0.0.0-r601
 ncs5500-ospf-1.0.0.0-r601.x86_64.rpm-6.0.1                    ncs5500-ospf-1.0.0.0-r601
-ncs5500-parser-1.0.0.0-r601.x86_64.rpm-6.0.1                  ncs5500-parser-1.0.0.0-r601
+ncs5500-parser.py-1.0.0.0-r601.x86_64.rpm-6.0.1                  ncs5500-parser.py-1.0.0.0-r601
 """
 import re
 
