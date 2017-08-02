@@ -122,6 +122,8 @@ setup(
             '{} = csmpe.core_plugins.csm_install_operations.ios.remove:Plugin'.format(uuid4()),
 
             '{} = csmpe.core_plugins.csm_custom_configuration.plugin:Plugin'.format(uuid4()),
+
+            '{} = csmpe.core_plugins.csm_check_ldp_neighbors.ios_xr.plugin:Plugin'.format(uuid4()),
         ],
     },
     classifiers=[
