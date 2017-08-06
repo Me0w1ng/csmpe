@@ -151,7 +151,7 @@ class CSMPluginManager(object):
         if isinstance(name, str) or isinstance(name, unicode):
             self._name_set = {name}
         elif isinstance(name, list):
-            self._name_set = set(name)
+            self._name_set = set([plugin_specs["plugin"] for plugin_specs in name])
         elif isinstance(name, set):
             self._name_set = name
         else:

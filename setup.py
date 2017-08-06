@@ -135,6 +135,7 @@ setup(
     ],
     zip_safe=False,
     install_requires=install_requires,
+    data_files=[('csmpe', ['csmpe/plugin.yaml'])],
     tests_require=['flake8'],
     package_data={'': ['LICENSE', ], },
 )

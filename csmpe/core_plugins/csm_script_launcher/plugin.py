@@ -24,6 +24,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 import subprocess
+import os
 
 from csmpe.plugins import CSMPlugin
 
@@ -33,26 +34,30 @@ class Plugin(CSMPlugin):
     name = "Script Executor"
     phases = {'Pre-Check', 'Post-Check'}
 
-    data_from_csm = ["full_command"]
+    need_connection = False
 
     def _run(self):
-        connection = self.ctx.connection
-        if connection:
-            connection.disconnect()
 
-        if not self.full_command:
+        full_command = self.ctx.plugin_data.get('full_command', None)
+
+        if not full_command:
             self.ctx.error("No command provided.")
 
-        self.ctx.info("Executing script with command '{}'".format(" ".join(self.full_command)))
+        self.ctx.info("Executing script with command '{}'".format(full_command))
+
+        script_log = open(os.path.join(self.ctx.log_directory, 'script.log'), 'a')
 
         try:
-            command = subprocess.Popen(self.full_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            command = subprocess.Popen(full_command.split(" "), stdout=script_log, stderr=subprocess.STDOUT)
 
             output, error = command.communicate()
         except OSError as e:
-            self.ctx.error("OSError executing {}: {}".format(self.full_command, e))
+            script_log.close()
+            self.ctx.error("OSError executing {}: {}".format(full_command, e))
 
         if error:
-            self.ctx.error("Error executing {}: {}".format(self.full_command, error))
+            script_log.close()
+            self.ctx.error("Error executing {}: {}".format(full_command, error))
 
-        self.ctx.info("Script execution completed. Output:\n{}".format(output))
+        script_log.close()
+        self.ctx.info("Execution completed.")

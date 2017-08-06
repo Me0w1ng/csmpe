@@ -59,6 +59,7 @@ def print_plugin_info(pm, detail=False, brief=False):
             click.echo("Platforms: {}".format(platforms))
             click.echo("Phases: {}".format(phases))
             click.echo("OS: {}".format(os))
+            click.echo("Attributes: {}".format(str(details["attributes_table"])))
             description = "Description: {}\n".format(details['description'])
             description = "\n".join(textwrap.wrap(description, 60))
             click.echo(description)

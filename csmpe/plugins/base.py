@@ -29,8 +29,6 @@
 import abc
 import six
 
-plugins_need_no_connection = {"External Script Executor"}
-
 
 @six.add_metaclass(abc.ABCMeta)
 class CSMPlugin(object):
@@ -58,7 +56,7 @@ class CSMPlugin(object):
     #: Empty set means plugin will be executed regardless of the detected operating system.
     os = set()
 
-    data_from_csm = []
+    need_connection = True
 
     def __init__(self, ctx):
         """ This is a constructor of a plugin object. The constructor can be overridden by the plugin code.
@@ -80,10 +78,12 @@ class CSMPlugin(object):
         self.ctx.post_status(self.name)
         self.ctx.current_plugin = self.name
 
-        if not self.ctx.connection and self.name not in plugins_need_no_connection:
-            self.ctx.init_connection()
+        current_connection = self.ctx.connection
 
-        self.set_attributes_with_data(self.data_from_csm)
+        if not current_connection and self.need_connection:
+            self.ctx.init_connection()
+        elif current_connection and not self.need_connection:
+            current_connection.disconnect()
 
         self._run()
         self.ctx.plugin_number += 1
@@ -95,11 +95,3 @@ class CSMPlugin(object):
 
         :return: None
         """
-
-    def set_attributes_with_data(self, data_from_csm):
-        for attribute in data_from_csm:
-            value = self.ctx.plugin_data.get(attribute, "")
-            if not value:
-                setattr(self, attribute, "")
-            else:
-                setattr(self, attribute, value)

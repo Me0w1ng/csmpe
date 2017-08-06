@@ -31,8 +31,10 @@ import logging
 import os
 import re
 from time import time
+import yaml
 
 import condoor
+from csmpe.attribute_collection import AttributeCollection
 from decorators import delegate
 
 
@@ -91,9 +93,11 @@ class PluginContext(object):
         if csm is not None:
             self._set_logging(hostname=self._csm.hostname, log_dir=self._csm.log_directory, log_level=logging.DEBUG)
             self.init_connection()
+            self.mop_data = self.get_mop_data()
         else:
             self._connection = None
             self._set_logging()
+            self.mop_data = []
 
     def init_connection(self):
         self._connection = condoor.Connection(
@@ -105,6 +109,27 @@ class PluginContext(object):
         self._connection.error_msg_callback = self._error_callback
 
         self._device_detect()
+
+    def get_mop_data(self):
+        plugin_attributes_configs = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                 'plugin.yaml')
+        try:
+            plugin_attributes_table = yaml.load(open(plugin_attributes_configs))
+        except IOError:
+            self._logger.error("Missing {}".format(plugin_attributes_configs))
+
+        mop_data = []
+        if self.mop_specs:
+            for mop_plugin_details in self.mop_specs:
+                plugin_name = mop_plugin_details["plugin"]
+
+                if plugin_name in plugin_attributes_table:
+                    mop_data.append(AttributeCollection(plugin_attributes_table[plugin_name].get("attributes", {}),
+                                                        mop_plugin_details['data']))
+                else:
+                    mop_data.append(AttributeCollection({}, mop_plugin_details['data']))
+
+        return mop_data
 
     def _post_and_log(self, message):
         self.info(message)
@@ -171,20 +196,6 @@ class PluginContext(object):
             # raise AssertionError("Requested action not provided")
 
     @property
-    def plugin_execution_order(self):
-        """
-        :return: value is either None or a list of strings representing the order of execution of plugins.
-                Each string in the list is the name of a plugin.
-        """
-        try:
-            if self._csm:
-                return self._csm.plugin_execution_order
-        except AttributeError:
-            pass
-            # raise AssertionError("Plugin execution order not provided")
-        return None
-
-    @property
     def connection(self):
         return self._connection
 
@@ -192,9 +203,10 @@ class PluginContext(object):
     def connection(self, value):
         self._connection = value
 
+    @property
     def plugin_data(self):
         try:
-            return self.mop_specs[self.plugin_number - 1]['data']
+            return self.mop_data[self.plugin_number - 1]
         except (IndexError, KeyError):
             return {}
 

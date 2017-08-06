@@ -6,19 +6,10 @@ __version__ = '1.0.1'
 
 def get_csm_plugin_manager(ctx, load_plugins=True, invoke_on_load=True):
     plugin_context = PluginContext(ctx)
-    if plugin_context.plugin_execution_order:
-        return CSMPluginNamedExtensionManager(plugin_context, load_plugins, invoke_on_load)
+    try:
+        if plugin_context.mop_specs:
+            return CSMPluginNamedExtensionManager(plugin_context, load_plugins, invoke_on_load)
+    except AttributeError:
+        pass
     return CSMPluginDispatchExtensionManager(plugin_context, load_plugins, invoke_on_load)
 
-    """
-    try:
-        if ctx:
-            if ctx.plugin_execution_order:
-                if ctx.plugin_execution_order[0] in plugins_need_no_connection:
-                    return CSMPluginNamedExtensionManager(PluginContext(), load_plugins, invoke_on_load)
-                else:
-                    return CSMPluginNamedExtensionManager(PluginContext(ctx), load_plugins, invoke_on_load)
-        return CSMPluginDispatchExtensionManager(PluginContext(ctx), load_plugins, invoke_on_load)
-    except AttributeError:
-        raise
-    """

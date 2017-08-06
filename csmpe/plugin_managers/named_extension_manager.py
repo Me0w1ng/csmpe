@@ -48,13 +48,7 @@ class CSMPluginNamedExtensionManager(CSMPluginManager):
 
         self.set_phase_filter(self._ctx.phase)
 
-        # plugin_execution_order is a list of plugin names
-        # For MOP jobs, plugin_execution_order is specified in the context to indicate which plugins
-        # should execute and the order of execution.
-        # For regular jobs, plugin_execution_order is not specified.
-        self.plugin_execution_order = self._ctx.plugin_execution_order
-
-        self.set_name_filter(self.plugin_execution_order)
+        self.set_name_filter(self._ctx.mop_specs)
 
         if load_plugins:
             self.load(invoke_on_load=invoke_on_load)
@@ -73,11 +67,11 @@ class CSMPluginNamedExtensionManager(CSMPluginManager):
 
         plugins_missing = []
         ordered_extension_names = []
-        for plugin_name in self.plugin_execution_order:
-            if plugin_name not in plugin_name_to_extension_name:
-                plugins_missing.append(plugin_name)
+        for plugin_specs in self._ctx.mop_specs:
+            if plugin_specs["plugin"] not in plugin_name_to_extension_name:
+                plugins_missing.append(plugin_specs["plugin"])
             elif not plugins_missing:
-                ordered_extension_names.append(plugin_name_to_extension_name[plugin_name])
+                ordered_extension_names.append(plugin_name_to_extension_name[plugin_specs["plugin"]])
         if plugins_missing:
             self._ctx.error("Missing the following selected plugin(s): {}".format(", ".join(plugins_missing)))
             return
@@ -106,8 +100,7 @@ class CSMPluginNamedExtensionManager(CSMPluginManager):
                 'description': ext.plugin.__doc__,
                 'phases': ext.plugin.phases,
                 'platforms': ext.plugin.platforms,
-                'os': ext.plugin.os,
-                'csm_data': ext.plugin.data_from_csm
+                'os': ext.plugin.os
             }
             if ext.plugin.name in plugin_name_to_extension_name:
                 self._ctx.warning("Found more than one plugin with name {} at {}.".format(ext.plugin.name,
