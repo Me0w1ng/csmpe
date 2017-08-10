@@ -1,0 +1,5 @@
+full_command:
+  type: 'str'
+  default_value: null
+  enable_env_var_input: true
+  ui_component: 'text'

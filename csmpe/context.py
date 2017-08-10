@@ -31,10 +31,9 @@ import logging
 import os
 import re
 from time import time
-import yaml
 
 import condoor
-from csmpe.attribute_collection import AttributeCollection
+from csmpe.attribute_data_table import AttributeDataTable
 from decorators import delegate
 
 
@@ -89,15 +88,14 @@ class PluginContext(object):
         self._log_handler = None
         self.current_plugin = ""
         self.plugin_number = 1
+        self.plugin_data = AttributeDataTable()
 
         if csm is not None:
             self._set_logging(hostname=self._csm.hostname, log_dir=self._csm.log_directory, log_level=logging.DEBUG)
             self.init_connection()
-            self.mop_data = self.get_mop_data()
         else:
             self._connection = None
             self._set_logging()
-            self.mop_data = []
 
     def init_connection(self):
         self._connection = condoor.Connection(
@@ -110,26 +108,20 @@ class PluginContext(object):
 
         self._device_detect()
 
-    def get_mop_data(self):
-        plugin_attributes_configs = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                 'plugin.yaml')
-        try:
-            plugin_attributes_table = yaml.load(open(plugin_attributes_configs))
-        except IOError:
-            self._logger.error("Missing {}".format(plugin_attributes_configs))
+    def init_plugin_data(self, plugin_data_specs):
+        if not plugin_data_specs:
+            plugin_data_specs = {}
 
-        mop_data = []
+        plugin_data = {}
+
         if self.mop_specs:
-            for mop_plugin_details in self.mop_specs:
-                plugin_name = mop_plugin_details["plugin"]
+            try:
+                plugin_data = self.mop_specs[self.plugin_number - 1]['data']
+            except (IndexError, KeyError):
+                pass
 
-                if plugin_name in plugin_attributes_table:
-                    mop_data.append(AttributeCollection(plugin_attributes_table[plugin_name].get("attributes", {}),
-                                                        mop_plugin_details['data']))
-                else:
-                    mop_data.append(AttributeCollection({}, mop_plugin_details['data']))
-
-        return mop_data
+        self.plugin_data = AttributeDataTable(plugin_data_specs, plugin_data)
+        return
 
     def _post_and_log(self, message):
         self.info(message)
@@ -202,13 +194,6 @@ class PluginContext(object):
     @connection.setter
     def connection(self, value):
         self._connection = value
-
-    @property
-    def plugin_data(self):
-        try:
-            return self.mop_data[self.plugin_number - 1]
-        except (IndexError, KeyError):
-            return {}
 
     def _device_detect(self):
         """Connect to device using condoor"""

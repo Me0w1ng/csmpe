@@ -28,8 +28,22 @@
 
 import abc
 import six
+import yaml
 
 
+def apply_data_config(cls):
+    if cls.data_config_file:
+        try:
+            plugin_data_specs = yaml.load(open(cls.data_config_file))
+            cls.data_specs = plugin_data_specs
+            return cls
+        except IOError:
+            pass
+    cls.data_specs = {}
+    return cls
+
+
+@apply_data_config
 @six.add_metaclass(abc.ABCMeta)
 class CSMPlugin(object):
     """This is a base class for all plugins. Inheriting from this class is not mandatory,
@@ -56,6 +70,8 @@ class CSMPlugin(object):
     #: Empty set means plugin will be executed regardless of the detected operating system.
     os = set()
 
+    data_config_file = None
+
     need_connection = True
 
     def __init__(self, ctx):
@@ -81,9 +97,14 @@ class CSMPlugin(object):
         current_connection = self.ctx.connection
 
         if not current_connection and self.need_connection:
+            self.ctx.info("Reconnecting with device.")
             self.ctx.init_connection()
         elif current_connection and not self.need_connection:
+            self.ctx.info("Disconnecting with device.")
             current_connection.disconnect()
+            self.ctx.connection = None
+
+        self.ctx.init_plugin_data(self.data_specs)
 
         self._run()
         self.ctx.plugin_number += 1

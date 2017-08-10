@@ -72,7 +72,7 @@ class CSMPluginDispatchExtensionManager(CSMPluginManager):
                 'phases': ext.plugin.phases,
                 'platforms': ext.plugin.platforms,
                 'os': ext.plugin.os,
-                'attributes_table': ext.plugin.attributes_table,
+                'data_specs': ext.plugin.data_specs
             }
 
     def dispatch(self, func):

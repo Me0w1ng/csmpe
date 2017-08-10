@@ -28,3 +28,4 @@
 
 
 from base import CSMPlugin  # NOQA
+from base import apply_data_config

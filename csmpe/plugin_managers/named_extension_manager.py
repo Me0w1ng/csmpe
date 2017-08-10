@@ -100,7 +100,8 @@ class CSMPluginNamedExtensionManager(CSMPluginManager):
                 'description': ext.plugin.__doc__,
                 'phases': ext.plugin.phases,
                 'platforms': ext.plugin.platforms,
-                'os': ext.plugin.os
+                'os': ext.plugin.os,
+                'data_specs': ext.plugin.data_specs,
             }
             if ext.plugin.name in plugin_name_to_extension_name:
                 self._ctx.warning("Found more than one plugin with name {} at {}.".format(ext.plugin.name,

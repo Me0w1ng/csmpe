@@ -1,9 +1,7 @@
 # =============================================================================
 #
-# Copyright (c) 2017, Cisco Systems
+# Copyright (c) 2016, Cisco Systems
 # All rights reserved.
-#
-# # Author: Klaudiusz Staniek
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -25,29 +23,33 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
-import os
-
-from csmpe.plugins import CSMPlugin
-from csmpe.plugins import apply_data_config
+from pydoc import locate
 
 
-@apply_data_config
-class Plugin(CSMPlugin):
-    """This plugin configures the device."""
-    name = "Custom Configuration"
-    platforms = {'ASR9K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'ASR900', 'N6K', 'IOSXRv-9K', 'IOSXRv-X64'}
-    phases = {'Pre-Check', 'Post-Check'}
+class AttributeDataTable(object):
 
-    data_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'plugin_data_specs.yaml')
+    def __init__(self, data_specs={}, plugin_data={}):
+        self.data_specs = data_specs
+        self.bind_data(plugin_data)
 
-    def _run(self):
-        configlet = self.ctx.plugin_data.get('configlet', None)
-        plane = self.ctx.plugin_data.get('plane', 'sdr')
-        if configlet:
-            description = self.ctx.plugin_data.get('description')
-            if description:
-                description = ': ' + description
-            self.ctx.config(configlet=configlet, plane=plane)
-            self.ctx.info("Configuration applied{}.".format(description))
+    def bind_data(self, plugin_data):
 
-        return True
+        for attribute in self.data_specs:
+
+            details = self.data_specs[attribute]
+
+            value = plugin_data.get(attribute, details.get("default_value"))
+
+            if details.get("type") and locate(details.get("type")):
+                try:
+                    value = locate(details.get("type"))(value)
+                except:
+                    pass
+
+            setattr(self, attribute, value)
+
+    def get(self, attribute, default_value=None):
+        try:
+            return getattr(self, attribute)
+        except AttributeError:
+            return default_value

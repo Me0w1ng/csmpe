@@ -27,14 +27,18 @@ import subprocess
 import os
 
 from csmpe.plugins import CSMPlugin
+from csmpe.plugins import apply_data_config
 
 
+@apply_data_config
 class Plugin(CSMPlugin):
-    """This plugin executes a command that provokes an external script in the filesystem."""
+    """This plugin executes a command that invokes an external script in the filesystem."""
     name = "Script Executor"
     phases = {'Pre-Check', 'Post-Check'}
 
     need_connection = False
+
+    data_config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'plugin_data_specs.yaml')
 
     def _run(self):
 
@@ -45,7 +49,11 @@ class Plugin(CSMPlugin):
 
         self.ctx.info("Executing script with command '{}'".format(full_command))
 
-        script_log = open(os.path.join(self.ctx.log_directory, 'script.log'), 'a')
+        script_log = open(os.path.join(self.ctx.log_directory, 'script.log'), 'a', 0)
+
+        script_log.write("Plugin: {}#{}\n".format(self.name, self.ctx.plugin_number))
+        script_log.write("Command: {}\n".format(full_command))
+        script_log.write("Output:\n")
 
         try:
             command = subprocess.Popen(full_command.split(" "), stdout=script_log, stderr=subprocess.STDOUT)

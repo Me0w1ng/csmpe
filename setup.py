@@ -121,7 +121,7 @@ setup(
             '{} = csmpe.core_plugins.csm_install_operations.ios.remove:Plugin'.format(uuid4()),
 
             '{} = csmpe.core_plugins.csm_custom_configuration.plugin:Plugin'.format(uuid4()),
-            '{} = csmpe.core_plugins.csm_script_launcher.plugin:Plugin'.format(uuid4()),
+            '{} = csmpe.core_plugins.csm_script_executor.plugin:Plugin'.format(uuid4()),
         ],
     },
     classifiers=[
@@ -135,7 +135,6 @@ setup(
     ],
     zip_safe=False,
     install_requires=install_requires,
-    data_files=[('csmpe', ['csmpe/plugin.yaml'])],
     tests_require=['flake8'],
     package_data={'': ['LICENSE', ], },
 )

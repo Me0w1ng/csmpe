@@ -59,10 +59,10 @@ def print_plugin_info(pm, detail=False, brief=False):
             click.echo("Platforms: {}".format(platforms))
             click.echo("Phases: {}".format(phases))
             click.echo("OS: {}".format(os))
-            click.echo("Attributes: {}".format(str(details["attributes_table"])))
             description = "Description: {}\n".format(details['description'])
             description = "\n".join(textwrap.wrap(description, 60))
             click.echo(description)
+            # click.echo("Data Specifications: {}".format(str(details["data_specs"])))
 
             if detail:
                 click.echo("  UUID: {}".format(plugin))
@@ -143,7 +143,7 @@ run_help_message = "Run specific plugin on the device." +\
     " If you want the plugins to be executed in the specified order, make sure to also set the --mop flag."
 
 
-@cli.command("run", help=run_help_message, short_help="Run plugin")
+@cli.command("run", help="Run specific plugin on the device.", short_help="Run plugin")
 @click.option("--url", multiple=True, required=True, envvar='CSMPLUGIN_URLS', type=URL(),
               help='The connection url to the host (i.e. telnet://user:pass@hostname). '
                    'The --url option can be repeated to define multiple jumphost urls. '
@@ -160,17 +160,7 @@ run_help_message = "Run specific plugin on the device." +\
               help="The package repository URL. (i.e. tftp://server/dir")
 @click.option("--mopfile", required=False, type=click.File("r"),
               help='The filename with the MOP definition')
-@click.option("--mop", required=False, is_flag=True, default=False,
-              help='When this flag is set, a list of plugin name(s) must be provided '
-                   'in the end of the command to define the order of execution of the '
-                   'specified plugins. When this flag is not set, if any plugin name '
-                   'is provided in the end, the specified plugin(s) will be executed '
-                   'in no particular order.')
-@click.argument("plugin_names", required=False, default=None, nargs=-1)
-def plugin_run(url, phase, cmd, log_dir, package, repository_url, mopfile, mop, plugin_names):
-
-    if mop and not plugin_names:
-        raise click.BadParameter("plugin names must be specified in the end of the command when --mop is set.")
+def plugin_run(url, phase, cmd, log_dir, package, repository_url, mopfile):
 
     ctx = InstallContext()
     ctx.hostname = "Hostname"
@@ -196,9 +186,6 @@ def plugin_run(url, phase, cmd, log_dir, package, repository_url, mopfile, mop, 
 
     if cmd:
         ctx.custom_commands = list(cmd)
-
-    if mop:
-        ctx.plugin_execution_order = list(plugin_names)
 
     if mopfile:
         mop = MopFile(mopfile)
