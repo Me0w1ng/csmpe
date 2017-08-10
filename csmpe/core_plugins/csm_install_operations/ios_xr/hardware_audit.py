@@ -34,12 +34,7 @@ from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_
 
 
 class Plugin(CSMPlugin):
-    """
-    A plugin for auditing hardware for migration from
-    ASR9K IOS-XR (a.k.a. XR) to ASR9K IOS-XR 64 bit (a.k.a. eXR)
-
-    Console access is needed.
-    """
+    """This plugin audits hardware for migration from ASR9K IOS-XR (a.k.a. XR) to ASR9K IOS-XR 64 bit (a.k.a. eXR)"""
     name = "Migration Audit"
     platforms = {'ASR9K'}
     phases = {'Migration-Audit'}

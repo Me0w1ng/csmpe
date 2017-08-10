@@ -67,19 +67,7 @@ FINAL_XR_CONFIG = "cXR_xr_plane_converted_eXR.cfg"
 
 
 class Plugin(CSMPlugin):
-    """
-    A plugin for preparing device for migration from
-    ASR9K IOS-XR (a.k.a. XR) to ASR9K IOS-XR 64 bit (a.k.a. eXR)
-
-    This plugin does the following:
-    1. Check several pre-requisites
-    2. Resize the eUSB partition(/harddiskb:/ on XR)
-    3. Migrate the configurations with NoX and upload them to device
-    4. Copy the eXR image to /harddiskb:/
-    5. Upgrade some FPD's if needed.
-
-    Console access is needed.
-    """
+    """This plugin prepares device to migrate from ASR9K IOS-XR (a.k.a. XR) to ASR9K IOS-XR 64 bit (a.k.a. eXR)."""
     name = "Pre-Migrate"
     platforms = {'ASR9K'}
     phases = {'Pre-Migrate'}

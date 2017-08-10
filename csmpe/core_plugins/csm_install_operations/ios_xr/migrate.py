@@ -70,13 +70,7 @@ CONNECTION_REFUSED = re.compile("Connection refused")
 
 
 class Plugin(CSMPlugin):
-    """
-    A plugin for migrating a ASR9K IOS-XR(XR) system to
-    ASR9K IOS-XR 64 bit(eXR/fleXR).
-    This plugin calls the migration script on device and reload
-    device to boot eXR image.
-    Console access is needed.
-    """
+    """This plugin migrates a ASR9K IOS-XR(XR) system to ASR9K IOS-XR 64 bit(eXR)."""
     name = "Migrate"
     platforms = {'ASR9K'}
     phases = {'Migrate'}

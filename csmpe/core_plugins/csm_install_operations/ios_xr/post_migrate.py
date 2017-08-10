@@ -36,13 +36,7 @@ TIMEOUT_FOR_COPY_CONFIG = 3600
 
 
 class Plugin(CSMPlugin):
-    """
-    A plugin for loading configurations and upgrading FPD's
-    after the system migrated to ASR9K IOS-XR 64 bit(eXR).
-    If any FPD needs reloads after upgrade, the device
-    will be reloaded after the upgrade.
-    Console access is needed.
-    """
+    """This plugin handles configurations and FPD's upgrades after migration to ASR9K IOS-XR 64 bit(eXR)."""
     name = "Post-Migrate"
     platforms = {'ASR9K'}
     phases = {'Post-Migrate'}
