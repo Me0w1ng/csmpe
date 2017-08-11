@@ -1,15 +1,15 @@
-configlet:
+- attribute: 'configlet'
   type: 'str'
   default_value: null
   ui_component: 'textarea'
-plane:
+- attribute: 'plane'
   type: 'str'
   options:
     - 'admin'
     - 'sdr'
   default_value: 'sdr'
   ui_component: 'radio'
-description:
+- attribute: 'description'
   type: 'str'
   default_value: ''
   ui_component: 'text'

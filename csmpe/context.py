@@ -110,7 +110,7 @@ class PluginContext(object):
 
     def init_plugin_data(self, plugin_data_specs):
         if not plugin_data_specs:
-            plugin_data_specs = {}
+            plugin_data_specs = []
 
         plugin_data = {}
 

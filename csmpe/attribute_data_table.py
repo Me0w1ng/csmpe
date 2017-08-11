@@ -28,21 +28,21 @@ from pydoc import locate
 
 class AttributeDataTable(object):
 
-    def __init__(self, data_specs={}, plugin_data={}):
+    def __init__(self, data_specs=[], plugin_data={}):
         self.data_specs = data_specs
         self.bind_data(plugin_data)
 
     def bind_data(self, plugin_data):
 
-        for attribute in self.data_specs:
+        for specs in self.data_specs:
 
-            details = self.data_specs[attribute]
+            attribute = specs.get('attribute')
 
-            value = plugin_data.get(attribute, details.get("default_value"))
+            value = plugin_data.get(attribute, specs.get("default_value"))
 
-            if details.get("type") and locate(details.get("type")):
+            if specs.get("type") and locate(specs.get("type")):
                 try:
-                    value = locate(details.get("type"))(value)
+                    value = locate(specs.get("type"))(value)
                 except:
                     pass
 
