@@ -27,13 +27,13 @@
 # =============================================================================
 
 import yaml
+from collections import OrderedDict
 
 
-class MopFile(dict):
+class MopFile(OrderedDict):
     def __init__(self, file):
-        dict.__init__(self, yaml.load(file))
-        self.data = dict()
+        OrderedDict.__init__(self, yaml.load(file))
 
     def plugin_names(self):
         for item in self['mop']:
-            yield item['plugin_name']
+            yield item['plugin']
