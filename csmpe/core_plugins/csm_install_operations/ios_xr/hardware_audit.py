@@ -87,21 +87,20 @@ class Plugin(CSMPlugin):
                 continue
 
             if self.rp_pattern.match(node):
-                rp_or_rsp = self._check_if_supported_and_in_valid_state(node, entry,
-                                                                        supported_hw.get("RP"), "IOS XR RUN")
+                rp_or_rsp = self._check_if_supported_and_in_valid_state(node, entry, supported_hw.get("RP"),
+                                                                        "IOS XR RUN")
 
                 fpd_relevant_nodes[node] = rp_or_rsp
 
             elif self.fc_pattern.match(node):
 
-                fc = self._check_if_supported_and_in_valid_state(node, entry,
-                                                                 supported_hw.get("FC"), "OK")
+                fc = self._check_if_supported_and_in_valid_state(node, entry, supported_hw.get("FC"), "OK")
                 fpd_relevant_nodes[node] = fc
 
             elif self.lc_pattern.match(node):
 
-                lc = self._check_if_supported_and_in_valid_state(node, entry, supported_hw.get("LC"),
-                                                                 "IOS XR RUN", mandatory=False)
+                lc = self._check_if_supported_and_in_valid_state(node, entry, supported_hw.get("LC"), "IOS XR RUN",
+                                                                 mandatory_hw_check=False)
                 for j in xrange(i + 1, len(inventory)):
                     next_node, next_entry = inventory[j]
                     if "MPA" in next_entry["type"]:
@@ -112,40 +111,47 @@ class Plugin(CSMPlugin):
                 fpd_relevant_nodes[node] = lc
 
             elif self.fan_pattern.match(node):
-                self._check_if_supported_and_in_valid_state(node, entry,
-                                                            supported_hw.get("FAN"),
-                                                            "READY", mandatory=not override)
+                self._check_if_supported_and_in_valid_state(node, entry, supported_hw.get("FAN"), "READY",
+                                                            mandatory_hw_check=not override,
+                                                            mandatory_state_check=not override)
                 fpd_relevant_nodes[node] = 0
             elif self.pem_pattern.match(node):
-                    self._check_if_supported_and_in_valid_state(node, entry,
-                                                                supported_hw.get("PEM"),
-                                                                "READY", mandatory=not override)
+                    self._check_if_supported_and_in_valid_state(node, entry, supported_hw.get("PEM"), "READY",
+                                                                mandatory_hw_check=not override,
+                                                                mandatory_state_check=not override)
                     fpd_relevant_nodes[node] = 0
             else:
                 fpd_relevant_nodes[node] = 1
 
         return fpd_relevant_nodes
 
-    def _check_if_supported_and_in_valid_state(self, node_name, value,
-                                               supported_type_list, operational_state, mandatory=True):
+    def _check_if_supported_and_in_valid_state(self, node_name, value, supported_type_list, operational_state,
+                                               mandatory_hw_check=True, mandatory_state_check=True):
         """
         Check if a card (RSP/RP/FAN/PEM/FC/MPA) is supported and in valid state.
+        :param mandatory_state_check:
         :param node_name: the name under "Node" column in output of CLI "show platform". i.e., "0/RSP0/CPU0"
         :param value: the inventory value for nodes - through parsing output of "show platform"
         :param supported_type_list: the list of card types/pids that are supported for migration
         :param operational_state: the state that this node can be in in order to qualify for migration
-        :param mandatory: if mandatory is True, if this node matches the card_pattern, it must be supported card
+        :param mandatory_hw_check: if True and if this node matches the card_pattern, it must be supported card
                           type in order to qualify for migration. If it's False, it's not necessary that the card
                           type is supported, but if it is supported, its state must be in the operational state
-        :return: 1 if it's confirmed that the node is supported and in the operational state for migration.
+                           unless mandatory_state_check is False
+        :param mandatory_state_check: if True, this node's state must be in the operational state, if False,
+                            it's not necessary that the node is in operational state
+        :return: 1 if it's confirmed that the node is supported. If mandatory_state_check is True, the node is in
+                    operational state for migration, otherwise, the node may or may not be in operational state
 
                  0 if it's not mandatory that this node has supported card type, and it's confirmed that it does
-                    not have supported card type, but it is in the operational state for migration.
+                    not have supported card type, but if mandatory_state_check is True, the node is in
+                    operational state for migration, otherwise, the node may or may not be in operational state
 
                  errors out if this node is in either of the situations below:
                     1. It is mandatory for this node to have supported card type, but the card type of this node is NOT
-                        supported for migration.
-                    2. This node is supported for migration, but it is not in the operational state for migration.
+                       supported for migration.
+                    2. It is mandatory for this node to be in operational state, and this node is supported for
+                       migration, but it is not in the operational state for migration.
         """
         supported = False
         if supported_type_list is None:
@@ -154,12 +160,12 @@ class Plugin(CSMPlugin):
             if supported_type in value['type']:
                 supported = True
                 break
-        if mandatory and not supported:
+        if mandatory_hw_check and not supported:
             self.ctx.error("The card type for {} is not supported for migration to ASR9K-X64.".format(node_name) +
                            " Please check the user manual under 'Help' on CSM Server for list of " +
                            "supported hardware for ASR9K-X64.")
 
-        if supported and value['state'] != operational_state:
+        if mandatory_state_check and supported and value['state'] != operational_state:
             self.ctx.error("{} is supported in ASR9K-X64, but it's in {}".format(node_name, value['state']) +
                            " state. Valid operational state for migration: {}".format(operational_state))
         if supported:
