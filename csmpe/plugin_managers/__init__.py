@@ -12,4 +12,3 @@ def get_csm_plugin_manager(ctx, load_plugins=True, invoke_on_load=True):
     except AttributeError:
         pass
     return CSMPluginDispatchExtensionManager(plugin_context, load_plugins, invoke_on_load)
-
