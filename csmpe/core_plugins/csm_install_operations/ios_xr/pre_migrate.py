@@ -106,8 +106,8 @@ class Plugin(CSMPlugin):
 
         output = self.ctx.send("ping {}".format(repo_ip.group(1)))
         if "100 percent" not in output:
-            self.ctx.error("Failed to ping server repository {} on device." +
-                           "Please check session.log.".format(repo_ip.group(1)))
+            self.ctx.error("Failed to ping server repository {} on device.".format(repo_ip.group(1)) +
+                           "Please check session.log.")
 
     def _all_configs_supported(self, nox_output):
         """Check text output from running NoX on system. Only return True if all configs are supported by eXR."""
@@ -732,7 +732,8 @@ class Plugin(CSMPlugin):
         try:
             cmd = "admin show run" if admin else "show run"
             output = self.ctx.send(cmd, timeout=TIMEOUT_FOR_COPY_CONFIG)
-            ind = output.rfind('Building configuration...\n')
+            init_line = 'Building configuration...'
+            ind = output.rfind(init_line)
 
         except pexpect.TIMEOUT:
             self.ctx.error("CLI '{}' timed out after 1 hour.".format(cmd))
@@ -740,7 +741,10 @@ class Plugin(CSMPlugin):
         for file_path in files:
             # file = '../../csm_data/migration/<hostname>' + filename
             file_to_write = open(file_path, 'w+')
-            file_to_write.write(output[(ind + 1):])
+            if ind >= 0:
+                file_to_write.write(output[(ind + len(init_line)):])
+            else:
+                file_to_write.write(output)
             file_to_write.close()
 
     def _handle_configs(self, hostname, server, repo_url, fileloc, nox_to_use, config_filename):

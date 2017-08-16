@@ -94,7 +94,7 @@ class Plugin(CSMPlugin):
             time.sleep(poll_time)
             output = self.ctx.send("show hw-module fpd")
             num_need_reload = len(re.findall("RLOAD REQ", output))
-            if len(re.findall("CURRENT", output)) + num_need_reload >= num_fpds:
+            if len(re.findall("CURRENT", output)) + len(re.findall("UPGD SKIP", output)) + num_need_reload >= num_fpds:
                 if num_need_reload > 0:
                     log_and_post_status(self.ctx,
                                         "Finished upgrading FPD(s). Now reloading the device to complete the upgrade.")
