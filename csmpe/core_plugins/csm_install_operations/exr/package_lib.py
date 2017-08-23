@@ -37,7 +37,7 @@ ncs4k-mpls.pkg-6.0.2
 ncs4k-mcast.pkg-6.0.2
 ncs4k-mgbl.pkg-6.0.2
 
-NCS6K
+NCS6K (Pre-6.3.1)
 
 Production Packages
 
@@ -58,6 +58,20 @@ External Names                                Internal Names
 ncs6k-mcast.pkg-5.2.5.47I.DT_IMAGE            ncs6k-mcast-5.2.5.47I
 ncs6k-mini-x.iso-6.1.0.07I.DT_IMAGE           ncs6k-xr-5.2.5.47I
 ncs6k-5.2.5.47I.CSCuy47880-0.0.4.i.smu        ncs6k-5.2.5.47I.CSCuy47880-0.0.4.i
+
+NCS6K (6.3.1 and later)
+
+Production Packages
+
+External Names                                Internal Names
+ncs6k-mcast-1.0.0.0-r631.x86_64.rpm           ncs6k-mcast-1.0.0.0-r631
+ncs6k-full-x-6.3.1.iso or                     ncs6k-sysadmin-6.3.1
+ncs6k-mini-x-6.3.1.iso                        ncs6k-xr-6.3.1
+
+Engineering Packages
+
+External Names                                Internal Names
+ncs6k-mcast-1.0.0.0-r63134I.x86_64.rpm        ncs6k-mcast-1.0.0.0-r63134I
 
 ASR9K-64
 
@@ -117,23 +131,20 @@ ncs5500-mpls-2.0.0.0-r601.x86_64.rpm-6.0.1                    ncs5500-mpls-2.0.0
 ncs5500-ospf-1.0.0.0-r601.x86_64.rpm-6.0.1                    ncs5500-ospf-1.0.0.0-r601
 ncs5500-parser-1.0.0.0-r601.x86_64.rpm-6.0.1                  ncs5500-parser-1.0.0.0-r601
 """
+from csmpe.core_plugins.csm_install_operations.utils import replace_multiple
 import re
 
-platforms = ['asr9k', 'ncs1k', 'ncs4k', 'ncs5k', 'ncs5500', 'ncs6k', 'xrv9k']
+platforms = ['asr9k', 'ncs1k', 'ncs4k', 'ncs5k', 'ncs5500', 'ncs6k', 'xrv9k', 'iosxrv']
 
 
-version_dict = {"asr9k ncs1k ncs5k ncs5500 xrv9k":  # r61117I or r611 or 6.1.1.17I or 6.1.1
-                re.compile("(?P<VERSION>(r\d+\d+\d+(\d+\w+)?)|(\d+\.\d+\.\d+(\.\d+\w+)?)(?!\.\d)(?!-))"),
-                "ncs4k ncs6k":                      # 5.2.4 or 5.2.4.47I
-                re.compile("(?P<VERSION>\d+\.\d+\.\d+(\.\d+\w+)?)"),
+version_dict = {"asr9k ncs1k ncs4k ncs5k ncs5500 ncs6k xrv9k iosxrv":  # r61117I or r611 or 6.1.1.17I or 6.1.1
+                re.compile("(?P<VERSION>(r\d+\d+\d+(\d+\w+)?)|(\d+\.\d+\.\d+(\.\d+\w+)?)(?!\.\d)(?!-))")
                 }
 
 smu_re = re.compile("(?P<SMU>CSC[a-z]{2}\d{5})")
 
-subversion_dict = {"asr9k ncs1k ncs5k ncs5500 xrv9k":
-                   re.compile("-(?P<SUBVERSION>\d+\.\d+\.\d+\.\d+)-"),  # 2.0.0.0
-                   "ncs4k ncs6k":
-                   re.compile("CSC.*(?P<SUBVERSION>\d+\.\d+\.\d+?)"),   # 0.0.4
+subversion_dict = {"asr9k ncs1k ncs4k ncs5k ncs5500 ncs6k xrv9k iosxrv":
+                   re.compile("-(?P<SUBVERSION>\d+\.\d+\.\d+\.\d+)-")
                    }
 
 
@@ -159,44 +170,44 @@ class SoftwarePackage(object):
 
     @property
     def package_type(self):
+        """
+        The package type is normally found before the package version (X.X.X.X).
+        For example: ncs5500-mgbl-3.0.0.0-r601.x86_64.rpm-6.0.1, the package type is before '-3.0.0.0'.
+
+        The followings are the exceptions and require additional parsing
+            ncs6k-mcast.pkg-5.2.4
+            ncs5k-goldenk9-x.iso-6.3.1
+            ncs5k-sysadmin-6.0.1
+            ncs5500-mini-x.iso-6.0.1
+            ncs5500-xr-6.0.1
+
+        Package Types: mpls-te-rsvp, sysadmin, mcast, mgbl, mgbl-x64, mini-x, goldenk9-x
+        """
         if not self._package_type:
-            # For ASR9K-X64, NCS1K, NCS5K, NCS5500:
-            #     Extract the package type string before X.X.X.X
-            # For NCS6K
-            #     Extract the package type string before X.X.X
-            pattern = '-\d+\.\d+\.\d+' if self.platform == 'ncs6k' or \
-                self.platform == 'ncs4k' else '-\d\.\d\.\d.\d'
+            pattern = '-\d\.\d\.\d.\d'
 
             if self.platform and self.platform in self.package_name:
                 match = re.search(pattern, self.package_name)
-
-                # Special handling for mini, full, and sysadmin ISO on ASR9K-X64, NCS1K, NCS5K, NCS5500
-                # Example: ncs5500-mini-x.iso-6.0.1, asr9k-full-x64.iso-6.1.1
-                # Package type string is before the 3 part version string
-
-                # External Name: ncs5k-goldenk9-x.iso-6.3.1.11I.0, Internal Name: ncs5k-goldenk9-x-6.3.1.11I
-                if not match and sum([x in self.package_name for x in ['full', 'mini', 'sysadmin', 'goldenk9']]) > 0:
-                    # Use the three part match for these ISO packages
-                    match = re.search('-\d+\.\d+\.\d+', self.package_name)
+                if not match:
+                    pattern = '-\d+\.\d+\.\d+'   # take care of the exception cases (i.x. -X.X.X).
+                    match = re.search(pattern, self.package_name)
 
                 if match:
-                    # Extract the package type
-                    self._package_type = self.package_name[0:match.start()].replace(self.platform + '-', '')
-
-                if self._package_type:
-                    # Takes care the external to internal name matching
-                    # Example, ncs6k-mgbl.pkg-5.2.5 -> mgbl, ncs5500-mini-x.iso-6.0.1 -> mini-x
-                    self._package_type = self._package_type.replace('.pkg', '').replace('.iso', '')
+                    # Remove the platform string and other unwanted junks.
+                    self._package_type = replace_multiple(
+                        self.package_name[0:match.start()], {self.platform + '-': '', '.pkg': '', '.iso': ''})
 
         return self._package_type
 
     @property
     def version(self):
+        """
+        Example version strings: 6.2.2, r63134, 6.1.3.12I
+        """
         if not self._version:
             dict_values = self.get_values(version_dict, self.platform)
             if self.platform and dict_values:
-                to_match = self.package_name.replace(self.platform, '')
-                result = re.search(dict_values, to_match)
+                result = re.search(dict_values, self.package_name)
                 if result:
                     self._version = result.group("VERSION")
 
@@ -213,15 +224,16 @@ class SoftwarePackage(object):
 
     @property
     def subversion(self):
+        """
+        Subversion is the 'X.X.X.X' part of software package name.
+        Example: The subversion is 2.1.0.0 for ncs5500-mpls-2.1.0.0-r61311I
+        """
         if not self._subversion:
             dict_values = self.get_values(subversion_dict, self.platform)
             if self.platform and dict_values:
-                # For NCS6K, only need to consider subversion if it is a SMU.
-                if self.platform in ["asr9k", "ncs1k", "ncs5k", "ncs5500", "xrv9k"] or self.smu:
-                    to_match = self.package_name.replace(self.platform, '')
-                    result = re.search(dict_values, to_match)
-                    if result:
-                        self._subversion = result.group("SUBVERSION")
+                result = re.search(dict_values, self.package_name)
+                if result:
+                    self._subversion = result.group("SUBVERSION")
 
         return self._subversion
 
@@ -270,6 +282,7 @@ class SoftwarePackage(object):
                       'version', software_package.version, 'smu', software_package.smu,
                       'subversion', software_package.subversion)
                 """
+
                 software_packages.add(software_package)
         return software_packages
 
