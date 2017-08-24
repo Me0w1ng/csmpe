@@ -114,14 +114,16 @@ def validate_node_state(inventory):
     valid_state = [
         'IOS XR RUN',
         'PRESENT',
-        'UNPOWERED',
         'READY',
-        'UNPOWERED',
         'FAILED',
         'OK',
+        'DISABLED',
+        'UNPOWERED',
         'ADMIN DOWN',
-        'DISABLED'
+        'PWD',
+        'NOT ALLOW ONLIN',  # This is not spelling error
     ]
+
     for key, value in inventory.items():
         if 'CPU' in key:
             if value['state'] not in valid_state:
