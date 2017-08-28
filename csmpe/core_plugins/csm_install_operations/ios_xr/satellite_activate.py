@@ -33,7 +33,7 @@ from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_satellite
 
 class Plugin(CSMPlugin):
     """This plugin removes all inactive packages from the device."""
-    name = "Satellite-Transfer Plugin"
+    name = "Satellite-Activate Plugin"
     platforms = {'ASR9K'}
     phases = {'Satellite-Activate'}
     os = {'XR'}
