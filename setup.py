@@ -103,6 +103,8 @@ setup(
             '{} = csmpe.core_plugins.csm_install_operations.ios_xr.migrate:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.ios_xr.post_migrate:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.ios_xr.remove_all:Plugin'.format(uuid4()),
+            '{} = csmpe.core_plugins.csm_install_operations.ios_xr.satellite_transfer:Plugin'.format(uuid4()),
+            '{} = csmpe.core_plugins.csm_install_operations.ios_xr.satellite_activate:Plugin'.format(uuid4()),
 
             '{} = csmpe.core_plugins.csm_install_operations.exr.add:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.exr.activate:Plugin'.format(uuid4()),

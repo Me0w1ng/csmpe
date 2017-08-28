@@ -3,6 +3,8 @@
 # Copyright (c) 2016, Cisco Systems
 # All rights reserved.
 #
+# # Author: Klaudiusz Staniek
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -25,36 +27,39 @@
 # =============================================================================
 
 from csmpe.plugins import CSMPlugin
+from install import install_satellite_transfer
+from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_satellite
 
 
 class Plugin(CSMPlugin):
-    """This plugin retrieves software information from the device."""
-    name = "Get Inventory Plugin"
-    platforms = {'ASR9K', 'XR12K', 'CRS'}
-    phases = {'Get-Inventory'}
+    """This plugin removes all inactive packages from the device."""
+    name = "Satellite-Transfer Plugin"
+    platforms = {'ASR9K'}
+    phases = {'Satellite-Transfer'}
     os = {'XR'}
 
     def run(self):
-        get_package(self.ctx)
-        get_inventory(self.ctx)
+
+        """
+        Produces a list of satellite ID that needs transfer
+
+        RP/0/RP0/CPU0:AGN_PE_11_9k#install nv satellite 160,163 transfer
+        """
+        satellite_ids = self.ctx.load_job_data('selected_satellites')
+
+        # ctype = type(satellite_ids[0])
+        # self.ctx.info("ctype = {}".format(ctype))
+        self.ctx.info("satellite_ids = {}".format(satellite_ids[0]))
+
+        self.ctx.info("Satellite-Transfer Pending")
+        self.ctx.post_status("Satellite-Transfer Pending")
+
+        result = install_satellite_transfer(self.ctx, satellite_ids[0])
+
+        # Refresh satellite inventory information
         get_satellite(self.ctx)
 
-
-def get_inventory(ctx):
-    # saved the output of "admin show inventory"
-    output = ctx.send("admin show inventory")
-    ctx.save_data("cli_show_inventory", output)
-
-
-def get_package(ctx):
-    ctx.save_data("cli_show_install_inactive",
-                  ctx.send("admin show install inactive summary"))
-    ctx.save_data("cli_show_install_active",
-                  ctx.send("admin show install active summary"))
-    ctx.save_data("cli_show_install_committed",
-                  ctx.send("admin show install committed summary"))
-
-
-def get_satellite(ctx):
-    ctx.save_data("cli_show_nv_satellite",
-                  ctx.send("show nv satellite status"))
+        if result:
+            self.ctx.info("Satellite-Transfer was Successfully")
+        else:
+            self.ctx.error("Satellite-Transfer failed to complete.")
