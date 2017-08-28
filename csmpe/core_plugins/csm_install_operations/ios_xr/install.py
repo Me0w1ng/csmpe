@@ -446,3 +446,260 @@ def install_remove_all(ctx, cmd, hostname):
         ctx.post_status(message)
     else:
         ctx.error("Remove All Inactive Package(s) failed")
+
+
+def install_satellite_transfer(ctx, satellite_ids):
+    """
+    RP/0/RP0/CPU0:AGN_PE_11_9k#install nv satellite 160,163 transfer
+    Install Op 2: install nv satellite 160,163 transfer
+        2 configured satellites have been specified for the transfer operation.
+        2 satellites have successfully initiated the transfer operation.
+
+    RP/0/RP0/CPU0:AGN_PE_11_9k#show nv satellite status satellite 161
+    Satellite 161
+    -------------
+      Status: Connected (Transferring new image)
+      Redundancy: Active (Group: 100)
+      Type: ncs5002
+      Displayed device name: Sat161
+      MAC address: c472.95a6.87a5
+      IPv4 address: 10.0.161.1 (auto, VRF: **nVSatellite)
+      Serial Number: FOC1928R0XP
+      Remote version: Compatible (older version)
+        IOFPGA: 0.17
+        MB_MIFPGA: 0.16
+        DB_MIFPGA: 0.16
+        BIOS: 1.11
+        XR: 6.2.25.03I (Available: 6.2.25.05I)
+      Received candidate fabric ports:
+        nVFabric-TenGigE0/0/78-79 (permanent)
+        nVFabric-HundredGigE0/1/0-3 (permanent)
+      Configured satellite fabric links:
+        HundredGigE0/18/0/5
+        -------------------
+          Status: Satellite Ready
+          Remote ports: TenGigE0/0/0-70
+
+    RP/0/RP0/CPU0:AGN_PE_11_9k#show nv satellite status satellite 161
+    Satellite 161
+    -------------
+      Status: Connected (New image transferred)
+      Redundancy: Active (Group: 100)
+      Type: ncs5002
+      Displayed device name: Sat161
+      MAC address: c472.95a6.87a5
+      IPv4 address: 10.0.161.1 (auto, VRF: **nVSatellite)
+      Serial Number: FOC1928R0XP
+      Remote version: Compatible (older version)
+        IOFPGA: 0.17
+        MB_MIFPGA: 0.16
+        DB_MIFPGA: 0.16
+        BIOS: 1.11
+        XR: 6.2.25.03I (Available: 6.2.25.05I)
+      Received candidate fabric ports:
+        nVFabric-TenGigE0/0/78-79 (permanent)
+        nVFabric-HundredGigE0/1/0-3 (permanent)
+      Configured satellite fabric links:
+        HundredGigE0/18/0/5
+        -------------------
+          Status: Satellite Ready
+          Remote ports: TenGigE0/0/0-70
+    """
+
+    global plugin_ctx
+    plugin_ctx = ctx
+
+    # satellite_ids = '100-320'
+    # ids_list = range(100,321)
+    # satellite_ids = ','.join(str(x) for x in ids_list)
+    L = satellite_ids.split(',')
+
+    cmd = 'install nv satellite ' + satellite_ids + ' transfer'
+
+    Warning = re.compile("Do you wish to continue\? \[confirm\(y/n\)\]")
+    Host_prompt = re.compile(ctx._connection.hostname)
+
+    events = [Host_prompt, Warning]
+    transitions = [
+        (Warning, [0], -1, send_yes, 5),
+        (Host_prompt, [0], -1, None, 5),
+    ]
+
+    if not ctx.run_fsm("Satellite-Transfer", cmd, events, transitions, timeout=5):
+        ctx.warning("Failed: {}".format(cmd))
+        return False
+
+    ctx.info("Waiting for Satellite-Transfer to complete")
+    ctx.post_status("Waiting for Satellite-Transfer to complete")
+
+    timeout = 7200
+    poll_time = 30
+    time_waited = 60
+    begin = time.time()
+    time.sleep(time_waited)
+
+    while 1:
+        # Waiting for transfer to complete for all satellites
+        if time_waited >= timeout:
+            break
+
+        for id in range(len(L)):
+            show_cmd = 'show nv satellite status satellite ' + L[id]
+            output = ctx.send(show_cmd)
+
+            if 'Connected (New image transferred)' in output or 'No information for satellite' in output:
+                L[id] = None
+
+        L = [x for x in L if x is not None]
+
+        if not L:
+            ctx.info("Satellite-Transfer completed for all the satellites")
+            elapsed = time.time() - begin
+            ctx.info("Overall Satellite-Transfer time: {} minute(s) {:.0f} "
+                     "second(s)".format(elapsed // 60, elapsed % 60))
+            return True
+        else:
+            time_waited += poll_time
+            time.sleep(poll_time)
+
+    # Some transfer did not ccomplete
+    ctx.warning("Satellite-Transfer did not complete for satellites {}.:".format(','.join(L)))
+    return False
+
+
+def install_satellite_activate(ctx, satellite_ids):
+    """
+    RP/0/RP0/CPU0:AGN_PE_11_9k#install nv satellite 160,161 activate
+    The operation will cause an image to be transferred where required, and then activate new versions on the \
+    requested satellites.
+    WARNING: This may take the requested satellites out of service.
+    Do you wish to continue? [confirm(y/n)] y
+    Install Op 4: install nv satellite 160-161 activate
+      2 configured satellites have been specified for the activate operation.
+      2 satellites have successfully initiated the activate operation.
+
+    RP/0/RP0/CPU0:AGN_PE_11_9k#show nv satellite status satellite 161
+    Satellite 161
+    -------------
+      Status: Connected (Installing new image)
+      Redundancy: Active (Group: 100)
+      Type: ncs5002
+      Displayed device name: Sat161
+      MAC address: c472.95a6.87a5
+      IPv4 address: 10.0.161.1 (auto, VRF: **nVSatellite)
+      Serial Number: FOC1928R0XP
+      Remote version: Compatible (older version)
+        IOFPGA: 0.17
+        MB_MIFPGA: 0.16
+        DB_MIFPGA: 0.16
+        BIOS: 1.11
+        XR: 6.2.25.03I (Available: 6.2.25.05I)
+      Received candidate fabric ports:
+        nVFabric-TenGigE0/0/78-79 (permanent)
+        nVFabric-HundredGigE0/1/0-3 (permanent)
+      Configured satellite fabric links:
+        HundredGigE0/18/0/5
+        -------------------
+          Status: Satellite Ready
+          Remote ports: TenGigE0/0/0-70
+
+    RP/0/RP0/CPU0:AGN_PE_11_9k#show nv satellite status satellite 161
+    Satellite 161
+    -------------
+      Status: Discovery Stalled; Conflict: interface is down
+      Type: ncs5002
+      Displayed device name: Sat161
+      IPv4 address: 10.0.161.1 (auto, VRF: **nVSatellite)
+      Serial Number: FOC1928R0XP
+      Configured satellite fabric links:
+        HundredGigE0/18/0/5
+        -------------------
+          Status: Discovery Stalled; Conflict: interface is down
+          Remote ports: TenGigE0/0/0-70
+
+    RP/0/RP0/CPU0:AGN_PE_11_9k#show nv satellite status satellite 161
+    Satellite 161
+    -------------
+      Status: Connected (Stable)
+      Redundancy: Active (Group: 100) (Recovery Delay remaining: 4m 23s)
+      Type: ncs5002
+      Displayed device name: Sat161
+      MAC address: c472.95a6.87a5
+      IPv4 address: 10.0.161.1 (auto, VRF: **nVSatellite)
+      Serial Number: FOC1928R0XP
+      Remote version: Compatible (latest version)
+        IOFPGA: 0.17
+        MB_MIFPGA: 0.16
+        DB_MIFPGA: 0.16
+        BIOS: 1.11
+        XR: 6.2.25.05I (Latest)
+      Received candidate fabric ports:
+        nVFabric-TenGigE0/0/78-79 (permanent)
+        nVFabric-HundredGigE0/1/0-3 (permanent)
+      Configured satellite fabric links:
+        HundredGigE0/18/0/5
+        -------------------
+          Status: Satellite Ready
+          Remote ports: TenGigE0/0/0-70
+    """
+
+    global plugin_ctx
+    plugin_ctx = ctx
+
+    # satellite_ids = '100-320'
+    # ids_list = range(100,321)
+    # satellite_ids = ','.join(str(x) for x in ids_list)
+    # or satellite_ids_list = map(str, ids_list)
+    L = satellite_ids.split(',')
+
+    cmd = 'install nv satellite ' + satellite_ids + ' activate'
+
+    Warning = re.compile("Do you wish to continue\? \[confirm\(y/n\)\]")
+    Host_prompt = re.compile(ctx._connection.hostname)
+
+    events = [Host_prompt, Warning]
+    transitions = [
+        (Warning, [0], -1, send_yes, 5),
+        (Host_prompt, [0], -1, None, 5),
+    ]
+
+    if not ctx.run_fsm("Satellite-Activate", cmd, events, transitions, timeout=5):
+        ctx.warning("Failed: {}".format(cmd))
+        return False
+
+    ctx.info("Waiting for Satellite-Activate to complete")
+    ctx.post_status("Waiting for Satellite-Activate to complete")
+
+    timeout = 7200
+    poll_time = 30
+    time_waited = 60
+    begin = time.time()
+    time.sleep(time_waited)
+
+    while 1:
+        # Waiting for activate to complete for all satellites
+        if time_waited >= timeout:
+            break
+
+        for id in range(len(L)):
+            show_cmd = 'show nv satellite status satellite ' + L[id]
+            output = ctx.send(show_cmd)
+
+            if 'Status: Connected (Stable)' in output or 'No information for satellite' in output:
+                L[id] = None
+
+        L = [x for x in L if x is not None]
+
+        if not L:
+            ctx.info("Satellite-Activate completed for all the satellites")
+            elapsed = time.time() - begin
+            ctx.info("Overall Satellite-Activate time: {} minute(s) {:.0f} "
+                     "second(s)".format(elapsed // 60, elapsed % 60))
+            return True
+        else:
+            time_waited += poll_time
+            time.sleep(poll_time)
+
+    # Some transfer did not ccomplete
+    ctx.warning("Satellite-Activate did not complete for satellites {}.".format(','.join(L)))
+    return False
