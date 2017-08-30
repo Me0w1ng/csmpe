@@ -39,7 +39,7 @@ from hardware_audit import Plugin as HardwareAuditPlugin
 from migration_lib import log_and_post_status
 from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_inventory
 
-MINIMUM_RELEASE_VERSION_FOR_MIGRATION = "6.1.3"
+MINIMUM_RELEASE_VERSION_FOR_MIGRATION = "6.1.2"
 
 NOX_FOR_MAC = "nox-mac64.bin"
 NOX_64_BINARY = "nox-linux-64.bin"
