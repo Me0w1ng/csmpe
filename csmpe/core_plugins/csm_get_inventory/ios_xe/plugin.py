@@ -42,12 +42,12 @@ class Plugin(CSMPlugin):
 def get_inventory(ctx):
     # Save the output of "show inventory"
     output = ctx.send("show inventory")
-    ctx.save_data("cli_show_inventory", output)
+    ctx.save_job_data("cli_show_inventory", output)
 
 
 def get_package(ctx):
-    ctx.save_data("cli_show_install_committed",
-                  ctx.send("show version running | include File:"))
+    ctx.save_job_data("cli_show_install_committed",
+                      ctx.send("show version running | include File:"))
 
     ctx.send('cd bootflash:')
-    ctx.save_data("cli_show_install_inactive", ctx.send("dir"))
+    ctx.save_job_data("cli_show_install_inactive", ctx.send("dir"))

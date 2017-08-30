@@ -43,18 +43,18 @@ class Plugin(CSMPlugin):
 def get_inventory(ctx):
     # saved the output of "admin show inventory"
     output = ctx.send("admin show inventory")
-    ctx.save_data("cli_show_inventory", output)
+    ctx.save_job_data("cli_show_inventory", output)
 
 
 def get_package(ctx):
-    ctx.save_data("cli_show_install_inactive",
-                  ctx.send("admin show install inactive summary"))
-    ctx.save_data("cli_show_install_active",
-                  ctx.send("admin show install active summary"))
-    ctx.save_data("cli_show_install_committed",
-                  ctx.send("admin show install committed summary"))
+    ctx.save_job_data("cli_show_install_inactive",
+                      ctx.send("admin show install inactive summary"))
+    ctx.save_job_data("cli_show_install_active",
+                      ctx.send("admin show install active summary"))
+    ctx.save_job_data("cli_show_install_committed",
+                      ctx.send("admin show install committed summary"))
 
 
 def get_satellite(ctx):
-    ctx.save_data("cli_show_nv_satellite",
-                  ctx.send("show nv satellite status"))
+    ctx.save_job_data("cli_show_nv_satellite",
+                      ctx.send("show nv satellite status"))

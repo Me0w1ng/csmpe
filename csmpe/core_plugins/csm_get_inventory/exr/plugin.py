@@ -43,7 +43,7 @@ class Plugin(CSMPlugin):
 def get_inventory(ctx):
     # Save the output of "show inventory" in admin mode
     output = get_output_in_admin_mode(ctx, "show inventory")
-    ctx.save_data("cli_show_inventory", output)
+    ctx.save_job_data("cli_show_inventory", output)
 
 
 def get_package(ctx):
@@ -52,20 +52,20 @@ def get_package(ctx):
     """
 
     # Get the admin packages
-    ctx.save_data("cli_admin_show_install_inactive",
-                  get_output_in_admin_mode(ctx, "show install inactive"))
-    ctx.save_data("cli_admin_show_install_active",
-                  get_output_in_admin_mode(ctx, "show install active"))
-    ctx.save_data("cli_admin_show_install_committed",
-                  get_output_in_admin_mode(ctx, "show install committed"))
+    ctx.save_job_data("cli_admin_show_install_inactive",
+                      get_output_in_admin_mode(ctx, "show install inactive"))
+    ctx.save_job_data("cli_admin_show_install_active",
+                      get_output_in_admin_mode(ctx, "show install active"))
+    ctx.save_job_data("cli_admin_show_install_committed",
+                      get_output_in_admin_mode(ctx, "show install committed"))
 
     # Get the non-admin packages
-    ctx.save_data("cli_show_install_inactive",
-                  get_output_in_admin_mode(ctx, "show install inactive", admin=False))
-    ctx.save_data("cli_show_install_active",
-                  get_output_in_admin_mode(ctx, "show install active", admin=False))
-    ctx.save_data("cli_show_install_committed",
-                  get_output_in_admin_mode(ctx, "show install committed", admin=False))
+    ctx.save_job_data("cli_show_install_inactive",
+                      get_output_in_admin_mode(ctx, "show install inactive", admin=False))
+    ctx.save_job_data("cli_show_install_active",
+                      get_output_in_admin_mode(ctx, "show install active", admin=False))
+    ctx.save_job_data("cli_show_install_committed",
+                      get_output_in_admin_mode(ctx, "show install committed", admin=False))
 
 
 def get_output_in_admin_mode(ctx, cmd, admin=True):
