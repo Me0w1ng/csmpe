@@ -25,6 +25,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
+import time
 import re
 
 from csmpe.plugins import CSMPlugin
@@ -40,8 +41,7 @@ SCRIPT_BACKUP_CONFIG_612_UP = "harddiskb:/cXR_xr_plane.cfg"
 SCRIPT_BACKUP_ADMIN_CONFIG_611_DOWN = "harddiskb:/admin.cfg"
 SCRIPT_BACKUP_ADMIN_CONFIG_612_UP = "harddiskb:/cXR_admin_plane.cfg"
 
-MIGRATION_TIME_OUT = 3600
-NODES_COME_UP_TIME_OUT = 3600
+MIGRATION_TIME_OUT = 7200
 
 PASSWORD_PROMPT = re.compile("[P|p]assword:\s?")
 USERNAME_PROMPT = re.compile("([U|u]sername:|login:)\s?")
@@ -89,7 +89,7 @@ class Plugin(CSMPlugin):
         :return: True if no error occurred.
         """
 
-        output = self.ctx.send("run /pkg/bin/migrate_to_eXR -m eusb", timeout=600)
+        output = self.ctx.send("run /pkg/bin/migrate_to_eXR -m eusb", timeout=1800)
 
         self._check_migration_script_output(output)
 
@@ -124,9 +124,37 @@ class Plugin(CSMPlugin):
 
     def _reload_all(self):
         """Reload all nodes to boot eXR image."""
-        if self.ctx.reload(reload_timeout=MIGRATION_TIME_OUT):
-            return self._wait_for_reload()
-        self.ctx.error("Encountered error when attempting to reload device.")
+        if self.ctx.is_console:
+            if not self.ctx.reload(reload_timeout=MIGRATION_TIME_OUT):
+                self.ctx.error("Encountered error when attempting to reload device.")
+        else:
+            def send_newline(fsm_ctx):
+                fsm_ctx.ctrl.sendline()
+                return True
+
+            UNCOMMITTED_PACKAGES = re.compile("software packages are not yet committed. Proceed\?\[confirm\]")
+            DONE = re.compile(re.escape("[Done]"))
+            PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
+
+            events = [UNCOMMITTED_PACKAGES, DONE, PROCEED]
+            transitions = [
+                (UNCOMMITTED_PACKAGES, [0], 1, send_newline, 300),
+                (DONE, [0, 1], 2, None, 300),
+                (PROCEED, [0, 1, 2], -1, send_newline, 300)
+            ]
+
+            if not self.ctx.run_fsm("RELOAD", "admin reload location all", events, transitions, timeout=300):
+                self.ctx.error("Failed to reload.")
+
+            # wait a little bit before disconnect so that newline character can reach the router
+            time.sleep(5)
+            self.ctx.disconnect()
+            self.ctx.post_status("Waiting for device boot to reconnect")
+            self.ctx.info("Waiting for device boot to reconnect")
+            time.sleep(300)
+            self.ctx.reconnect(max_timeout=MIGRATION_TIME_OUT, force_discovery=True)  # 60 * 60 = 3600
+
+        return self._wait_for_reload()
 
     def _wait_for_reload(self):
         """Wait for all nodes to come up with max timeout as 18 minutes after the first RSP/RP comes up."""

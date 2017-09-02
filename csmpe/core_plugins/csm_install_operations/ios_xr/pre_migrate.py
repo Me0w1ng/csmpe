@@ -45,7 +45,7 @@ NOX_FOR_MAC = "nox-mac64.bin"
 NOX_64_BINARY = "nox-linux-64.bin"
 
 TIMEOUT_FOR_COPY_CONFIG = 3600
-TIMEOUT_FOR_COPY_IMAGE = 1800
+TIMEOUT_FOR_COPY_IMAGE = 3600
 TIMEOUT_FOR_FPD_UPGRADE = 5400
 
 IMAGE_LOCATION = "harddisk:/"
@@ -191,7 +191,7 @@ class Plugin(CSMPlugin):
 
         return True
 
-    def _copy_files_to_device(self, server, repository, source_filenames, dest_files, timeout=600):
+    def _copy_files_to_device(self, server, repository, source_filenames, dest_files, timeout=3600):
         """
         Copy files from their locations in the user selected server directory in the FTP/TFTP/SFTP server repository
         to locations on device.
@@ -215,7 +215,7 @@ class Plugin(CSMPlugin):
         else:
             self.ctx.error("Pre-Migrate does not support {} server repository.".format(server.server_type))
 
-    def _copy_files_from_ftp_tftp_to_device(self, repository, source_filenames, dest_files, timeout=600):
+    def _copy_files_from_ftp_tftp_to_device(self, repository, source_filenames, dest_files, timeout=3600):
         """
         Copy files from their locations in the user selected server directory in the FTP or TFTP server repository
         to locations on device.
@@ -270,7 +270,7 @@ class Plugin(CSMPlugin):
                                                                                  dest_files[x]))
 
             if not self.ctx.run_fsm("Copy file from tftp/ftp to device", command, events, transitions,
-                                    timeout=20, max_transitions=40):
+                                    timeout=80, max_transitions=60):
                 self.ctx.error("Error copying {}/{} to {} on device".format(repository,
                                                                             source_filenames[x],
                                                                             dest_files[x]))
@@ -281,7 +281,7 @@ class Plugin(CSMPlugin):
                                                                              source_filenames[x],
                                                                              dest_files[x]))
 
-    def _copy_files_from_sftp_to_device(self, server, source_filenames, dest_files, timeout=600):
+    def _copy_files_from_sftp_to_device(self, server, source_filenames, dest_files, timeout=3600):
         """
         Copy files from their locations in the user selected server directory in the SFTP server repository
         to locations on device.
@@ -373,7 +373,7 @@ class Plugin(CSMPlugin):
                                                                                  source_filenames[x],
                                                                                  dest_files[x]))
 
-            if not self.ctx.run_fsm("Copy file from sftp to device", command, events, transitions, timeout=20):
+            if not self.ctx.run_fsm("Copy file from sftp to device", command, events, transitions, timeout=80):
                 self.ctx.error("Error copying {}/{} to {} on device".format(source_path,
                                                                             source_filenames[x],
                                                                             dest_files[x]))
@@ -640,10 +640,10 @@ class Plugin(CSMPlugin):
 
             if not self.ctx.run_fsm("Upgrade FPD",
                                     "admin upgrade hw-module fpd {} location all".format(fpdtype),
-                                    events, transitions, timeout=30):
+                                    events, transitions, timeout=80):
                 self.ctx.error("Error while upgrading FPD subtype {}. Please check session.log".format(fpdtype))
 
-            fpd_log = self.ctx.send("show log | include fpd", timeout=300)
+            fpd_log = self.ctx.send("show log | include fpd", timeout=1200)
 
             for location in subtype_to_locations_need_upgrade[fpdtype]:
 
@@ -875,6 +875,7 @@ class Plugin(CSMPlugin):
             self.ctx.error("The configuration migration tool NoX is currently not available for 32 bit linux system.")
 
     def run(self):
+
         server_repo_url = None
         try:
             server_repo_url = self.ctx.server_repository_url
@@ -972,7 +973,7 @@ class Plugin(CSMPlugin):
         if crypto_file:
             log_and_post_status(self.ctx, "Copying the crypto key generation file from server repository to device.")
             self._copy_files_to_device(server, server_repo_url, [crypto_file],
-                                       [CONFIG_LOCATION + crypto_file], timeout=60)
+                                       [CONFIG_LOCATION + crypto_file], timeout=300)
 
         self._ensure_updated_fpd(fpd_relevant_nodes)
 
