@@ -448,6 +448,77 @@ def install_remove_all(ctx, cmd, hostname):
         ctx.error("Remove All Inactive Package(s) failed")
 
 
+def build_satellite_list(satellite_ids):
+    """
+    :param satellite_ids: a string of satellite IDs with comma delimiter and range
+    For example, satellite_ids = '100-102,105,106-109,110,160-164,319-320'
+    :return: a list of satellite IDs in string
+    """
+
+    L = []
+    input_list = satellite_ids.split(',')
+    for item in input_list:
+        if '-' in item:
+            m = re.search('(\w+)-(\w+)', item)
+            arg1 = int(m.group(1))
+            arg2 = int(m.group(2)) + 1
+            ilist = range(arg1, arg2)
+            slist = []
+            for i in ilist:
+                slist.append(str(i))
+            L = L + slist
+        else:
+            L.append(item)
+
+    return L
+
+
+def build_new_argument(L):
+    """
+    :param L: a list of satellite id in string
+    :return: a string of satellite id that includes comma delimiter and range
+    """
+
+    LI = [int(x) for x in L]
+    LI.sort()
+
+    lrange = len(LI) - 1
+
+    if lrange == 0:
+        arg = str(LI[0])
+    else:
+        # walk thru the list to construct the new string argument
+        arg = str(LI[0])
+        id = 1
+        nexts = ''
+        while id < lrange:
+            if LI[id - 1] + 1 == LI[id]:
+                if nexts != '-':
+                    nexts = '-'
+            else:
+                if nexts == '-':
+                    arg = arg + '-' + str(LI[id - 1]) + ',' + str(LI[id])
+                    nexts = ''
+                else:
+                    arg = arg + ',' + str(LI[id])
+            id += 1
+
+        id = lrange
+        if LI[id - 1] + 1 == LI[id]:
+            if nexts == '-':
+                arg = arg + '-' + str(LI[id])
+            else:
+                arg = arg + ',' + str(LI[id])
+        else:
+            if nexts == '-':
+                arg = arg + '-' + str(LI[id - 1]) + ',' + str(LI[id])
+                nexts = ''
+            else:
+                arg = arg + ',' + str(LI[id])
+
+    return arg
+
+
 def install_satellite_transfer(ctx, satellite_ids):
     """
     RP/0/RP0/CPU0:AGN_PE_11_9k#install nv satellite 160,163 transfer
@@ -509,56 +580,134 @@ def install_satellite_transfer(ctx, satellite_ids):
     global plugin_ctx
     plugin_ctx = ctx
 
-    # satellite_ids = '100-320'
-    # ids_list = range(100,321)
-    # satellite_ids = ','.join(str(x) for x in ids_list)
-    L = satellite_ids.split(',')
+    # satellite_ids = '100-102,105,106-109,110,160-164,319-320'
+    L = build_satellite_list(satellite_ids)
+    ctx.info("Checking satellite status: {}".format(','.join(L)))
 
-    cmd = 'install nv satellite ' + satellite_ids + ' transfer'
+    # filter invalid cases
+    command_success = True
+    for id in range(len(L)):
+        show_cmd = 'show nv satellite status satellite ' + L[id]
+        output = ctx.send(show_cmd)
 
+        if 'No information for satellite' in output:
+            ctx.warning("There is no information for Satellite ID {}.".format(L[id]))
+            ctx.warning("{}".format(output))
+            L[id] = None
+            command_success = False
+
+        if 'Status: Connected' not in output:
+            ctx.warning("Satellite ID {} Status is not Connected.".format(L[id]))
+            ctx.warning("{}".format(output))
+            L[id] = None
+            command_success = False
+
+        if 'Status: Connected (New image transferred)' in output:
+            ctx.info("Satellite ID {} Status: Connected (New image transferred)".format(L[id]))
+            L[id] = None
+
+        if 'Remote version: Compatible (latest version)' in output:
+            ctx.info("Satellite ID {} Remote version: Compatible (latest version)".format(L[id]))
+            L[id] = None
+
+    L = [x for x in L if x is not None]
+
+    if not L:
+        if command_success:
+            ctx.info("Satellite-Transfer: all satellites are up to date. No action is required.")
+            return True
+        else:
+            ctx.warning("Satellite-Transfer: one or more satellites are not ready")
+            return False
+
+    # construct the new argument
+    ctx.info("Satellite-Transfer satellites {}".format(','.join(L)))
+    arg = build_new_argument(L)
+
+    cmd = 'install nv satellite ' + arg + ' transfer'
     Warning = re.compile("Do you wish to continue\? \[confirm\(y/n\)\]")
     Host_prompt = re.compile(ctx._connection.hostname)
 
     events = [Host_prompt, Warning]
     transitions = [
-        (Warning, [0], -1, send_yes, 5),
-        (Host_prompt, [0], -1, None, 5),
+        (Warning, [0], -1, send_yes, 30),
+        (Host_prompt, [0], -1, None, 30),
     ]
 
-    if not ctx.run_fsm("Satellite-Transfer", cmd, events, transitions, timeout=5):
+    if not ctx.run_fsm("Satellite-Transfer ", cmd, events, transitions, timeout=30):
         ctx.warning("Failed: {}".format(cmd))
         return False
 
     ctx.info("Waiting for Satellite-Transfer to complete")
     ctx.post_status("Waiting for Satellite-Transfer to complete")
 
-    timeout = 7200
-    poll_time = 30
-    time_waited = 60
+    timeout = 3600
+    poll_time = 180
+    time_waited = 180
     begin = time.time()
     time.sleep(time_waited)
+
+    header = "Transferring Satellite Image <br>" + \
+             "<pre>" + \
+             "Sat-ID  Type       Status\n" + \
+             "------  --------   ----------------\n"
 
     while 1:
         # Waiting for transfer to complete for all satellites
         if time_waited >= timeout:
             break
 
-        for id in range(len(L)):
-            show_cmd = 'show nv satellite status satellite ' + L[id]
-            output = ctx.send(show_cmd)
+        status = header
+        show_cmd = 'show nv satellite status brief'
+        output = ctx.send(show_cmd)
+        lines = output.split('\n')
+        lines = [x for x in lines if x]
 
-            if 'Connected (New image transferred)' in output or 'No information for satellite' in output:
-                L[id] = None
+        for line in lines:
+
+            if not line[0].isdigit():
+                continue
+
+            sl = line.split()
+            elements = len(sl)
+            if elements > 5:
+                i = 5
+                while i < elements:
+                    sl[4] = sl[4] + ' ' + sl[i]
+                    i += 1
+
+            for id in range(len(L)):
+                if L[id] == sl[0]:
+                    if 'Transferred' in sl[4]:
+                        L[id] = None
+                    else:
+                        length = len(sl[0])
+                        space = 8 - length
+                        sat_id = sl[0] + ' ' * space
+                        length = len(sl[1])
+                        space = 11 - length
+                        type = sl[1] + ' ' * space
+                        status = status + sat_id + type + sl[4] + '\n'
+
+                    break
 
         L = [x for x in L if x is not None]
 
         if not L:
-            ctx.info("Satellite-Transfer completed for all the satellites")
             elapsed = time.time() - begin
-            ctx.info("Overall Satellite-Transfer time: {} minute(s) {:.0f} "
+            ctx.info("Satellite-Transfer time: {} minute(s) {:.0f} "
                      "second(s)".format(elapsed // 60, elapsed % 60))
-            return True
+            if command_success:
+                ctx.info("Satellite-Transfer completed for all the satellites")
+                ctx.post_status("Satellite-Transfer completed for all the satellites")
+                return True
+            else:
+                ctx.warning("Satellite-Transfer completed but some satellites were not ready.")
+                ctx.post_status("Satellite-Transfer completed but some satellites were not ready.")
+                return True
         else:
+            status += "</pre>"
+            ctx.post_status(status)
             time_waited += poll_time
             time.sleep(poll_time)
 
@@ -646,57 +795,130 @@ def install_satellite_activate(ctx, satellite_ids):
     global plugin_ctx
     plugin_ctx = ctx
 
-    # satellite_ids = '100-320'
-    # ids_list = range(100,321)
-    # satellite_ids = ','.join(str(x) for x in ids_list)
-    # or satellite_ids_list = map(str, ids_list)
-    L = satellite_ids.split(',')
+    # satellite_ids = '100-102,105,106-109,110,160-164,319-320'
+    L = build_satellite_list(satellite_ids)
+    ctx.info("Checking satellite status: {}".format(','.join(L)))
 
-    cmd = 'install nv satellite ' + satellite_ids + ' activate'
+    # filter invalid cases
+    command_success = True
+    for id in range(len(L)):
+        show_cmd = 'show nv satellite status satellite ' + L[id]
+        output = ctx.send(show_cmd)
 
+        if 'No information for satellite' in output:
+            ctx.warning("There is no information for Satellite ID {}.".format(L[id]))
+            ctx.warning("{}".format(output))
+            L[id] = None
+            command_success = False
+
+        if 'Status: Connected' not in output:
+            ctx.warning("Satellite ID {} Status is not Connected.".format(L[id]))
+            ctx.warning("{}".format(output))
+            L[id] = None
+            command_success = False
+
+        if 'Remote version: Compatible (latest version)' in output:
+            ctx.info("Satellite ID {} Remote version: Compatible (latest version)".format(L[id]))
+            L[id] = None
+
+    L = [x for x in L if x is not None]
+
+    if not L:
+        if command_success:
+            ctx.info("Satellite-Activate: all satellites are up to date. No action is required.")
+            return True
+        else:
+            ctx.warning("Satellite-Activate: one or more satellites are not ready")
+            return False
+
+    # construct the new argument
+    ctx.info("Satellite-Activate satellites {}".format(','.join(L)))
+    arg = build_new_argument(L)
+
+    cmd = 'install nv satellite ' + arg + ' activate'
     Warning = re.compile("Do you wish to continue\? \[confirm\(y/n\)\]")
     Host_prompt = re.compile(ctx._connection.hostname)
 
     events = [Host_prompt, Warning]
     transitions = [
-        (Warning, [0], -1, send_yes, 5),
-        (Host_prompt, [0], -1, None, 5),
+        (Warning, [0], -1, send_yes, 30),
+        (Host_prompt, [0], -1, None, 30),
     ]
 
-    if not ctx.run_fsm("Satellite-Activate", cmd, events, transitions, timeout=5):
+    if not ctx.run_fsm("Satellite-Activate", cmd, events, transitions, timeout=30):
         ctx.warning("Failed: {}".format(cmd))
         return False
 
     ctx.info("Waiting for Satellite-Activate to complete")
     ctx.post_status("Waiting for Satellite-Activate to complete")
 
-    timeout = 7200
-    poll_time = 30
-    time_waited = 60
+    timeout = 5400
+    poll_time = 180
+    time_waited = 180
     begin = time.time()
     time.sleep(time_waited)
 
+    header = "Activating Satellite Image <br>" + \
+             "<pre>" + \
+             "Sat-ID  Type       Status\n" + \
+             "------  --------   ----------------\n"
+
     while 1:
-        # Waiting for activate to complete for all satellites
+        # Waiting for transfer to complete for all satellites
         if time_waited >= timeout:
             break
 
-        for id in range(len(L)):
-            show_cmd = 'show nv satellite status satellite ' + L[id]
-            output = ctx.send(show_cmd)
+        status = header
+        show_cmd = 'show nv satellite status brief'
+        output = ctx.send(show_cmd)
+        lines = output.split('\n')
+        lines = [x for x in lines if x]
 
-            if 'Status: Connected (Stable)' in output or 'No information for satellite' in output:
-                L[id] = None
+        for line in lines:
+
+            if not line[0].isdigit():
+                continue
+
+            sl = line.split()
+            elements = len(sl)
+            if elements > 5:
+                i = 5
+                while i < elements:
+                    sl[4] = sl[4] + ' ' + sl[i]
+                    i += 1
+
+            for id in range(len(L)):
+                if L[id] == sl[0]:
+                    if sl[4] == 'Connected' or sl[4] == 'Connected (Act)':
+                        L[id] = None
+                    else:
+                        length = len(sl[0])
+                        space = 8 - length
+                        sat_id = sl[0] + ' ' * space
+                        length = len(sl[1])
+                        space = 11 - length
+                        type = sl[1] + ' ' * space
+                        status = status + sat_id + type + sl[4] + '\n'
+
+                    break
 
         L = [x for x in L if x is not None]
 
         if not L:
-            ctx.info("Satellite-Activate completed for all the satellites")
             elapsed = time.time() - begin
-            ctx.info("Overall Satellite-Activate time: {} minute(s) {:.0f} "
+            ctx.info("Satellite-Activate time: {} minute(s) {:.0f} "
                      "second(s)".format(elapsed // 60, elapsed % 60))
-            return True
+            if command_success:
+                ctx.info("Satellite-Activate completed for all the satellites")
+                ctx.post_status("Satellite-Activate completed for all the satellites")
+                return True
+            else:
+                ctx.warning("Satellite-Activate completed but some satellites were not ready.")
+                ctx.post_status("Satellite-Activate completed but some satellites were not ready.")
+                return True
         else:
+            status += "</pre>"
+            ctx.post_status(status)
             time_waited += poll_time
             time.sleep(poll_time)
 
