@@ -45,7 +45,7 @@ class Plugin(CSMPlugin):
 
         RP/0/RP0/CPU0:AGN_PE_11_9k#install nv satellite 160,163 transfer
         """
-        satellite_ids = self.ctx.load_job_data('selected_satellites')
+        satellite_ids = self.ctx.load_job_data('selected_satellite_ids')
 
         # ctype = type(satellite_ids[0])
         # self.ctx.info("ctype = {}".format(ctype))
@@ -56,10 +56,13 @@ class Plugin(CSMPlugin):
 
         result = install_satellite_activate(self.ctx, satellite_ids[0])
 
+        self.ctx.info("Refresh satellite inventory information")
+        self.ctx.post_status("Refresh satellite inventory information")
+
         # Refresh satellite inventory information
         get_satellite(self.ctx)
 
         if result:
-            self.ctx.info("Satellite-Activate was Successfully")
+            self.ctx.info("Satellite-Activate completed")
         else:
             self.ctx.error("Satellite-Activate failed to complete.")
