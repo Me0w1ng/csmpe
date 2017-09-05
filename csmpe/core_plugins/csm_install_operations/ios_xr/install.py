@@ -643,7 +643,7 @@ def install_satellite_transfer(ctx, satellite_ids):
 
     timeout = 3600
     poll_time = 180
-    time_waited = 180
+    time_waited = 3
     begin = time.time()
     time.sleep(time_waited)
 
@@ -854,7 +854,7 @@ def install_satellite_activate(ctx, satellite_ids):
 
     timeout = 5400
     poll_time = 180
-    time_waited = 180
+    time_waited = 3
     begin = time.time()
     time.sleep(time_waited)
 
