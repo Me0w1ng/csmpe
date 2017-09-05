@@ -889,7 +889,7 @@ def install_satellite_activate(ctx, satellite_ids):
 
             for id in range(len(L)):
                 if L[id] == sl[0]:
-                    if sl[4] == 'Connected' or sl[4] == 'Connected (Act)':
+                    if sl[4] == 'Connected' or sl[4] == 'Connected (Act)' or sl[4] == 'Connected (Stby)':
                         L[id] = None
                     else:
                         length = len(sl[0])
