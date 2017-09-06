@@ -26,15 +26,15 @@
 from pydoc import locate
 
 
-class AttributeDataTable(object):
+class AttributeDataTable(dict):
 
     def __init__(self, data_specs=[], plugin_data={}):
-        self.data_specs = data_specs
-        self.bind_data(plugin_data)
+        super(AttributeDataTable, self).__init__()
+        self.bind_data(data_specs, plugin_data)
 
-    def bind_data(self, plugin_data):
+    def bind_data(self, data_specs, plugin_data):
 
-        for specs in self.data_specs:
+        for specs in data_specs:
 
             attribute = specs.get('attribute')
 
@@ -46,10 +46,21 @@ class AttributeDataTable(object):
                 except:
                     pass
 
-            setattr(self, attribute, value)
+            self[attribute] = value
 
-    def get(self, attribute, default_value=None):
-        try:
-            return getattr(self, attribute)
-        except AttributeError:
-            return default_value
+    def __getattr__(self, attr):
+        return self.get(attr)
+
+    def __setattr__(self, key, value):
+        self.__setitem__(key, value)
+
+    def __setitem__(self, key, value):
+        super(AttributeDataTable, self).__setitem__(key, value)
+        self.__dict__.update({key: value})
+
+    def __delattr__(self, item):
+        self.__delitem__(item)
+
+    def __delitem__(self, key):
+        super(AttributeDataTable, self).__delitem__(key)
+        del self.__dict__[key]
