@@ -58,6 +58,7 @@ class Plugin(CSMPlugin):
         pkg = self.ctx.load_data('xe_activate_pkg')[0]
         mode = self.ctx.load_data('xe_boot_mode')[0]
         folder = self.ctx.load_data('xe_install_folder')[0]
+        disk = self.ctx.load_data('xe_install_disk')[0]
 
         self.ctx.info("Activate number of RSP = {}".format(rsp_count))
         self.ctx.info("Activate package = {}".format(pkg))
@@ -71,14 +72,14 @@ class Plugin(CSMPlugin):
 
         # issu: need to copy the consolidated image to the installed folder
         if mode == 'issu':
-            cmd = 'copy bootflash:' + pkg + ' ' + folder + '/' + pkg
+            cmd = 'copy ' + disk + pkg + ' ' + folder + '/' + pkg
             install_add_remove(self.ctx, cmd)
-            # package = 'bootflash:' + pkg
+            # package = 'bootflash:' + pkg or 'harddisk:' + pkg
             # remove_exist_image(self.ctx, package)
 
         # subpackage: need to expand the consolidated image to the installed folder
         if mode == 'subpackage':
-            result = expand_subpkgs(self.ctx, rsp_count, folder, pkg)
+            result = expand_subpkgs(self.ctx, rsp_count, disk, folder, pkg)
             if not result:
                 self.ctx.error("Error in extracting sub-images from the consolidated "
                                "image {}".format(pkg))
@@ -99,7 +100,7 @@ class Plugin(CSMPlugin):
             cmd = "no boot system"
             self.ctx.send(cmd)
             if mode == 'consolidated':
-                cmd = "boot system bootflash:" + pkg
+                cmd = "boot system " + disk + pkg
             else:
                 cmd = 'boot system ' + folder + '/packages.conf'
             self.ctx.send(cmd)
@@ -148,7 +149,8 @@ class Plugin(CSMPlugin):
             # mode is consolidated
             output = self.ctx.send('show version | include ^System image')
             if output:
-                m = re.search('"bootflash:(.*)"$', output)
+                p = '"' + disk + '(.*)"$'
+                m = re.search(p, output)
                 if m:
                     image_type = m.group(1)
                     if image_type not in pkg:

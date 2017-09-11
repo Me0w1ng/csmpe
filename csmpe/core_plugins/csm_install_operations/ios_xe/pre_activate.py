@@ -50,18 +50,24 @@ class Plugin(CSMPlugin):
         self.ctx.info("Hardware platform: {}".format(self.ctx._connection.platform))
         self.ctx.info("OS Version: {}".format(self.ctx._connection.os_version))
 
+        output = self.ctx.send('dir harddisk:')
+        if '% Invalid input detected at \'^\' marker' in output:
+            disk = 'bootflash:'
+        else:
+            disk = 'harddisk:'
+        stby_disk = 'stby-' + disk
+        folder = ''
+
         try:
             packages = self.ctx.software_packages
         except AttributeError:
-            self.ctx.warning("No package list provided. Skipping calculation of required free bootflash memory.")
+            self.ctx.warning("No package list provided. Skipping calculation of required free " + disk + " memory.")
             return
 
         pkg = ''.join(packages)
         con_platforms = ['ASR-902', 'ASR-920', 'ASR1002', 'ASR1006']
         sub_platforms = ['ASR-903', 'ASR-907']
         rsp_count = 1
-        folder = 'bootflash:'
-        stby_folder = 'stby-bootflash:'
 
         # check the device type vs the package family
         supported_imgs = {}
@@ -83,10 +89,10 @@ class Plugin(CSMPlugin):
         pkg_family = install_package_family(pkg)
 
         if not pkg_family:
-            self.ctx.info("Private device image: {}".format(pkg))
+            self.ctx.info("Device image: {}".format(pkg))
 
         if pkg_family not in supported_imgs[device_family]:
-            self.ctx.info("Private device image: {} on {}".format(pkg, self.ctx._connection.platform))
+            self.ctx.info("Device image: {} on {}".format(pkg, self.ctx._connection.platform))
 
         # check the RSP type between image and device:
         curr_rsp = None
@@ -111,6 +117,14 @@ class Plugin(CSMPlugin):
             mode = 'consolidated'
         elif self.ctx._connection.platform in sub_platforms:
             mode = 'subpackage'
+        else:
+            self.ctx.error("Unsupported platform: {}".format(self.ctx._connection.platform))
+            return
+
+        total_size = 10000000
+        valid_pkg_conf = False
+        if mode == 'subpackage':
+
             # Determine the number of RSP's in the chassis
             rsp_count = number_of_rsp(self.ctx)
             if rsp_count == 0:
@@ -118,7 +132,7 @@ class Plugin(CSMPlugin):
                 return
 
             # Determine the install folder
-            folder = install_folder(self.ctx)
+            folder = install_folder(self.ctx, disk)
             stby_folder = 'stby-' + folder
 
             # Create the folder if it does not exist
@@ -130,14 +144,7 @@ class Plugin(CSMPlugin):
                 self.ctx.error("Install folder {} creation "
                                "failed", format(stby_folder))
                 return
-        else:
-            self.ctx.error("Unsupported platform: {}".format(self.ctx._connection.platform))
-            return
 
-        total_size = 10000000
-
-        valid_pkg_conf = False
-        if mode == 'subpackage':
             # Check if the packages.conf is valid
             valid_pkg_conf = check_pkg_conf(self.ctx, folder)
 
@@ -147,45 +154,45 @@ class Plugin(CSMPlugin):
             else:
                 self.ctx.warning("Empty or invalid {}/packages.conf".format(folder))
                 self.ctx.warning("Residual packages from previous installations are not "
-                                 "automatically removed from bootflash: / stby-bootflash:.")
+                                 "automatically removed from " + disk + " / " + stby_disk)
                 self.ctx.info("Sub-package mode will be performed to "
                               "activate package = {}".format(pkg))
 
-            cmd = "dir bootflash: | include " + pkg
+            cmd = "dir " + disk + " | include " + pkg
             output = self.ctx.send(cmd)
             if output:
                 m = re.search('-rw-\s+(\d+)\s+', output)
                 if m:
                     total_size += int(m.group(1))
 
-        flash_free = available_space(self.ctx, 'bootflash:')
-        self.ctx.info("Total required / bootflash "
-                      "available: {} / {} bytes".format(total_size, flash_free))
-        if flash_free < total_size:
-            self.ctx.error("Not enough space on bootflash: to install packages. "
-                           "The install process can't proceed.\n"
-                           "Please erase unused images, crashinfo, "
-                           "core files, and tracelogs")
-        else:
-            self.ctx.info("There is enough space on bootflash: to install packages.")
-
-        if rsp_count == 2:
-            if valid_pkg_conf:
-                remove_exist_subpkgs(self.ctx, stby_folder, pkg)
-            stby_free = available_space(self.ctx, 'stby-bootflash:')
-            self.ctx.info("Total required / stby-bootflash "
-                          "available: {} / {} bytes".format(total_size, stby_free))
-            if stby_free < total_size:
-                self.ctx.error("Not enough space on stby-bootflash: to "
-                               "install packages. The install process can't proceed.\n"
-                               "Please erase unused images, crashinfo, core files, "
-                               "and tracelogs")
+            flash_free = available_space(self.ctx, disk)
+            self.ctx.info("Total required / " + disk +
+                          "available: {} / {} bytes".format(total_size, flash_free))
+            if flash_free < total_size:
+                self.ctx.error("Not enough space on " + disk + " to install packages. "
+                               "The install process can't proceed.\n"
+                               "Please erase unused images, crashinfo, "
+                               "core files, and tracelogs")
             else:
-                self.ctx.info("There is enough space on stby-bootflash: to install packages.")
+                self.ctx.info("There is enough space on " + disk + " to install packages.")
+
+            if rsp_count == 2:
+                if valid_pkg_conf:
+                    remove_exist_subpkgs(self.ctx, stby_folder, pkg)
+                stby_free = available_space(self.ctx, stby_disk)
+                self.ctx.info("Total required / " + stby_disk +
+                              "available: {} / {} bytes".format(total_size, stby_free))
+                if stby_free < total_size:
+                    self.ctx.error("Not enough space on " + stby_disk + " to "
+                                   "install packages. The install process can't proceed.\n"
+                                   "Please erase unused images, crashinfo, core files, "
+                                   "and tracelogs")
+                else:
+                    self.ctx.info("There is enough space on " + stby_disk + " to install packages.")
 
         # Determine if ISSU is feasible
         if mode == 'subpackage' and rsp_count == 2 and valid_pkg_conf:
-            if check_issu_readiness(self.ctx, pkg, total_size):
+            if check_issu_readiness(self.ctx, disk, pkg, total_size):
                 mode = 'issu'
                 self.ctx.info("ISSU will be performed to activate package = {}".format(pkg))
 
@@ -198,13 +205,20 @@ class Plugin(CSMPlugin):
 
         self.ctx.info("Activate number of RSP = {}".format(rsp_count))
         self.ctx.info("Activate package = {}".format(pkg))
-        self.ctx.info("Install folder = {}".format(folder))
+        if not folder:
+            self.ctx.info("Install folder = {}".format(disk))
+        else:
+            self.ctx.info("Install folder = {}".format(folder))
         self.ctx.info("Activate package mode = {}".format(mode))
 
         self.ctx.save_data('xe_rsp_count', rsp_count)
         self.ctx.save_data('xe_activate_pkg', pkg)
         self.ctx.save_data('xe_boot_mode', mode)
-        self.ctx.save_data('xe_install_folder', folder)
+        if not folder:
+            self.ctx.save_data('xe_install_folder', disk)
+        else:
+            self.ctx.save_data('xe_install_folder', folder)
+        self.ctx.save_data('xe_install_disk', disk)
         self.ctx.save_data('xe_show_platform', platform_info)
 
         return True

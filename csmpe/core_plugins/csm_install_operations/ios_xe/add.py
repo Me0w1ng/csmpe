@@ -52,16 +52,22 @@ class Plugin(CSMPlugin):
         self.ctx.info("Add Package(s) Pending")
         self.ctx.post_status("Add Package(s) Pending")
 
+        output = self.ctx.send('dir harddisk:')
+        if '% Invalid input detected at \'^\' marker' in output:
+            disk = 'bootflash:'
+        else:
+            disk = 'harddisk:'
+
         for package in packages:
 
-            output = self.ctx.send('dir bootflash:' + package)
+            output = self.ctx.send('dir ' + disk + package)
             m = re.search('No such file', output)
 
             if not m:
-                self.ctx.info("No action: {} exists in bootflash:".format(package))
+                self.ctx.info("No action: {} exists in {}".format(package, disk))
                 continue
 
-            cmd = "copy {}/{} bootflash:".format(server_repository_url, package)
+                cmd = "copy {}/{} {}".format(server_repository_url, package, disk)
 
             install_add_remove(self.ctx, cmd)
 

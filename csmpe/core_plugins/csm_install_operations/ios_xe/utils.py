@@ -72,17 +72,18 @@ def number_of_rsp(ctx):
     return count
 
 
-def install_folder(ctx):
+def install_folder(ctx, disk):
     """
     Determine the image folder
         'File: bootflash:/Image/packages.conf, on: RP0'
         'File: consolidated:packages.conf, on: RP0'
 
     :param   ctx
+    :param   disk ie bootflash: or harddisk:
     :return: the image folder
     """
 
-    folder = 'bootflash:/Image'
+    folder = disk + '/Image'
 
     output = ctx.send("show version running | include packages.conf")
     if output:
@@ -91,7 +92,7 @@ def install_folder(ctx):
             folder = m.group(1)
             folder = re.sub("/$", "", folder)
             if folder == 'consolidated:':
-                folder = 'bootflash:/Image'
+                folder = disk + '/Image'
 
     return folder
 
@@ -129,7 +130,7 @@ def available_space(ctx, device):
     Determine the available space on device such as bootflash or stby-bootflash:
 
     :param ctx:
-    :param device: bootflash / stby-bootflash:
+    :param device: bootflash / stby-bootflash: / harddisk: / stby-harddisk:
     :return: the available space
     """
 
@@ -393,7 +394,7 @@ def remove_exist_subpkgs(ctx, folder, pkg):
     return
 
 
-def check_issu_readiness(ctx, pkg, image_size):
+def check_issu_readiness(ctx, disk, pkg, image_size):
     """
     Expand the consolidated file into the image folder
 
@@ -474,27 +475,28 @@ def check_issu_readiness(ctx, pkg, image_size):
         return False
 
     # check the required disk space for ISSU
-    # bootflash: requires additional 250 MB
-    # stby-bootflash: requires additional 450 MB
+    # disk (bootflash: or harddisk:) requires additional 250 MB
+    # disk (stby-bootflash:  or stby-harddisk:) requires additional 450 MB
     total_size = 250000000 + image_size
-    flash_free = available_space(ctx, 'bootflash:')
+    flash_free = available_space(ctx, disk)
     if flash_free < total_size:
-        ctx.info("Total required / bootflash "
-                 "available: {} / {} bytes".format(total_size, flash_free))
-        ctx.info("Not enough space in bootflash: to perform ISSU. "
+        ctx.info("Total required / " + disk +
+                 " available: {} / {} bytes".format(total_size, flash_free))
+        ctx.info("Not enough space in " + disk + " to perform ISSU. "
                  "Setting the Router to boot in sub-package mode.")
         return False
 
     total_size = 450000000 + image_size
-    flash_free = available_space(ctx, 'stby-bootflash:')
+    stby_disk = 'stby-' + disk
+    flash_free = available_space(ctx, stby_disk)
     if flash_free < total_size:
-        ctx.info("Total required / stby-bootflash "
-                 "available: {} / {} bytes".format(total_size, flash_free))
-        ctx.info("Not enough space in stby-bootflash: to perform ISSU. "
+        ctx.info("Total required / " + stby_disk +
+                 " available: {} / {} bytes".format(total_size, flash_free))
+        ctx.info("Not enough space in " + stby_disk + " to perform ISSU. "
                  "Setting the Router to boot in sub-package mode.")
         return False
     else:
-        ctx.info("There is enough space on bootflash and stby-bootflash to perform ISSU")
+        ctx.info("There is enough space on " + disk + " and " + stby_disk + " to perform ISSU")
 
     # check show redundancy
     cmd = 'show redundancy | include Configured Redundancy Mode'
