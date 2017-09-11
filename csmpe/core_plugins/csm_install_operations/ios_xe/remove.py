@@ -46,23 +46,29 @@ class Plugin(CSMPlugin):
         self.ctx.info("Remove Package(s) Pending")
         self.ctx.post_status("Remove Package(s) Pending")
 
-        for pkg in packages_to_remove:
-            self.ctx.info("Delete package bootflash:{}".format(pkg))
+        output = self.ctx.send('dir harddisk:')
+        if '% Invalid input detected at \'^\' marker' in output:
+            disk = 'bootflash:'
+        else:
+            disk = 'harddisk:'
 
-            package = 'bootflash:' + pkg
+        for pkg in packages_to_remove:
+            self.ctx.info("Delete package {}{}".format(disk, pkg))
+
+            package = disk + pkg
             output = remove_exist_image(self.ctx, package)
 
             if not output:
-                self.ctx.info("bootflash:{} Removal Failed".format(pkg))
+                self.ctx.info("{}{} Removal Failed".format(disk, pkg))
                 break
 
             rsp_count = number_of_rsp(self.ctx)
             if rsp_count == 2:
-                package = 'stby-bootflash:' + pkg
+                package = 'stby-' + disk + pkg
                 output = remove_exist_image(self.ctx, package)
 
                 if not output:
-                    self.ctx.info("stby-bootflash:{} Removal Failed".format(pkg))
+                    self.ctx.info("stby-{}{} Removal Failed".format(disk, pkg))
                     break
         else:
             self.ctx.info("Package(s) Removed Successfully")
