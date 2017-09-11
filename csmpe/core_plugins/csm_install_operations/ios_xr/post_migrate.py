@@ -120,7 +120,7 @@ class Plugin(CSMPlugin):
 
             events = [CONFIRM]
             transitions = [
-                (CONFIRM, [0], None, send_yes, 0),
+                (CONFIRM, [0], -1, send_yes, 0),
             ]
 
             if not self.ctx.run_fsm("RELOAD", "admin hw-module location all reload", events, transitions, timeout=300):
@@ -131,7 +131,7 @@ class Plugin(CSMPlugin):
             self.ctx.disconnect()
             self.ctx.post_status("Waiting for device boot to reconnect")
             self.ctx.info("Waiting for device boot to reconnect")
-            time.sleep(300)
+            time.sleep(180)
             self.ctx.reconnect(max_timeout=3600, force_discovery=True)  # 60 * 60 = 3600
 
         return self._wait_for_reload()
