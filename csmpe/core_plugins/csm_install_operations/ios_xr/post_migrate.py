@@ -108,9 +108,33 @@ class Plugin(CSMPlugin):
 
     def _reload_all(self):
         """Reload the device with 1 hour maximum timeout"""
-        if self.ctx.reload(reload_timeout=3600):
-            return self._wait_for_reload()
-        self.ctx.error("Encountered error when attempting to reload device.")
+        if self.ctx.is_console:
+            if not self.ctx.reload(reload_timeout=3600):
+                self.ctx.error("Encountered error when attempting to reload device.")
+        else:
+            def send_yes(fsm_ctx):
+                fsm_ctx.ctrl.sendline('yes')
+                return True
+
+            CONFIRM = re.compile("Reload hardware module \? \[no,yes\]")
+
+            events = [CONFIRM]
+            transitions = [
+                (CONFIRM, [0], None, send_yes, 0),
+            ]
+
+            if not self.ctx.run_fsm("RELOAD", "admin hw-module location all reload", events, transitions, timeout=300):
+                self.ctx.error("Failed to reload.")
+
+            # wait a little bit before disconnect so that newline character can reach the router
+            time.sleep(5)
+            self.ctx.disconnect()
+            self.ctx.post_status("Waiting for device boot to reconnect")
+            self.ctx.info("Waiting for device boot to reconnect")
+            time.sleep(300)
+            self.ctx.reconnect(max_timeout=3600, force_discovery=True)  # 60 * 60 = 3600
+
+        return self._wait_for_reload()
 
     def _wait_for_reload(self):
         """Wait for all nodes to come up with max timeout as 18 min"""
@@ -125,10 +149,6 @@ class Plugin(CSMPlugin):
         return True
 
     def run(self):
-
-        log_and_post_status(self.ctx, "Waiting for all nodes to come to FINAL Band.")
-        if not wait_for_final_band(self.ctx):
-            self.ctx.warning("Warning: Not all nodes are in FINAL Band after 25 minutes.")
 
         log_and_post_status(self.ctx, "Capturing new IOS XR and Calvados configurations.")
 
