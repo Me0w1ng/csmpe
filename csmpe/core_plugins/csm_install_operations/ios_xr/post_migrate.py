@@ -138,8 +138,6 @@ class Plugin(CSMPlugin):
 
     def _wait_for_reload(self):
         """Wait for all nodes to come up with max timeout as 18 min"""
-        # device.disconnect()
-        # device.reconnect(max_timeout=300)
         log_and_post_status(self.ctx, "Waiting for all nodes to come to FINAL Band.")
         if wait_for_final_band(self.ctx):
             log_and_post_status(self.ctx, "All nodes are in FINAL Band.")
@@ -161,3 +159,5 @@ class Plugin(CSMPlugin):
         # Refresh package and inventory information
         get_package(self.ctx)
         get_inventory(self.ctx)
+
+        return True
