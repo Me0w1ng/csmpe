@@ -105,6 +105,7 @@ setup(
             '{} = csmpe.core_plugins.csm_install_operations.ios_xr.remove_all:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.ios_xr.satellite_transfer:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.ios_xr.satellite_activate:Plugin'.format(uuid4()),
+            '{} = csmpe.core_plugins.csm_install_operations.ios_xr.fpd_upgrade:Plugin'.format(uuid4()),
 
             '{} = csmpe.core_plugins.csm_install_operations.exr.add:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.exr.activate:Plugin'.format(uuid4()),
@@ -112,6 +113,7 @@ setup(
             '{} = csmpe.core_plugins.csm_install_operations.exr.deactivate:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.exr.remove:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.exr.remove_all:Plugin'.format(uuid4()),
+            '{} = csmpe.core_plugins.csm_install_operations.exr.fpd_upgrade:Plugin'.format(uuid4()),
 
             '{} = csmpe.core_plugins.csm_install_operations.ios_xe.add:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.ios_xe.pre_activate:Plugin'.format(uuid4()),
