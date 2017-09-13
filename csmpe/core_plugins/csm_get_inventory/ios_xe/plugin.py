@@ -49,9 +49,10 @@ def get_package(ctx):
     ctx.save_job_data("cli_show_install_committed",
                       ctx.send("show version running | include File:"))
 
-    output = ctx.send('dir harddisk:')
-    if '% Invalid input detected at \'^\' marker' in output:
-        ctx.send('cd bootflash:')
-    else:
+    try:
+        ctx.send('dir harddisk:')
         ctx.send('cd harddisk:')
+    except ctx.CommandError:
+        ctx.send('cd bootflash:')
+
     ctx.save_job_data("cli_show_install_inactive", ctx.send("dir"))
