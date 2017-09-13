@@ -50,11 +50,11 @@ class Plugin(CSMPlugin):
         self.ctx.info("Hardware platform: {}".format(self.ctx._connection.platform))
         self.ctx.info("OS Version: {}".format(self.ctx._connection.os_version))
 
-        output = self.ctx.send('dir harddisk:')
-        if '% Invalid input detected at \'^\' marker' in output:
-            disk = 'bootflash:'
-        else:
+        try:
+            self.ctx.send('dir harddisk:')
             disk = 'harddisk:'
+        except self.ctx.CommandError:
+            disk = 'bootflash:'
         stby_disk = 'stby-' + disk
         folder = ''
 

@@ -46,11 +46,11 @@ class Plugin(CSMPlugin):
         self.ctx.info("Remove Package(s) Pending")
         self.ctx.post_status("Remove Package(s) Pending")
 
-        output = self.ctx.send('dir harddisk:')
-        if '% Invalid input detected at \'^\' marker' in output:
-            disk = 'bootflash:'
-        else:
+        try:
+            self.ctx.send('dir harddisk:')
             disk = 'harddisk:'
+        except self.ctx.CommandError:
+            disk = 'bootflash:'
 
         for pkg in packages_to_remove:
             self.ctx.info("Delete package {}{}".format(disk, pkg))

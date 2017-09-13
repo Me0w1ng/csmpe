@@ -52,11 +52,11 @@ class Plugin(CSMPlugin):
         self.ctx.info("Add Package(s) Pending")
         self.ctx.post_status("Add Package(s) Pending")
 
-        output = self.ctx.send('dir harddisk:')
-        if '% Invalid input detected at \'^\' marker' in output:
-            disk = 'bootflash:'
-        else:
+        try:
+            self.ctx.send('dir harddisk:')
             disk = 'harddisk:'
+        except self.ctx.CommandError:
+            disk = 'bootflash:'
 
         for package in packages:
 
