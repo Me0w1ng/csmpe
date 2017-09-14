@@ -45,7 +45,7 @@ def issu_error_state(fsm_ctx):
 
 
 def issu_connection_closed(fsm_ctx):
-    plugin_ctx.warning("Unexpected connection closed by foreign host during ISSU")
+    plugin_ctx.info("Connection closed by foreign host during ISSU")
     # sleep until both standby and active RSP's are upgraded
     time.sleep(3600)
     return True
