@@ -25,6 +25,7 @@
 # =============================================================================
 
 from csmpe.plugins import CSMPlugin
+from condoor.exceptions import CommandSyntaxError
 
 
 class Plugin(CSMPlugin):
@@ -52,7 +53,7 @@ def get_package(ctx):
     try:
         ctx.send('dir harddisk:')
         ctx.send('cd harddisk:')
-    except ctx.CommandError:
+    except CommandSyntaxError:
         ctx.send('cd bootflash:')
 
     ctx.save_job_data("cli_show_install_inactive", ctx.send("dir"))

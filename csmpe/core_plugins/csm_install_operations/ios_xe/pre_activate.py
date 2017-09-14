@@ -36,6 +36,7 @@ from utils import install_package_family
 from utils import create_folder
 from utils import xe_show_platform
 from utils import check_pkg_conf
+from condoor.exceptions import CommandSyntaxError
 
 
 class Plugin(CSMPlugin):
@@ -53,7 +54,7 @@ class Plugin(CSMPlugin):
         try:
             self.ctx.send('dir harddisk:')
             disk = 'harddisk:'
-        except self.ctx.CommandError:
+        except CommandSyntaxError:
             disk = 'bootflash:'
         stby_disk = 'stby-' + disk
         folder = ''
