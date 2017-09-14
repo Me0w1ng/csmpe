@@ -28,6 +28,7 @@ from csmpe.plugins import CSMPlugin
 from csmpe.core_plugins.csm_get_inventory.ios_xe.plugin import get_package, get_inventory
 from utils import remove_exist_image
 from utils import number_of_rsp
+from condoor.exceptions import CommandSyntaxError
 
 
 class Plugin(CSMPlugin):
@@ -49,7 +50,7 @@ class Plugin(CSMPlugin):
         try:
             self.ctx.send('dir harddisk:')
             disk = 'harddisk:'
-        except self.ctx.CommandError:
+        except CommandSyntaxError:
             disk = 'bootflash:'
 
         for pkg in packages_to_remove:
