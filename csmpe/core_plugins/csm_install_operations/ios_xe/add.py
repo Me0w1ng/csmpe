@@ -68,8 +68,7 @@ class Plugin(CSMPlugin):
                 self.ctx.info("No action: {} exists in {}".format(package, disk))
                 continue
 
-                cmd = "copy {}/{} {}".format(server_repository_url, package, disk)
-
+            cmd = "copy {}/{} {}".format(server_repository_url, package, disk)
             install_add_remove(self.ctx, cmd)
 
         self.ctx.info("Package(s) Added Successfully")
