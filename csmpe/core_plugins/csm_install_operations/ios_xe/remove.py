@@ -27,7 +27,6 @@
 from csmpe.plugins import CSMPlugin
 from csmpe.core_plugins.csm_get_inventory.ios_xe.plugin import get_package, get_inventory
 from utils import remove_exist_image
-from utils import number_of_rsp
 from condoor.exceptions import CommandSyntaxError
 
 
@@ -63,14 +62,18 @@ class Plugin(CSMPlugin):
                 self.ctx.info("{}{} Removal Failed".format(disk, pkg))
                 break
 
-            rsp_count = number_of_rsp(self.ctx)
-            if rsp_count == 2:
-                package = 'stby-' + disk + pkg
+            package = 'stby-' + disk + pkg
+            cmd = 'dir ' + package
+            try:
+                output = self.ctx.send(cmd)
+                if 'No such file or directory' in output:
+                    continue
                 output = remove_exist_image(self.ctx, package)
-
                 if not output:
-                    self.ctx.info("stby-{}{} Removal Failed".format(disk, pkg))
+                    self.ctx.warning("stby-{}{} Removal Failed".format(disk, pkg))
                     break
+            except CommandSyntaxError:
+                continue
         else:
             self.ctx.info("Package(s) Removed Successfully")
             # Refresh package and inventory information

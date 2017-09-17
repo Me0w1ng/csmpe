@@ -58,6 +58,7 @@ class Plugin(CSMPlugin):
             disk = 'harddisk:'
         except CommandSyntaxError:
             disk = 'bootflash:'
+        stby_disk = 'stby-' + disk
 
         for package in packages:
 
@@ -70,6 +71,14 @@ class Plugin(CSMPlugin):
 
             cmd = "copy {}/{} {}".format(server_repository_url, package, disk)
             install_add_remove(self.ctx, cmd)
+
+            cmd = "dir " + stby_disk
+            try:
+                self.ctx.send(cmd)
+                cmd = "copy {}{} {}{}".format(disk, package, stby_disk, package)
+                install_add_remove(self.ctx, cmd)
+            except CommandSyntaxError:
+                continue
 
         self.ctx.info("Package(s) Added Successfully")
 
