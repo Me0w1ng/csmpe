@@ -59,7 +59,7 @@ def number_of_rsp(ctx):
         return count
 
     # show platform can take more than 1 minute after router reload. Issue No. 47
-    output = ctx.send("show platform | count RSP", timeout=600)
+    output = ctx.send("show platform | count RP|RSP", timeout=600)
     if output:
         m = re.search('Number.*= (\d+)', output)
         if m:
