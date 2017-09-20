@@ -227,18 +227,23 @@ def watch_install(ctx, cmd, op_id=0):
             ctx.error(output)
             return
 
-    result = re.search(install_method, output)
+    # it produces a list of all captured groups matching the pattern, i.e.:
+    # ['Parallel Process Restart', 'Parallel Process Restart', 'Parallel Reload', 'Parallel Process Restart' ....]
+    result = re.findall(install_method, output)
     if result:
-        restart_type = result.group(1).strip()
-        ctx.info("{} Pending".format(restart_type))
-        if restart_type == "Parallel Reload":
+        if "Parallel Reload" in result:
+            ctx.info("Parallel Reload Pending")
             if re.search(completed_with_failure, output):
                 ctx.info("Install completed with failure, going for reload")
             elif re.search(success_oper, output):
                 ctx.info("Install completed successfully, going for reload")
             return wait_for_reload(ctx)
-        elif restart_type == "Parallel Process Restart":
+        elif "Parallel Process Restart" in result:
+            ctx.info("Parallel Process Restart Pending")
+            ctx.info("Install completed successfully, going for process restart")
             return True
+        else:
+            ctx.warning("No Install Method detected.")
 
     log_install_errors(ctx, output)
     return False
