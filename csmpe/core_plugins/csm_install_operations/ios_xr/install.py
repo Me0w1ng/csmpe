@@ -229,7 +229,7 @@ def watch_install(ctx, cmd, op_id=0):
 
     """
     Command example:
-    
+
     admin show install log 151 detail
 
 Install operation 151 started by user 'root' via CLI at 04:42:17 PST Sun Sep 20 1987.
