@@ -127,6 +127,7 @@ def watch_operation(ctx, op_id=0):
     last_status = None
     finish = False
     time_tried = 0
+    op_id = str(op_id)
     while not finish:
         try:
             try:
