@@ -28,7 +28,7 @@ from functools import partial
 import itertools
 import re
 import time
-from condoor import ConnectionError, CommandError
+from condoor import ConnectionError, CommandError, CommandSyntaxError
 from csmpe.core_plugins.csm_node_status_check.exr.plugin_lib import parse_show_platform
 from csmpe.core_plugins.csm_install_operations.actions import a_error
 
@@ -137,7 +137,12 @@ def watch_operation(ctx, op_id=0):
                 pass
 
             message = ""
-            output = ctx.send(cmd_show_install_request, timeout=300)
+            try:
+                output = ctx.send(cmd_show_install_request, timeout=300)
+            except (CommandError, CommandSyntaxError) as e:
+                ctx.info("{} received an error".format(cmd_show_install_request))
+                time.sleep(10)
+                output = ctx.send(cmd_show_install_request, timeout=300)
             if op_id in output:
                 result = re.search(op_progress, output)
                 if result:
@@ -592,7 +597,12 @@ def observe_install_remove_all(ctx, cmd, prompt):
                 pass
 
             message = ""
-            output = ctx.send(cmd_show_install_request, timeout=300)
+            try:
+                output = ctx.send(cmd_show_install_request, timeout=300)
+            except (CommandError, CommandSyntaxError) as e:
+                ctx.info("{} received an error".format(cmd_show_install_request))
+                time.sleep(10)
+                output = ctx.send(cmd_show_install_request, timeout=300)
             if op_id in output:
                 result = re.search(op_progress, output)
                 if result:
