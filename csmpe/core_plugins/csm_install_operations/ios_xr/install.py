@@ -227,6 +227,121 @@ def watch_install(ctx, cmd, op_id=0):
             ctx.error(output)
             return
 
+    """
+    Command example:
+    
+    admin show install log 151 detail
+
+Install operation 151 started by user 'root' via CLI at 04:42:17 PST Sun Sep 20 1987.
+(admin) install activate disk0:asr9k-mini-px-6.1.3 disk0:asr9k-services-px-6.1.3 disk0:asr9k-doc-px-6.1.3 disk0:asr9k-video-px-6.1.3 disk0:asr9k-fpd-px-6.1.3 disk0:asr9k-mpls-px-6.1.3 disk0:asr9k-mcast-px-6.1.3 disk0:asr9k-px-5.3.3.CSCux41951-1.0.0 disk0:asr9k-mgbl-px-6.1.3 disk0:asr9k-optic-px-6.1.3 disk0:asr9k-k9sec-px-6.1.3 disk0:asr9k-9000v-nV-px-6.1.3 disk0:asr9k-bng-px-6.1.3 disk0:asr9k-li-px-6.1.3 disk0:asr9k-services-infra-6.1.3 disk0:asr9k-px-5.3.3.CSCux68183-1.0.0 prompt-level none
+Install operation 151 completed successfully at 04:46:35 PST Sun Sep 20 1987.
+
+Install logs:
+    Install operation 151 '(admin) install activate disk0:asr9k-mini-px-6.1.3 disk0:asr9k-services-px-6.1.3 disk0:asr9k-doc-px-6.1.3 disk0:asr9k-video-px-6.1.3 disk0:asr9k-fpd-px-6.1.3 disk0:asr9k-mpls-px-6.1.3 disk0:asr9k-mcast-px-6.1.3 disk0:asr9k-px-5.3.3.CSCux41951-1.0.0 disk0:asr9k-mgbl-px-6.1.3 disk0:asr9k-optic-px-6.1.3 disk0:asr9k-k9sec-px-6.1.3 disk0:asr9k-9000v-nV-px-6.1.3 disk0:asr9k-bng-px-6.1.3 disk0:asr9k-li-px-6.1.3 disk0:asr9k-services-infra-6.1.3 disk0:asr9k-px-5.3.3.CSCux68183-1.0.0
+    prompt-level none' started by user 'root' via CLI at 04:42:17 PST Sun Sep 20 1987.
+    Info:     After this install operation, some SMU package(s) are fully/partially superceded. The fully superseded SMUs can found using CLI: 'show install superceded'. If found those can be deactivated using CLI: 'install deactivate superceded'.
+    Warning:  There is no valid license for the following package:
+    Warning:
+    Warning:      disk0:asr9k-li-6.1.3
+    Warning:
+    Info:     The following sequence of sub-operations has been determined to minimize any impact:
+    Info:
+    Info:     Sub-operation 1:
+    Info:         Install Method: Parallel Process Restart
+    Info:         asr9k-px-5.3.3.CSCux41951-1.0.0
+    Info:
+    Info:     Sub-operation 2:
+    Info:         Install Method: Parallel Process Restart
+    Info:         asr9k-px-5.3.3.CSCux68183-1.0.0
+    Info:
+    Info:     Sub-operation 3:
+    Info:         Install Method: Parallel Roeload
+    Info:         asr9k-services-infra-6.1.3
+    Info:         asr9k-li-px-6.1.3
+    Info:         asr9k-bng-px-6.1.3
+    Info:         asr9k-9000v-nV-px-6.1.3
+    Info:         asr9k-k9sec-px-6.1.3
+    Info:         asr9k-optic-px-6.1.3
+    Info:         asr9k-mgbl-px-6.1.3
+    Info:         asr9k-mcast-px-6.1.3
+    Info:         asr9k-mpls-px-6.1.3
+    Info:         asr9k-fpd-px-6.1.3
+    Info:         asr9k-video-px-6.1.3
+    Info:         asr9k-doc-px-6.1.3
+    Info:         asr9k-services-px-6.1.3
+    Info:         asr9k-mini-px-6.1.3
+    Info:
+    'prompt-level none' specified. Proceeding with operation.
+    Info:     This operation will reload the following nodes in parallel:
+    Info:         0/RSP0/CPU0 (RP) (SDR: Owner)
+    Info:         0/RSP1/CPU0 (RP) (SDR: Owner)
+    Info:         0/0/CPU0 (LC) (SDR: Owner)
+    Info:         0/1/CPU0 (LC) (SDR: Owner)
+    Info:         0/3/CPU0 (LC) (SDR: Owner)
+    Info:         0/5/CPU0 (LC) (SDR: Owner)
+    Info:         0/6/CPU0 (LC) (SDR: Owner)
+    Install operation 151: load phase started at 04:43:32 PST Sun Sep 20 1987.
+    Install operation 151: load phase started at 04:44:45 PST Sun Sep 20 1987.
+    Install operation 151: load phase started at 04:45:59 PST Sun Sep 20 1987.
+    Info:     The changes made to software configurations will not be persistent across system reloads. Use the command '(admin) install commit' to make changes persistent.
+    Info:     Please verify that the system is consistent following the software change using the following commands:
+    Info:         show system verify
+    Info:         install verify packages
+    Install operation 151 completed successfully at 04:46:35 PST Sun Sep 20 1987.
+
+Summary:
+    Sub-operation 1:
+    Started at: 04:43:32 PST Sun Sep 20 1987
+    Install method: Parallel Process Restart
+    Summary of changes on nodes 0/RSP0/CPU0, 0/RSP1/CPU0:
+        Activated:    asr9k-fwding-5.3.3.CSCux41951-1.0.0
+        Impacted:     iosxr-mcast-5.3.3
+        No processes affected
+
+    Summary of changes on node 0/0/CPU0:
+        Activated:    asr9k-fwding-5.3.3.CSCux41951-1.0.0
+        Impacted:     asr9k-fwding-5.3.3
+                      asr9k-li-5.3.3
+            1 asr9k-li processes affected (0 updated, 0 added, 0 removed, 1 impacted)
+            1 asr9k-fwding processes affected (0 updated, 0 added, 0 removed, 1 impacted)
+
+    Summary of changes on node 0/1/CPU0:
+        Activated:    asr9k-fwding-5.3.3.CSCux41951-1.0.0
+        Impacted:     asr9k-fwding-5.3.3
+                      asr9k-li-5.3.3
+            1 asr9k-li processes affected (0 updated, 0 added, 0 removed, 1 impacted)
+            1 asr9k-fwding processes affected (0 updated, 0 added, 0 removed, 1 impacted)
+
+    Summary of changes on nodes 0/3/CPU0, 0/5/CPU0:
+        Activated:    asr9k-fwding-5.3.3.CSCux41951-1.0.0
+        Impacted:     asr9k-fwding-5.3.3
+                      asr9k-li-5.3.3
+            1 asr9k-li processes affected (0 updated, 0 added, 0 removed, 1 impacted)
+            1 asr9k-fwding processes affected (0 updated, 0 added, 0 removed, 1 impacted)
+
+    Summary of changes on node 0/6/CPU0:
+        Activated:    asr9k-fwding-5.3.3.CSCux41951-1.0.0
+        Impacted:     asr9k-fwding-5.3.3
+                      asr9k-li-5.3.3
+            1 asr9k-li processes affected (0 updated, 0 added, 0 removed, 1 impacted)
+            1 asr9k-fwding processes affected (0 updated, 0 added, 0 removed, 1 impacted)
+
+    Sub-operation 2:
+    Started at: 04:44:45 PST Sun Sep 20 1987
+    Install method: Parallel Process Restart
+    Summary of changes on nodes 0/RSP0/CPU0, 0/RSP1/CPU0:
+        Activated:    iosxr-ce-5.3.3.CSCux68183-1.0.0
+            1 iosxr-ce-5.3.3.CSCux68183 processes affected (1 updated, 0 added, 0 removed, 0 impacted)
+
+[snip]
+    Sub-operation 3:
+    Started at: 04:45:58 PST Sun Sep 20 1987
+    Install method: Parallel Reoload
+    Summary of changes on nodes 0/RSP0/CPU0, 0/RSP1/CPU0:
+        Activated:    asr9K-doc-supp-6.1.3
+                      asr9k-9000v-nV-supp-6.1.3
+[snip]
+    """
     # it produces a list of all captured groups matching the pattern, i.e.:
     # ['Parallel Process Restart', 'Parallel Process Restart', 'Parallel Reload', 'Parallel Process Restart' ....]
     result = re.findall(install_method, output)
