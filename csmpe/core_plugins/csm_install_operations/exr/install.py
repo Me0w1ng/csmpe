@@ -204,7 +204,8 @@ def wait_for_reload(ctx):
         ctx.disconnect()
         ctx.post_status("Waiting for device boot to reconnect")
         ctx.info("Waiting for device boot to reconnect")
-        time.sleep(60)
+        # it may take up to 10 minutes before Fretta actually reboots
+        time.sleep(600)
         ctx.reconnect(max_timeout=3600, force_discovery=True)  # 60 * 60 = 3600
 
     else:
