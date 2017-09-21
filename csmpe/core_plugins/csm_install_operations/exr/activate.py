@@ -29,7 +29,6 @@ from package_lib import SoftwarePackage
 from csmpe.plugins import CSMPlugin
 from install import install_activate_deactivate
 from install import send_admin_cmd
-from install import check_ncs6k_release, check_ncs4k_release
 from csmpe.core_plugins.csm_get_inventory.exr.plugin import get_package, get_inventory
 from csmpe.core_plugins.csm_install_operations.utils import update_device_info_udi, get_cmd_for_install_activate_deactivate
 
@@ -37,7 +36,7 @@ from csmpe.core_plugins.csm_install_operations.utils import update_device_info_u
 class Plugin(CSMPlugin):
     """This plugin Activates packages on the device."""
     name = "Install Activate Plugin"
-    platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
+    platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS540', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
     phases = {'Activate'}
     os = {'eXR'}
 
@@ -99,9 +98,6 @@ class Plugin(CSMPlugin):
         """
         Performs install activate operation
         """
-        check_ncs6k_release(self.ctx)
-        check_ncs4k_release(self.ctx)
-
         cmd = get_cmd_for_install_activate_deactivate(self.ctx, self.get_tobe_activated_pkg_list,
                                                       cmd_with_package_names='install activate {}',
                                                       cmd_with_operation_id='install activate id {}')

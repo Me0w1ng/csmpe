@@ -31,7 +31,8 @@ from csmpe.plugins import CSMPlugin
 class Plugin(CSMPlugin):
     """This plugin retrieves software information from the device."""
     name = "Get Inventory Plugin"
-    platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
+    platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS540',
+                 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
     phases = {'Get-Inventory'}
     os = {'eXR'}
 
@@ -43,7 +44,7 @@ class Plugin(CSMPlugin):
 def get_inventory(ctx):
     # Save the output of "show inventory" in admin mode
     output = get_output_in_admin_mode(ctx, "show inventory")
-    ctx.save_data("cli_show_inventory", output)
+    ctx.save_job_data("cli_show_inventory", output)
 
 
 def get_package(ctx):
@@ -52,20 +53,20 @@ def get_package(ctx):
     """
 
     # Get the admin packages
-    ctx.save_data("cli_admin_show_install_inactive",
-                  get_output_in_admin_mode(ctx, "show install inactive"))
-    ctx.save_data("cli_admin_show_install_active",
-                  get_output_in_admin_mode(ctx, "show install active"))
-    ctx.save_data("cli_admin_show_install_committed",
-                  get_output_in_admin_mode(ctx, "show install committed"))
+    ctx.save_job_data("cli_admin_show_install_inactive",
+                      get_output_in_admin_mode(ctx, "show install inactive"))
+    ctx.save_job_data("cli_admin_show_install_active",
+                      get_output_in_admin_mode(ctx, "show install active"))
+    ctx.save_job_data("cli_admin_show_install_committed",
+                      get_output_in_admin_mode(ctx, "show install committed"))
 
     # Get the non-admin packages
-    ctx.save_data("cli_show_install_inactive",
-                  get_output_in_admin_mode(ctx, "show install inactive", admin=False))
-    ctx.save_data("cli_show_install_active",
-                  get_output_in_admin_mode(ctx, "show install active", admin=False))
-    ctx.save_data("cli_show_install_committed",
-                  get_output_in_admin_mode(ctx, "show install committed", admin=False))
+    ctx.save_job_data("cli_show_install_inactive",
+                      get_output_in_admin_mode(ctx, "show install inactive", admin=False))
+    ctx.save_job_data("cli_show_install_active",
+                      get_output_in_admin_mode(ctx, "show install active", admin=False))
+    ctx.save_job_data("cli_show_install_committed",
+                      get_output_in_admin_mode(ctx, "show install committed", admin=False))
 
 
 def get_output_in_admin_mode(ctx, cmd, admin=True):

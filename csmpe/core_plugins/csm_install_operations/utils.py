@@ -81,3 +81,7 @@ def get_cmd_for_install_activate_deactivate(ctx, func_get_pkg_list,
     else:
         ctx.info("Using the operation ID: {}".format(operation_id))
         return cmd_with_operation_id.format(operation_id)
+
+
+def replace_multiple(text, dictionary):
+    return reduce(lambda a, kv: a.replace(*kv), dictionary.iteritems(), text)

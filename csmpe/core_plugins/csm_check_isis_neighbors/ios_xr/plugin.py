@@ -33,7 +33,7 @@ from condoor.exceptions import CommandSyntaxError
 class Plugin(CSMPlugin):
     """This plugin checks the ISIS neighbor."""
     name = "ISIS Neighbor Check Plugin"
-    platforms = {'ASR9K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
+    platforms = {'ASR9K', 'XR12K', 'CRS', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS540', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
     phases = {'Pre-Upgrade', 'Post-Upgrade'}
 
     def run(self):

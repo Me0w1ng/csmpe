@@ -45,7 +45,7 @@ def issu_error_state(fsm_ctx):
 
 
 def issu_connection_closed(fsm_ctx):
-    plugin_ctx.warning("Unexpected connection closed by foreign host during ISSU")
+    plugin_ctx.info("Connection closed by foreign host during ISSU")
     # sleep until both standby and active RSP's are upgraded
     time.sleep(3600)
     return True
@@ -161,7 +161,7 @@ def expand_subpkgs_exec(ctx, folder, pkg):
 
     :param: ctx
     :param: folder
-    :param: pkg ie bootflash:asr900*.bin
+    :param: pkg ie bootflash:asr900*.bin or harddisk:asr1000*.bin
     :return: True or False
     """
     pkg_conf = folder + '/packages.conf'
@@ -186,7 +186,7 @@ def expand_subpkgs_exec(ctx, folder, pkg):
     return True
 
 
-def expand_subpkgs(ctx, rsp_count, folder, pkg):
+def expand_subpkgs(ctx, rsp_count, disk, folder, pkg):
     """
     Expand the consolidated file into the image folder
 
@@ -196,7 +196,7 @@ def expand_subpkgs(ctx, rsp_count, folder, pkg):
     :return: True or False
     """
 
-    package = 'bootflash:' + pkg
+    package = disk + pkg
     result = expand_subpkgs_exec(ctx, folder, package)
     if not result:
         ctx.error('Expanding {} into {} has encountered '
@@ -204,7 +204,7 @@ def expand_subpkgs(ctx, rsp_count, folder, pkg):
         return False
 
     if rsp_count == 2:
-        cmd = 'copy bootflash:' + pkg + ' ' + 'stby-bootflash:' + pkg
+        cmd = 'copy ' + disk + pkg + ' ' + 'stby-' + disk + pkg
         install_add_remove(ctx, cmd)
 
         package = 'stby-' + package

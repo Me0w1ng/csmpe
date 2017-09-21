@@ -25,12 +25,13 @@
 # =============================================================================
 
 from csmpe.plugins import CSMPlugin
+from condoor.exceptions import CommandSyntaxError
 
 
 class Plugin(CSMPlugin):
     """This plugin retrieves software information from the device."""
     name = "Get Inventory Plugin"
-    platforms = {'ASR900'}
+    platforms = {'ASR900', 'ASR1K'}
     phases = {'Get-Inventory'}
     os = {'XE'}
 
@@ -42,12 +43,17 @@ class Plugin(CSMPlugin):
 def get_inventory(ctx):
     # Save the output of "show inventory"
     output = ctx.send("show inventory")
-    ctx.save_data("cli_show_inventory", output)
+    ctx.save_job_data("cli_show_inventory", output)
 
 
 def get_package(ctx):
-    ctx.save_data("cli_show_install_committed",
-                  ctx.send("show version running | include File:"))
+    ctx.save_job_data("cli_show_install_committed",
+                      ctx.send("show version running | include File:"))
 
-    ctx.send('cd bootflash:')
-    ctx.save_data("cli_show_install_inactive", ctx.send("dir"))
+    try:
+        ctx.send('dir harddisk:')
+        ctx.send('cd harddisk:')
+    except CommandSyntaxError:
+        ctx.send('cd bootflash:')
+
+    ctx.save_job_data("cli_show_install_inactive", ctx.send("dir"))

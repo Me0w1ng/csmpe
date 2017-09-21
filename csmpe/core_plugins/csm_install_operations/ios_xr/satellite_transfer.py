@@ -1,8 +1,9 @@
 # =============================================================================
-# asr9k
 #
-# Copyright (c)  2016, Cisco Systems
+# Copyright (c) 2016, Cisco Systems
 # All rights reserved.
+#
+# # Author: Klaudiusz Staniek
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -24,36 +25,44 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
+
 from csmpe.plugins import CSMPlugin
-from plugin_lib import parse_show_platform
+from install import install_satellite_transfer
+from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_satellite
 
 
 class Plugin(CSMPlugin):
-    """This plugin checks the states of all nodes"""
-    name = "Node Status Check Plugin"
-    platforms = {'ASR900', 'ASR1K'}
-    phases = {'Pre-Upgrade', 'Post-Upgrade'}
-    os = {'XE'}
+    """This plugin removes all inactive packages from the device."""
+    name = "Satellite-Transfer Plugin"
+    platforms = {'ASR9K'}
+    phases = {'Satellite-Transfer'}
+    os = {'XR'}
 
     def run(self):
-        # show platform can take more than 1 minute after router reload. Issue No. 47
-        output = self.ctx.send("show platform", timeout=600)
-        inventory = parse_show_platform(self.ctx, output)
-        valid_state = [
-            'ok',
-            'ok, active',
-            'ok, standby',
-            'ps, fail',
-            'out of service',
-            'N/A'
-        ]
-        for key, value in inventory.items():
-            if value['state'] not in valid_state:
-                self.ctx.warning("{}={}: {}".format(key, value, "Not in valid state for upgrade"))
-                break
-        else:
-            self.ctx.save_data("node_status", inventory)
-            self.ctx.info("All nodes in valid state for upgrade")
-            return True
 
-        self.ctx.error("Not all nodes in correct state. Upgrade can not proceed")
+        """
+        Produces a list of satellite ID that needs transfer
+
+        RP/0/RP0/CPU0:AGN_PE_11_9k#install nv satellite 160,163 transfer
+        """
+        satellite_ids = self.ctx.load_job_data('selected_satellite_ids')
+
+        # ctype = type(satellite_ids[0])
+        # self.ctx.info("ctype = {}".format(ctype))
+        self.ctx.info("satellite_ids = {}".format(satellite_ids[0]))
+
+        self.ctx.info("Satellite-Transfer Pending")
+        self.ctx.post_status("Satellite-Transfer Pending")
+
+        result = install_satellite_transfer(self.ctx, satellite_ids[0])
+
+        self.ctx.info("Refresh satellite inventory information")
+        self.ctx.post_status("Refresh satellite inventory information")
+
+        # Refresh satellite inventory information
+        get_satellite(self.ctx)
+
+        if result:
+            self.ctx.info("Satellite-Transfer completed")
+        else:
+            self.ctx.error("Satellite-Transfer failed to complete.")

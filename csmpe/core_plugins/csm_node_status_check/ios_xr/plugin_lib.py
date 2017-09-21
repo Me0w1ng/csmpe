@@ -32,17 +32,6 @@ def parse_show_platform(ctx, output):
     :return: dictionary of nodes
 
     ASR9K:
-    Node            Type                      State            Config State
-    -----------------------------------------------------------------------------
-    0/RSP0/CPU0     A9K-RSP440-SE(Active)     IOS XR RUN       PWR,NSHUT,MON
-    0/FT0/SP        ASR-9006-FAN              READY
-    0/1/CPU0        A9K-40GE-E                IOS XR RUN       PWR,NSHUT,MON
-    0/2/CPU0        A9K-MOD80-SE              UNPOWERED        NPWR,NSHUT,MON
-    0/3/CPU0        A9K-8T-L                  UNPOWERED        NPWR,NSHUT,MON
-    0/PS0/M0/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
-    0/PS0/M1/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
-
-    ASR9K:
     RP/0/RSP0/CPU0:PE4#admin show platform
     Node            Type                      State            Config State
     -----------------------------------------------------------------------------
@@ -54,6 +43,22 @@ def parse_show_platform(ctx, output):
     0/PS0/M0/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
     0/PS0/M1/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
     0/PS0/M2/SP     A9K-3KW-AC                READY            PWR,NSHUT,MON
+
+    XR12K:
+    RP/0/7/CPU0:GSR-PE19#admin show platform
+    Node		    Type		    PLIM		    State		    Config State
+    -----------------------------------------------------------------------------
+    0/0/CPU0        L3LC Eng 5      Jacket Card     IOS XR RUN      PWR,NSHUT,MON
+    0/1/CPU0        L3LC Eng 5+     Jacket Card     IOS XR RUN      PWR,NSHUT,MON
+    0/1/0           SPA             SPA-10X1GE-V2   READY           PWR,NSHUT
+    0/1/1           SPA             SPA-1XCHOC48/DS READY           PWR,NSHUT
+    0/3/CPU0        L3LC Eng 5+     Jacket Card     IOS XR RUN      PWR,NSHUT,MON
+    0/3/0           SPA             SPA-10X1GE-V2   READY           PWR,NSHUT
+    0/5/CPU0        L3LC Eng 3      OC12-ATM-4      IOS XR RUN      PWR,NSHUT,MON
+    0/6/CPU0        L3LC Eng 5      Jacket Card     IOS XR RUN      PWR,NSHUT,MON
+    0/17/CPU0       CSC_OC192(P)    N/A             PWD             PWR,NSHUT,MON
+    0/18/CPU0       SFC_OC192       N/A             PWD             PWR,NSHUT,MON
+    0/19/CPU0       SFC_OC192       N/A             PWD             PWR,NSHUT,MON
 
     CRS:
     Node          Type              PLIM               State           Config State
@@ -75,48 +80,30 @@ def parse_show_platform(ctx, output):
     """
     host = ctx.get_host
     inventory = {}
+
+    # Use the tuple to record the begin and end positions of each column.  Unfortunately,
+    # we cannot rely on the header line as it contains a mixed of space and tab characters.
     if host.family == 'ASR9K':
-        sl = ['Node', 'Type', 'State', 'Config State']
+        dl = {'Node': (0, 16), 'Type': (16, 42), 'State': (42, 59), 'Config State': (59, 77)}
     elif host.family == 'CRS':
-        sl = ['Node', 'Type', 'PLIM', 'State', 'Config State']
+        dl = {'Node': (0, 14), 'Type': (14, 32), 'State': (51, 67), 'Config State': (67, 82)}
+    elif host.family == 'XR12K':
+        dl = {'Node': (0, 16), 'Type': (16, 32), 'State': (47, 64), 'Config State': (64, 79)}
     else:
         ctx.warning("Unsupported platform {}".format(host.family))
         return None
-    dl = {}
 
     lines = output.split('\n')
     lines = [x for x in lines if x]
     for line in lines:
-        line = line.strip()
-
-        if line[0:4] == 'Node':
-            if '\t' in line and ctx.family == 'ASR9K':
-                dl['Node'] = 0
-                dl['Type'] = 16
-                dl['State'] = 42
-                dl['Config State'] = 59
-            else:
-                for s in sl:
-                    n = line.find(s)
-                    if n != -1:
-                        dl[s] = n
-                    else:
-                        ctx.warning("unrecognized show platform header {}".format(line))
-                        return None
-            continue
-
         if line[0].isdigit():
-            node = line[:dl['Type']].strip()
+            node = line[dl['Node'][0]:dl['Node'][1]].strip()
             if not re.search('CPU\d+$', node):
                 continue
 
-            if host.family == 'ASR9K':
-                node_type = line[dl['Type']:dl['State']].strip()
-            else:   # CRS
-                node_type = line[dl['Type']:dl['PLIM']].strip()
-
-            state = line[dl['State']:dl['Config State']].strip()
-            config_state = line[dl['Config State']:].strip()
+            node_type = line[dl['Type'][0]:dl['Type'][1]].strip()
+            state = line[dl['State'][0]:dl['State'][1]].strip()
+            config_state = line[dl['Config State'][0]:dl['Config State'][1]].strip()
 
             entry = {
                 'type': node_type,
