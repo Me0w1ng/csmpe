@@ -31,7 +31,8 @@ from csmpe.plugins import CSMPlugin
 class Plugin(CSMPlugin):
     """This plugin retrieves software information from the device."""
     name = "Get Inventory Plugin"
-    platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
+    platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS540',
+                 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
     phases = {'Get-Inventory'}
     os = {'eXR'}
 

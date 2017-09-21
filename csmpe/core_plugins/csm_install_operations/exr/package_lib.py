@@ -134,16 +134,16 @@ ncs5500-parser-1.0.0.0-r601.x86_64.rpm-6.0.1                  ncs5500-parser-1.0
 from csmpe.core_plugins.csm_install_operations.utils import replace_multiple
 import re
 
-platforms = ['asr9k', 'ncs1k', 'ncs4k', 'ncs5k', 'ncs5500', 'ncs6k', 'xrv9k', 'iosxrv']
+platforms = ['asr9k', 'ncs1k', 'ncs4k', 'ncs5k', 'ncs540', 'ncs5500', 'ncs6k', 'xrv9k', 'iosxrv']
 
 
-version_dict = {"asr9k ncs1k ncs4k ncs5k ncs5500 ncs6k xrv9k iosxrv":  # r61117I or r611 or 6.1.1.17I or 6.1.1
+version_dict = {"asr9k ncs1k ncs4k ncs5k ncs540 ncs5500 ncs6k xrv9k iosxrv":  # r61117I or r611 or 6.1.1.17I or 6.1.1
                 re.compile("(?P<VERSION>(r\d+\d+\d+(\d+\w+)?)|(\d+\.\d+\.\d+(\.\d+\w+)?)(?!\.\d)(?!-))")
                 }
 
 smu_re = re.compile("(?P<SMU>CSC[a-z]{2}\d{5})")
 
-subversion_dict = {"asr9k ncs1k ncs4k ncs5k ncs5500 ncs6k xrv9k iosxrv":
+subversion_dict = {"asr9k ncs1k ncs4k ncs5k ncs540 ncs5500 ncs6k xrv9k iosxrv":
                    re.compile("-(?P<SUBVERSION>\d+\.\d+\.\d+\.\d+)-")
                    }
 
