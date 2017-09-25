@@ -36,7 +36,7 @@ from csmpe.plugins import CSMPlugin
 from csmpe.core_plugins.csm_install_operations.utils import ServerType, is_empty, concatenate_dirs
 from simple_server_helper import TFTPServer, FTPServer, SFTPServer
 from hardware_audit import Plugin as HardwareAuditPlugin
-from migration_lib import log_and_post_status
+from migration_lib import log_and_post_status, compare_version_numbers
 from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_inventory
 
 MINIMUM_RELEASE_VERSION_FOR_MIGRATION = "6.1.3"
@@ -270,7 +270,7 @@ class Plugin(CSMPlugin):
                                                                                  dest_files[x]))
 
             if not self.ctx.run_fsm("Copy file from tftp/ftp to device", command, events, transitions,
-                                    timeout=80, max_transitions=60):
+                                    timeout=80, max_transitions=200):
                 self.ctx.error("Error copying {}/{} to {} on device".format(repository,
                                                                             source_filenames[x],
                                                                             dest_files[x]))
@@ -643,7 +643,7 @@ class Plugin(CSMPlugin):
                                     events, transitions, timeout=80):
                 self.ctx.error("Error while upgrading FPD subtype {}. Please check session.log".format(fpdtype))
 
-            fpd_log = self.ctx.send("show log | include fpd", timeout=1200)
+            fpd_log = self.ctx.send("show log | include fpd", timeout=1800)
 
             for location in subtype_to_locations_need_upgrade[fpdtype]:
 
@@ -908,7 +908,7 @@ class Plugin(CSMPlugin):
 
         exr_image, crypto_file = self._get_packages(packages)
 
-        version_match = re.findall("(\d+\.\d+)\.\d+", exr_image)
+        version_match = re.findall("\d+\.\d+\.\d+", exr_image)
         if version_match:
             exr_version = version_match[0]
         else:
@@ -943,7 +943,7 @@ class Plugin(CSMPlugin):
 
         version = match_version.group(1)
 
-        if version < MINIMUM_RELEASE_VERSION_FOR_MIGRATION:
+        if compare_version_numbers(version, MINIMUM_RELEASE_VERSION_FOR_MIGRATION) < 0:
             self.ctx.error("The minimal release version required for migration is {0}. Please upgrade to at lease {0} before scheduling migration.".format(MINIMUM_RELEASE_VERSION_FOR_MIGRATION))
 
         log_and_post_status(self.ctx, "Testing ping to selected server repository IP.")
