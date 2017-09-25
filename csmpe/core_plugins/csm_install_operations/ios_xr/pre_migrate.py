@@ -61,6 +61,8 @@ CONVERTED_ADMIN_XR_CONFIG_IN_CSM = "admin.iox"
 FINAL_CAL_CONFIG = "cXR_admin_plane_converted_eXR.cfg"
 FINAL_XR_CONFIG = "cXR_xr_plane_converted_eXR.cfg"
 
+CRYPTO_KEY_FILENAME = "crypto_auto_key_gen.txt"
+
 # XR_CONFIG_ON_DEVICE = "iosxr.cfg"
 # ADMIN_CAL_CONFIG_ON_DEVICE = "admin_calvados.cfg"
 # ADMIN_XR_CONFIG_ON_DEVICE = "admin_iosxr.cfg"
@@ -973,7 +975,7 @@ class Plugin(CSMPlugin):
         if crypto_file:
             log_and_post_status(self.ctx, "Copying the crypto key generation file from server repository to device.")
             self._copy_files_to_device(server, server_repo_url, [crypto_file],
-                                       [CONFIG_LOCATION + crypto_file], timeout=300)
+                                       [CONFIG_LOCATION + CRYPTO_KEY_FILENAME], timeout=600)
 
         self._ensure_updated_fpd(fpd_relevant_nodes)
 
