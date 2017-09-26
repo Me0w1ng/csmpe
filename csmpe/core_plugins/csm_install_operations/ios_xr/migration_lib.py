@@ -19,7 +19,7 @@ def log_and_post_status(ctx, msg):
 
 def parse_exr_admin_show_platform(output):
     """Get all RSP/RP/LC string node names matched with the card type."""
-    inventory = {}
+    inventory = dict()
     lines = output.split('\n')
 
     for line in lines:
@@ -27,7 +27,7 @@ def parse_exr_admin_show_platform(output):
         if len(line) > 0 and line[0].isdigit():
             node = line[:10].strip()
             # print "node = *{}*".format(node)
-            node_type = line[10:34].strip(),
+            node_type = line[10:34].strip()
             # print "node_type = *{}*".format(node_type)
             inventory[node] = node_type
     return inventory
