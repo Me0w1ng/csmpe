@@ -26,7 +26,6 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-from package_lib import SoftwarePackage
 from csmpe.plugins import CSMPlugin
 from install import install_activate_deactivate
 from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_inventory
@@ -42,8 +41,8 @@ class Plugin(CSMPlugin):
 
     def run(self):
 
-        SoftwarePackage.from_show_cmd(self.ctx.send("admin show install active summary"))
-        SoftwarePackage.from_show_cmd(self.ctx.send("admin show install committed summary"))
+        self.ctx.send("admin show install active summary")
+        self.ctx.send("admin show install committed summary")
 
         cmd = 'admin install rollback to committed prompt-level none asynchronous'
 
