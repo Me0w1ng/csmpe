@@ -137,7 +137,7 @@ class Plugin(CSMPlugin):
         return self._wait_for_reload()
 
     def _wait_for_reload(self):
-        """Wait for all nodes to come up with max timeout as 18 min"""
+        """Wait for all nodes to come up with max timeout as 60 min"""
         log_and_post_status(self.ctx, "Waiting for all nodes to come to FINAL Band.")
         if wait_for_final_band(self.ctx):
             log_and_post_status(self.ctx, "All nodes are in FINAL Band.")

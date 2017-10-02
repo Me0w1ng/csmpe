@@ -61,7 +61,8 @@ class Plugin(CSMPlugin):
                 cmd = "{}/{} {}".format(url, package, destination_on_host)
                 # e.g., scp root@10.77.132.122:/rosco/asr9k-px-5.3.3.CSCuy20115.pie disk0:
                 self.ctx.send(cmd, wait_for_string="[Pp]assword:", timeout=60)
-                self.ctx.send(scp_password, timeout=100)
+                # SCP does not return router prompt right away.  Need a longer timeout to make sure.
+                self.ctx.send(scp_password, timeout=3600, password=True)
 
             cmd = "admin install add source {} {} async".format(destination_on_host, s_packages)
         else:

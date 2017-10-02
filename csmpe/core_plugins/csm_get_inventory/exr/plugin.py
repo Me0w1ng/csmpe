@@ -42,9 +42,11 @@ class Plugin(CSMPlugin):
 
 
 def get_inventory(ctx):
+    # Save the output of "show inventory" (non-admin mode)
+    ctx.save_job_data("cli_show_inventory", get_output_in_admin_mode(ctx, "show inventory", admin=False))
+
     # Save the output of "show inventory" in admin mode
-    output = get_output_in_admin_mode(ctx, "show inventory")
-    ctx.save_job_data("cli_show_inventory", output)
+    ctx.save_job_data("cli_admin_show_inventory", get_output_in_admin_mode(ctx, "show inventory"))
 
 
 def get_package(ctx):
