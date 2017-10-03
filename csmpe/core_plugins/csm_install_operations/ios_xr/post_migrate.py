@@ -29,7 +29,7 @@ import re
 import time
 
 from csmpe.plugins import CSMPlugin
-from migration_lib import wait_for_final_band, log_and_post_status, run_additional_custom_commands
+from migration_lib import check_exr_final_band, log_and_post_status, run_additional_custom_commands
 from csmpe.core_plugins.csm_get_inventory.exr.plugin import get_package, get_inventory
 
 TIMEOUT_FOR_COPY_CONFIG = 3600
@@ -134,19 +134,14 @@ class Plugin(CSMPlugin):
             time.sleep(180)
             self.ctx.reconnect(max_timeout=3600, force_discovery=True)  # 60 * 60 = 3600
 
-        return self._wait_for_reload()
-
-    def _wait_for_reload(self):
-        """Wait for all nodes to come up with max timeout as 60 min"""
-        log_and_post_status(self.ctx, "Waiting for all nodes to come to FINAL Band.")
-        if wait_for_final_band(self.ctx):
-            log_and_post_status(self.ctx, "All nodes are in FINAL Band.")
-        else:
-            log_and_post_status(self.ctx, "Warning: Not all nodes went to FINAL Band.")
-
-        return True
+        return check_exr_final_band(self.ctx)
 
     def run(self):
+
+        if self.ctx.os_type != "eXR":
+            self.ctx.error("Device is not running ASR9K-X64.")
+
+        check_exr_final_band(self.ctx, timeout=1500)
 
         log_and_post_status(self.ctx, "Capturing new IOS XR and Calvados configurations.")
 

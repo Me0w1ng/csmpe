@@ -131,7 +131,15 @@ def get_supported_cards_for_exr_version(ctx, supported_hw_list, exr_version):
     return supported_cards
 
 
-def wait_for_final_band(ctx):
+def check_exr_final_band(ctx, timeout=3600):
+    log_and_post_status(ctx, "Waiting for all supported nodes to come to FINAL Band.")
+    if wait_for_final_band(ctx, timeout):
+        log_and_post_status(ctx, "All supported nodes are in FINAL Band.")
+    else:
+        log_and_post_status(ctx, "Warning: Not all supported nodes went to FINAL Band after {} minutes.".format(timeout/60))
+
+
+def wait_for_final_band(ctx, timeout):
     """This is for ASR9K eXR. Wait for all present nodes to come to FINAL Band."""
     exr_version = get_version(ctx)
     try:
@@ -143,7 +151,6 @@ def wait_for_final_band(ctx):
     supported_cards = get_supported_cards_for_exr_version(ctx, supported_hw_list, exr_version)
     supported_nodes = get_all_supported_nodes(ctx, supported_cards)
     # Wait for all nodes to Final Band
-    timeout = 3600
     poll_time = 20
     time_waited = 0
 
