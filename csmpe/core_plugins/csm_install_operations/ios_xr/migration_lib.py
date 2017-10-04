@@ -137,6 +137,7 @@ def check_exr_final_band(ctx, timeout=3600):
         log_and_post_status(ctx, "All supported nodes are in FINAL Band.")
     else:
         log_and_post_status(ctx, "Warning: Not all supported nodes went to FINAL Band after {} minutes.".format(timeout/60))
+    return True
 
 
 def wait_for_final_band(ctx, timeout):
