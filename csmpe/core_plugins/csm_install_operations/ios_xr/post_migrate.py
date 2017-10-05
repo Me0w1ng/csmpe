@@ -57,13 +57,7 @@ class Plugin(CSMPlugin):
         match = re.search("\d+/\w+.+\d+.\d+\s+[-\w]+\s+(NEED UPGD)", fpdtable)
 
         if match:
-            total_num = len(re.findall("NEED UPGD", fpdtable)) + len(re.findall("CURRENT", fpdtable))
-            if not self._upgrade_all_fpds(total_num):
-                self.ctx.send("exit")
-                self.ctx.error("FPD upgrade in eXR is not finished. Please check session.log.")
-                return False
-            else:
-                return True
+            return self._upgrade_all_fpds(len(re.findall("NEED UPGD|CURRENT", fpdtable)))
 
         self.ctx.send("exit")
         return True
@@ -94,17 +88,26 @@ class Plugin(CSMPlugin):
             time.sleep(poll_time)
             output = self.ctx.send("show hw-module fpd")
             num_need_reload = len(re.findall("RLOAD REQ", output))
-            if len(re.findall("CURRENT", output)) + len(re.findall("UPGD SKIP", output)) + num_need_reload >= num_fpds:
+            if len(re.findall("CURRENT|UPGD SKIP", output)) + num_need_reload >= num_fpds:
                 if num_need_reload > 0:
                     log_and_post_status(self.ctx,
-                                        "Finished upgrading FPD(s). Now reloading the device to complete the upgrade.")
+                                        "Finished upgrading FPD(s). Reloading device to complete the upgrade.")
                     self.ctx.send("exit")
                     return self._reload_all()
                 self.ctx.send("exit")
                 return True
 
-        # Some FPDs didn't finish upgrade
-        return False
+        output = self.ctx.send("show hw-module fpd")
+        if len(re.findall("\d+% UPGD|IN QUEUE|NEED UPGD", output)) == 0:
+            if len(re.findall("RLOAD REQ", output)) > 0:
+                log_and_post_status(self.ctx, "Reloading device to complete the upgrade.")
+                self.ctx.send("exit")
+                return self._reload_all()
+        else:
+            self.ctx.warning(self.ctx, "FPD Upgrade not completed after {} minutes.".format(timeout / 60))
+
+        self.ctx.send("exit")
+        return True
 
     def _reload_all(self):
         """Reload the device with 1 hour maximum timeout"""

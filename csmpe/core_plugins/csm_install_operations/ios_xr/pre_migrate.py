@@ -302,31 +302,24 @@ class Plugin(CSMPlugin):
         if not is_empty(remote_directory):
             source_path += ":{}".format(remote_directory)
 
-        def pause_logfile_stream(ctx):
+        def send_password(ctx):
+            ctx.ctrl.sendline(server.password)
             """
             This was made necessary because during sftp download, when file is large,
             the number of transferred bytes keeps changing and session log takes so much
             time in reading and writing the changing number that it is still doing that
             long after the operation is complete.
             """
-            if ctx.ctrl._session.logfile_read:
-                ctx.ctrl._session.logfile_read = None
+            self.ctx.pause_session_logging()
             return True
-
-        def send_password(ctx):
-            ctx.ctrl.sendline(server.password)
-            return pause_logfile_stream(ctx)
 
         def send_yes(ctx):
             ctx.ctrl.sendline("yes")
-            return pause_logfile_stream(ctx)
+            self.ctx.pause_session_logging()
+            return True
 
         def reinstall_logfile(ctx):
-            if ctx.ctrl._logfile_fd and (not ctx.ctrl._session.logfile_read):
-                ctx.ctrl._session.logfile_read = ctx.ctrl._logfile_fd
-            else:
-                ctx.message = "Error reinstalling session.log."
-                return False
+            self.ctx.resume_session_logging()
             return True
 
         def timeout_error(ctx):
