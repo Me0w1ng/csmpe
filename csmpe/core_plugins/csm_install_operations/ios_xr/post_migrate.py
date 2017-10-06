@@ -57,7 +57,11 @@ class Plugin(CSMPlugin):
         match = re.search("\d+/\w+.+\d+.\d+\s+[-\w]+\s+(NEED UPGD)", fpdtable)
 
         if match:
-            return self._upgrade_all_fpds(len(re.findall("NEED UPGD|CURRENT", fpdtable)))
+            if re.search("\d+/\w+.+\d+.\d+\s+[-\w]+\s+(NOT READY)", fpdtable):
+                self.ctx.send("exit")
+                self.ctx.error("Some nodes are not ready for FPD upgrade. Please re-schedule Post-Migrate when all nodes are ready.")
+            else:
+                return self._upgrade_all_fpds(len(re.findall("NEED UPGD|CURRENT", fpdtable)))
 
         self.ctx.send("exit")
         return True
