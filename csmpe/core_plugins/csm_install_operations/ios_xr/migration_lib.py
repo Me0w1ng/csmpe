@@ -130,7 +130,7 @@ def get_supported_cards_for_exr_version(ctx, supported_hw_list, exr_version):
     return supported_cards
 
 
-def check_exr_final_band(ctx, timeout=9000):
+def check_exr_final_band(ctx, timeout=7200):
     log_and_post_status(ctx, "Waiting for all supported nodes to come to FINAL Band.")
     if wait_for_final_band(ctx, timeout):
         log_and_post_status(ctx, "All supported nodes are in FINAL Band.")
