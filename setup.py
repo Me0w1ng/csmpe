@@ -36,7 +36,7 @@ install_requires = [
     "stevedore",
     "pkginfo==1.4.1",
     "click",
-    "condoor>=1.0.6",
+    "condoor>=1.0.8",
 ]
 
 
@@ -125,8 +125,8 @@ setup(
         ],
     },
     classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Developers',
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Telecommunications Industry',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
