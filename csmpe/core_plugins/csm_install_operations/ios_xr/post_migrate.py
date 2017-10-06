@@ -29,7 +29,7 @@ import re
 import time
 
 from csmpe.plugins import CSMPlugin
-from migration_lib import wait_for_final_band, log_and_post_status, run_additional_custom_commands
+from migration_lib import check_exr_final_band, log_and_post_status, run_additional_custom_commands
 from csmpe.core_plugins.csm_get_inventory.exr.plugin import get_package, get_inventory
 
 TIMEOUT_FOR_COPY_CONFIG = 3600
@@ -57,13 +57,11 @@ class Plugin(CSMPlugin):
         match = re.search("\d+/\w+.+\d+.\d+\s+[-\w]+\s+(NEED UPGD)", fpdtable)
 
         if match:
-            total_num = len(re.findall("NEED UPGD", fpdtable)) + len(re.findall("CURRENT", fpdtable))
-            if not self._upgrade_all_fpds(total_num):
+            if re.search("\d+/\w+.+\d+.\d+\s+[-\w]+\s+(NOT READY)", fpdtable):
                 self.ctx.send("exit")
-                self.ctx.error("FPD upgrade in eXR is not finished. Please check session.log.")
-                return False
+                self.ctx.error("Some nodes are not ready for FPD upgrade. Please re-schedule Post-Migrate when all nodes are ready.")
             else:
-                return True
+                return self._upgrade_all_fpds(len(re.findall("NEED UPGD|CURRENT", fpdtable)))
 
         self.ctx.send("exit")
         return True
@@ -94,17 +92,26 @@ class Plugin(CSMPlugin):
             time.sleep(poll_time)
             output = self.ctx.send("show hw-module fpd")
             num_need_reload = len(re.findall("RLOAD REQ", output))
-            if len(re.findall("CURRENT", output)) + len(re.findall("UPGD SKIP", output)) + num_need_reload >= num_fpds:
+            if len(re.findall("CURRENT|UPGD SKIP", output)) + num_need_reload >= num_fpds:
                 if num_need_reload > 0:
                     log_and_post_status(self.ctx,
-                                        "Finished upgrading FPD(s). Now reloading the device to complete the upgrade.")
+                                        "Finished upgrading FPD(s). Reloading device to complete the upgrade.")
                     self.ctx.send("exit")
                     return self._reload_all()
                 self.ctx.send("exit")
                 return True
 
-        # Some FPDs didn't finish upgrade
-        return False
+        output = self.ctx.send("show hw-module fpd")
+        if len(re.findall("\d+% UPGD|IN QUEUE|NEED UPGD", output)) == 0:
+            if len(re.findall("RLOAD REQ", output)) > 0:
+                log_and_post_status(self.ctx, "Reloading device to complete the upgrade.")
+                self.ctx.send("exit")
+                return self._reload_all()
+        else:
+            self.ctx.warning(self.ctx, "FPD Upgrade not completed after {} minutes.".format(timeout / 60))
+
+        self.ctx.send("exit")
+        return True
 
     def _reload_all(self):
         """Reload the device with 1 hour maximum timeout"""
@@ -134,19 +141,14 @@ class Plugin(CSMPlugin):
             time.sleep(180)
             self.ctx.reconnect(max_timeout=3600, force_discovery=True)  # 60 * 60 = 3600
 
-        return self._wait_for_reload()
-
-    def _wait_for_reload(self):
-        """Wait for all nodes to come up with max timeout as 60 min"""
-        log_and_post_status(self.ctx, "Waiting for all nodes to come to FINAL Band.")
-        if wait_for_final_band(self.ctx):
-            log_and_post_status(self.ctx, "All nodes are in FINAL Band.")
-        else:
-            log_and_post_status(self.ctx, "Warning: Not all nodes went to FINAL Band.")
-
-        return True
+        return check_exr_final_band(self.ctx)
 
     def run(self):
+
+        if self.ctx.os_type != "eXR":
+            self.ctx.error("Device is not running ASR9K-X64.")
+
+        check_exr_final_band(self.ctx, timeout=1500)
 
         log_and_post_status(self.ctx, "Capturing new IOS XR and Calvados configurations.")
 

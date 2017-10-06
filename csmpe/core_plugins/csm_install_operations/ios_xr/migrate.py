@@ -29,7 +29,7 @@ import time
 import re
 
 from csmpe.plugins import CSMPlugin
-from migration_lib import wait_for_final_band, log_and_post_status, run_additional_custom_commands
+from migration_lib import check_exr_final_band, log_and_post_status, run_additional_custom_commands
 from csmpe.core_plugins.csm_get_inventory.exr.plugin import get_package, get_inventory
 from csmpe.core_plugins.csm_install_operations.utils import update_device_info_udi
 
@@ -154,17 +154,7 @@ class Plugin(CSMPlugin):
             time.sleep(300)
             self.ctx.reconnect(max_timeout=MIGRATION_TIME_OUT, force_discovery=True)  # 60 * 60 = 3600
 
-        return self._wait_for_reload()
-
-    def _wait_for_reload(self):
-        """Wait for all nodes to come up with max timeout as 18 minutes after the first RSP/RP comes up."""
-        log_and_post_status(self.ctx, "Waiting for all nodes to come to FINAL Band.")
-        if wait_for_final_band(self.ctx):
-            log_and_post_status(self.ctx, "All nodes are in FINAL Band.")
-        else:
-            log_and_post_status(self.ctx, "Warning: Not all nodes are in FINAL Band after 25 minutes.")
-
-        return True
+        return check_exr_final_band(self.ctx)
 
     def run(self):
 

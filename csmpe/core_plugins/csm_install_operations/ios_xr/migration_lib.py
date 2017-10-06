@@ -91,7 +91,7 @@ def get_all_supported_nodes(ctx, supported_cards):
                     supported_nodes.append(node)
                     break
     ctx.send("exit")
-    ctx.info("Found support nodes: " + str(supported_nodes))
+    ctx.info("Support nodes: " + str(supported_nodes))
     return supported_nodes
 
 
@@ -127,11 +127,19 @@ def get_supported_cards_for_exr_version(ctx, supported_hw_list, exr_version):
                     supported_cards[card_type].extend(supported_hw[card_type])
         else:
             break
-    ctx.info("Supported hardware list: " + str(supported_cards))
     return supported_cards
 
 
-def wait_for_final_band(ctx):
+def check_exr_final_band(ctx, timeout=7200):
+    log_and_post_status(ctx, "Waiting for all supported nodes to come to FINAL Band.")
+    if wait_for_final_band(ctx, timeout):
+        log_and_post_status(ctx, "All supported nodes are in FINAL Band.")
+    else:
+        log_and_post_status(ctx, "Warning: Not all supported nodes went to FINAL Band after {} minutes.".format(timeout / 60))
+    return True
+
+
+def wait_for_final_band(ctx, timeout):
     """This is for ASR9K eXR. Wait for all present nodes to come to FINAL Band."""
     exr_version = get_version(ctx)
     try:
@@ -143,7 +151,6 @@ def wait_for_final_band(ctx):
     supported_cards = get_supported_cards_for_exr_version(ctx, supported_hw_list, exr_version)
     supported_nodes = get_all_supported_nodes(ctx, supported_cards)
     # Wait for all nodes to Final Band
-    timeout = 3600
     poll_time = 20
     time_waited = 0
 
@@ -172,7 +179,6 @@ def wait_for_final_band(ctx):
 def check_show_plat_vm(output, supported_nodes):
     """Check if all supported nodes reached FINAL Band status"""
 
-    all_nodes_ready = True
     entries_in_show_plat_vm = []
     lines = output.splitlines()
     for line in lines:
@@ -180,20 +186,19 @@ def check_show_plat_vm(output, supported_nodes):
         if len(line) > 0 and line[0].isdigit():
             entries_in_show_plat_vm.append(line)
 
-    if len(entries_in_show_plat_vm) < len(supported_nodes):
-        all_nodes_ready = False
-    else:
-        for node in supported_nodes:
-            node_is_ready = False
-            for entry in entries_in_show_plat_vm:
-                if node in entry:
+    if len(entries_in_show_plat_vm) >= len(supported_nodes):
+        ready_nodes_count = 0
+        for entry in entries_in_show_plat_vm:
+            for node in supported_nodes:
+                if entry.startswith(node):
                     if 'FINAL Band' in entry:
-                        node_is_ready = True
-                    break
-            if not node_is_ready:
-                all_nodes_ready = False
-                break
-    return all_nodes_ready
+                        ready_nodes_count += 1
+                        break
+                    else:
+                        return False
+        if ready_nodes_count == len(supported_nodes):
+            return True
+    return False
 
 
 def check_sw_status_admin(supported_nodes, output):
