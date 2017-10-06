@@ -32,7 +32,7 @@ from condoor import ConnectionError, CommandError, CommandSyntaxError
 from csmpe.core_plugins.csm_node_status_check.exr.plugin_lib import parse_show_platform
 from csmpe.core_plugins.csm_install_operations.actions import a_error
 
-install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
+install_error_pattern = re.compile("ERROR(.*)$", re.MULTILINE)
 
 plugin_ctx = None
 
