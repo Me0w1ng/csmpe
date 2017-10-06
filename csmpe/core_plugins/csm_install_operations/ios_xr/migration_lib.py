@@ -91,7 +91,7 @@ def get_all_supported_nodes(ctx, supported_cards):
                     supported_nodes.append(node)
                     break
     ctx.send("exit")
-    ctx.info("Found support nodes: " + str(supported_nodes))
+    ctx.info("Support nodes: " + str(supported_nodes))
     return supported_nodes
 
 
@@ -127,7 +127,6 @@ def get_supported_cards_for_exr_version(ctx, supported_hw_list, exr_version):
                     supported_cards[card_type].extend(supported_hw[card_type])
         else:
             break
-    ctx.info("Supported hardware list: " + str(supported_cards))
     return supported_cards
 
 
