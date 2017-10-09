@@ -34,7 +34,8 @@ import re
 class Plugin(CSMPlugin):
     """This plugin adds packages from repository to the device."""
     name = "Install Add Plugin"
-    platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS540', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
+    platforms = {'ASR9K', 'NCS1K', 'NCS1001', 'NCS4K', 'NCS5K', 'NCS540',
+                 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
     phases = {'Add'}
     os = {'eXR'}
 
