@@ -36,7 +36,7 @@ install_requires = [
     "stevedore",
     "pkginfo==1.4.1",
     "click",
-    "condoor>=1.0.8",
+    "condoor>=1.0.9",
 ]
 
 
