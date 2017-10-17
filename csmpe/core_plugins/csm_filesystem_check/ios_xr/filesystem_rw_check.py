@@ -35,7 +35,7 @@ from utils import get_filesystems
 class Plugin(CSMPlugin):
     """This plugin checks if the filesystems are writable"""
     name = "Filesystem Check"
-    platforms = {'ASR9K', 'CRS'}
+    platforms = {'ASR9K', 'XR12K', 'CRS'}
     phases = {'Pre-Check'}
     os = {'None'}
 

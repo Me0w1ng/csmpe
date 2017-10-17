@@ -36,7 +36,7 @@ install_requires = [
     "stevedore",
     "pkginfo==1.4.1",
     "click",
-    "condoor>=1.0.2",
+    "condoor>=1.0.9",
 ]
 
 
@@ -101,7 +101,14 @@ setup(
             '{} = csmpe.core_plugins.csm_install_operations.ios_xr.migrate:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.ios_xr.post_migrate:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.ios_xr.remove_all:Plugin'.format(uuid4()),
+<<<<<<< HEAD
             '{} = csmpe.core_plugins.csm_install_operations.ios_xr.fpd_upgrade:Plugin'.format(uuid4()),
+=======
+            '{} = csmpe.core_plugins.csm_install_operations.ios_xr.satellite_transfer:Plugin'.format(uuid4()),
+            '{} = csmpe.core_plugins.csm_install_operations.ios_xr.satellite_activate:Plugin'.format(uuid4()),
+            '{} = csmpe.core_plugins.csm_install_operations.ios_xr.fpd_upgrade:Plugin'.format(uuid4()),
+            '{} = csmpe.core_plugins.csm_install_operations.ios_xr.rollback:Plugin'.format(uuid4()),
+>>>>>>> origin/master
 
             '{} = csmpe.core_plugins.csm_install_operations.exr.add:Plugin'.format(uuid4()),
             '{} = csmpe.core_plugins.csm_install_operations.exr.activate:Plugin'.format(uuid4()),
@@ -125,8 +132,8 @@ setup(
         ],
     },
     classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Developers',
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Telecommunications Industry',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',

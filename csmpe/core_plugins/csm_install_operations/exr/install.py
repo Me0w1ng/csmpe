@@ -33,8 +33,15 @@ from csmpe.core_plugins.csm_install_operations.actions import a_get_opid, a_no_p
 import itertools
 import re
 import time
+from condoor import ConnectionError, CommandError, CommandSyntaxError
+from csmpe.core_plugins.csm_node_status_check.exr.plugin_lib import parse_show_platform
+from csmpe.core_plugins.csm_install_operations.actions import a_error
 
-install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
+# match for:
+# Error! Not enough free disk space for installation.
+# ERROR:Initrd md5sum does not match. The iso might be corrupted
+# ERROR!! failed while handling validate reply
+install_error_pattern = re.compile("E[Rr][Rr][Oo][Rr]:?!* *(.*)", re.MULTILINE)
 
 
 def log_install_errors(ctx, output):
@@ -127,6 +134,7 @@ def watch_operation(ctx, op_id=0):
     last_status = None
     finish = False
     time_tried = 0
+    op_id = str(op_id)
     while not finish:
         try:
             try:
@@ -137,7 +145,12 @@ def watch_operation(ctx, op_id=0):
                 pass
 
             message = ""
-            output = ctx.send(cmd_show_install_request, timeout=300)
+            try:
+                output = ctx.send(cmd_show_install_request, timeout=300)
+            except (CommandError, CommandSyntaxError) as e:
+                ctx.info("{} received an error".format(cmd_show_install_request))
+                time.sleep(10)
+                output = ctx.send(cmd_show_install_request, timeout=300)
             if op_id in output:
                 result = re.search(op_progress, output)
                 if result:
@@ -198,7 +211,8 @@ def wait_for_reload(ctx):
         ctx.disconnect()
         ctx.post_status("Waiting for device boot to reconnect")
         ctx.info("Waiting for device boot to reconnect")
-        time.sleep(60)
+        # it may take up to 10 minutes before Fretta actually reboots
+        time.sleep(600)
         ctx.reconnect(max_timeout=3600, force_discovery=True)  # 60 * 60 = 3600
 
     else:
@@ -569,7 +583,12 @@ def observe_install_remove_all(ctx, cmd, prompt):
                 pass
 
             message = ""
-            output = ctx.send(cmd_show_install_request, timeout=300)
+            try:
+                output = ctx.send(cmd_show_install_request, timeout=300)
+            except (CommandError, CommandSyntaxError) as e:
+                ctx.info("{} received an error".format(cmd_show_install_request))
+                time.sleep(10)
+                output = ctx.send(cmd_show_install_request, timeout=300)
             if op_id in output:
                 result = re.search(op_progress, output)
                 if result:

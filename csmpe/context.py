@@ -79,6 +79,7 @@ class Host(object):
                                      "migration_directory", "get_server", "get_host", "mop_specs"))
 @delegate("_connection", ("connect", "disconnect", "reconnect", "discovery", "send", "run_fsm", "reload"),
           ("family", "prompt", "os_type", "os_version", "is_console", "config"))
+
 class PluginContext(object):
     """ This is a class passed to the constructor during plugin instantiation.
     Thi class provides the API for the plugins to allow the communication with the CMS Server and device.

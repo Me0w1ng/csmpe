@@ -36,7 +36,7 @@ from csmpe.plugins import CSMPlugin
 from csmpe.core_plugins.csm_install_operations.utils import ServerType, is_empty, concatenate_dirs
 from simple_server_helper import TFTPServer, FTPServer, SFTPServer
 from hardware_audit import Plugin as HardwareAuditPlugin
-from migration_lib import log_and_post_status
+from migration_lib import log_and_post_status, compare_version_numbers
 from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_inventory
 
 MINIMUM_RELEASE_VERSION_FOR_MIGRATION = "6.1.3"
@@ -45,7 +45,7 @@ NOX_FOR_MAC = "nox-mac64.bin"
 NOX_64_BINARY = "nox-linux-64.bin"
 
 TIMEOUT_FOR_COPY_CONFIG = 3600
-TIMEOUT_FOR_COPY_IMAGE = 1800
+TIMEOUT_FOR_COPY_IMAGE = 3600
 TIMEOUT_FOR_FPD_UPGRADE = 5400
 
 IMAGE_LOCATION = "harddisk:/"
@@ -60,6 +60,8 @@ CONVERTED_ADMIN_XR_CONFIG_IN_CSM = "admin.iox"
 
 FINAL_CAL_CONFIG = "cXR_admin_plane_converted_eXR.cfg"
 FINAL_XR_CONFIG = "cXR_xr_plane_converted_eXR.cfg"
+
+CRYPTO_KEY_FILENAME = "crypto_auto_key_gen.txt"
 
 # XR_CONFIG_ON_DEVICE = "iosxr.cfg"
 # ADMIN_CAL_CONFIG_ON_DEVICE = "admin_calvados.cfg"
@@ -94,8 +96,8 @@ class Plugin(CSMPlugin):
 
         output = self.ctx.send("ping {}".format(repo_ip.group(1)))
         if "100 percent" not in output:
-            self.ctx.error("Failed to ping server repository {} on device." +
-                           "Please check session.log.".format(repo_ip.group(1)))
+            self.ctx.error("Failed to ping server repository {} on device.".format(repo_ip.group(1)) +
+                           "Please check session.log.")
 
     def _all_configs_supported(self, nox_output):
         """Check text output from running NoX on system. Only return True if all configs are supported by eXR."""
@@ -179,7 +181,7 @@ class Plugin(CSMPlugin):
 
         return True
 
-    def _copy_files_to_device(self, server, repository, source_filenames, dest_files, timeout=600):
+    def _copy_files_to_device(self, server, repository, source_filenames, dest_files, timeout=3600):
         """
         Copy files from their locations in the user selected server directory in the FTP/TFTP/SFTP server repository
         to locations on device.
@@ -203,7 +205,7 @@ class Plugin(CSMPlugin):
         else:
             self.ctx.error("Pre-Migrate does not support {} server repository.".format(server.server_type))
 
-    def _copy_files_from_ftp_tftp_to_device(self, repository, source_filenames, dest_files, timeout=600):
+    def _copy_files_from_ftp_tftp_to_device(self, repository, source_filenames, dest_files, timeout=3600):
         """
         Copy files from their locations in the user selected server directory in the FTP or TFTP server repository
         to locations on device.
@@ -258,7 +260,7 @@ class Plugin(CSMPlugin):
                                                                                  dest_files[x]))
 
             if not self.ctx.run_fsm("Copy file from tftp/ftp to device", command, events, transitions,
-                                    timeout=20, max_transitions=40):
+                                    timeout=80, max_transitions=200):
                 self.ctx.error("Error copying {}/{} to {} on device".format(repository,
                                                                             source_filenames[x],
                                                                             dest_files[x]))
@@ -269,7 +271,7 @@ class Plugin(CSMPlugin):
                                                                              source_filenames[x],
                                                                              dest_files[x]))
 
-    def _copy_files_from_sftp_to_device(self, server, source_filenames, dest_files, timeout=600):
+    def _copy_files_from_sftp_to_device(self, server, source_filenames, dest_files, timeout=3600):
         """
         Copy files from their locations in the user selected server directory in the SFTP server repository
         to locations on device.
@@ -288,31 +290,24 @@ class Plugin(CSMPlugin):
         if not is_empty(remote_directory):
             source_path += ":{}".format(remote_directory)
 
-        def pause_logfile_stream(ctx):
+        def send_password(ctx):
+            ctx.ctrl.sendline(server.password)
             """
             This was made necessary because during sftp download, when file is large,
             the number of transferred bytes keeps changing and session log takes so much
             time in reading and writing the changing number that it is still doing that
             long after the operation is complete.
             """
-            if ctx.ctrl._session.logfile_read:
-                ctx.ctrl._session.logfile_read = None
+            self.ctx.pause_session_logging()
             return True
-
-        def send_password(ctx):
-            ctx.ctrl.sendline(server.password)
-            return pause_logfile_stream(ctx)
 
         def send_yes(ctx):
             ctx.ctrl.sendline("yes")
-            return pause_logfile_stream(ctx)
+            self.ctx.pause_session_logging()
+            return True
 
         def reinstall_logfile(ctx):
-            if ctx.ctrl._logfile_fd and (not ctx.ctrl._session.logfile_read):
-                ctx.ctrl._session.logfile_read = ctx.ctrl._logfile_fd
-            else:
-                ctx.message = "Error reinstalling session.log."
-                return False
+            self.ctx.resume_session_logging()
             return True
 
         def timeout_error(ctx):
@@ -361,7 +356,7 @@ class Plugin(CSMPlugin):
                                                                                  source_filenames[x],
                                                                                  dest_files[x]))
 
-            if not self.ctx.run_fsm("Copy file from sftp to device", command, events, transitions, timeout=20):
+            if not self.ctx.run_fsm("Copy file from sftp to device", command, events, transitions, timeout=80):
                 self.ctx.error("Error copying {}/{} to {} on device".format(source_path,
                                                                             source_filenames[x],
                                                                             dest_files[x]))
@@ -628,10 +623,10 @@ class Plugin(CSMPlugin):
 
             if not self.ctx.run_fsm("Upgrade FPD",
                                     "admin upgrade hw-module fpd {} location all".format(fpdtype),
-                                    events, transitions, timeout=30):
+                                    events, transitions, timeout=80):
                 self.ctx.error("Error while upgrading FPD subtype {}. Please check session.log".format(fpdtype))
 
-            fpd_log = self.ctx.send("show log | include fpd", timeout=300)
+            fpd_log = self.ctx.send("show log | include fpd", timeout=1800)
 
             for location in subtype_to_locations_need_upgrade[fpdtype]:
 
@@ -720,7 +715,8 @@ class Plugin(CSMPlugin):
         try:
             cmd = "admin show run" if admin else "show run"
             output = self.ctx.send(cmd, timeout=TIMEOUT_FOR_COPY_CONFIG)
-            ind = output.rfind('Building configuration...\n')
+            init_line = 'Building configuration...'
+            ind = output.rfind(init_line)
 
         except pexpect.TIMEOUT:
             self.ctx.error("CLI '{}' timed out after 1 hour.".format(cmd))
@@ -728,7 +724,10 @@ class Plugin(CSMPlugin):
         for file_path in files:
             # file = '../../csm_data/migration/<hostname>' + filename
             file_to_write = open(file_path, 'w+')
-            file_to_write.write(output[(ind + 1):])
+            if ind >= 0:
+                file_to_write.write(output[(ind + len(init_line)):])
+            else:
+                file_to_write.write(output)
             file_to_write.close()
 
     def _handle_configs(self, hostname, server, repo_url, fileloc, nox_to_use, config_filename):
@@ -891,7 +890,7 @@ class Plugin(CSMPlugin):
 
         exr_image, crypto_file = self._get_packages(packages)
 
-        version_match = re.findall("(\d+\.\d+)\.\d+", exr_image)
+        version_match = re.findall("\d+\.\d+\.\d+", exr_image)
         if version_match:
             exr_version = version_match[0]
         else:
@@ -926,7 +925,7 @@ class Plugin(CSMPlugin):
 
         version = match_version.group(1)
 
-        if version < MINIMUM_RELEASE_VERSION_FOR_MIGRATION:
+        if compare_version_numbers(version, MINIMUM_RELEASE_VERSION_FOR_MIGRATION) < 0:
             self.ctx.error("The minimal release version required for migration is {0}. Please upgrade to at lease {0} before scheduling migration.".format(MINIMUM_RELEASE_VERSION_FOR_MIGRATION))
 
         log_and_post_status(self.ctx, "Testing ping to selected server repository IP.")
@@ -956,7 +955,7 @@ class Plugin(CSMPlugin):
         if crypto_file:
             log_and_post_status(self.ctx, "Copying the crypto key generation file from server repository to device.")
             self._copy_files_to_device(server, server_repo_url, [crypto_file],
-                                       [CONFIG_LOCATION + crypto_file], timeout=60)
+                                       [CONFIG_LOCATION + CRYPTO_KEY_FILENAME], timeout=600)
 
         self._ensure_updated_fpd(fpd_relevant_nodes)
 

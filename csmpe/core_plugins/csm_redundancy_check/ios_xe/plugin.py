@@ -36,7 +36,7 @@ class Plugin(CSMPlugin):
     This plugin checks if the node redundancy is sufficient to proceed the upgrade.
     """
     name = "Node Redundancy Check"
-    platforms = {'ASR900'}
+    platforms = {'ASR900', 'ASR1K'}
     phases = {'Pre-Check', 'Post-Check'}
 
     def _run(self):

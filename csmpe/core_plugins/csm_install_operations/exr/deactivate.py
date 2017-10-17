@@ -28,7 +28,6 @@ from package_lib import SoftwarePackage
 from csmpe.plugins import CSMPlugin
 from install import install_activate_deactivate
 from install import send_admin_cmd
-from install import check_ncs6k_release, check_ncs4k_release
 from csmpe.core_plugins.csm_get_inventory.exr.plugin import get_package, get_inventory
 from csmpe.core_plugins.csm_install_operations.utils import get_cmd_for_install_activate_deactivate
 
@@ -36,7 +35,8 @@ from csmpe.core_plugins.csm_install_operations.utils import get_cmd_for_install_
 class Plugin(CSMPlugin):
     """This plugin deactivates packages on the device."""
     name = "Install Deactivate"
-    platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
+    platforms = {'ASR9K', 'NCS1K', 'NCS1001', 'NCS4K', 'NCS5K', 'NCS540',
+                 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
     phases = {'Deactivate'}
     os = {'eXR'}
 
@@ -82,9 +82,6 @@ class Plugin(CSMPlugin):
         May 27 16:39:31     ncs6k-5.2.5.CSCuz65240-1.0.0
         May 27 16:39:36 Install operation will continue in the background
         """
-        check_ncs6k_release(self.ctx)
-        check_ncs4k_release(self.ctx)
-
         cmd = get_cmd_for_install_activate_deactivate(self.ctx, self.get_tobe_deactivated_pkg_list,
                                                       cmd_with_package_names='install deactivate {}',
                                                       cmd_with_operation_id='install deactivate id {}')

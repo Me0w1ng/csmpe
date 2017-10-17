@@ -27,13 +27,13 @@
 from csmpe.plugins import CSMPlugin
 from csmpe.core_plugins.csm_get_inventory.ios_xe.plugin import get_package, get_inventory
 from utils import remove_exist_image
-from utils import number_of_rsp
+from condoor.exceptions import CommandSyntaxError
 
 
 class Plugin(CSMPlugin):
     """This plugin removes inactive packages from the device."""
     name = "Install Remove"
-    platforms = {'ASR900'}
+    platforms = {'ASR900', 'ASR1K'}
     phases = {'Remove'}
     os = {'XE'}
 
@@ -46,24 +46,34 @@ class Plugin(CSMPlugin):
         self.ctx.info("Remove Package(s) Pending")
         self.ctx.post_status("Remove Package(s) Pending")
 
-        for pkg in packages_to_remove:
-            self.ctx.info("Delete package bootflash:{}".format(pkg))
+        try:
+            self.ctx.send('dir harddisk:')
+            disk = 'harddisk:'
+        except CommandSyntaxError:
+            disk = 'bootflash:'
 
-            package = 'bootflash:' + pkg
+        for pkg in packages_to_remove:
+            self.ctx.info("Delete package {}{}".format(disk, pkg))
+
+            package = disk + pkg
             output = remove_exist_image(self.ctx, package)
 
             if not output:
-                self.ctx.info("bootflash:{} Removal Failed".format(pkg))
+                self.ctx.info("{}{} Removal Failed".format(disk, pkg))
                 break
 
-            rsp_count = number_of_rsp(self.ctx)
-            if rsp_count == 2:
-                package = 'stby-bootflash:' + pkg
+            package = 'stby-' + disk + pkg
+            cmd = 'dir ' + package
+            try:
+                output = self.ctx.send(cmd)
+                if 'No such file or directory' in output:
+                    continue
                 output = remove_exist_image(self.ctx, package)
-
                 if not output:
-                    self.ctx.info("stby-bootflash:{} Removal Failed".format(pkg))
+                    self.ctx.warning("stby-{}{} Removal Failed".format(disk, pkg))
                     break
+            except CommandSyntaxError:
+                continue
         else:
             self.ctx.info("Package(s) Removed Successfully")
             # Refresh package and inventory information

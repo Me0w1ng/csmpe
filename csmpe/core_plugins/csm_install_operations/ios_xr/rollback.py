@@ -1,7 +1,6 @@
 # =============================================================================
-# asr9k
 #
-# Copyright (c)  2016, Cisco Systems
+# Copyright (c) 2016, Cisco Systems
 # All rights reserved.
 #
 # # Author: Klaudiusz Staniek
@@ -27,24 +26,38 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-
 from csmpe.plugins import CSMPlugin
+from install import install_activate_deactivate
+from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_inventory
+from csmpe.core_plugins.csm_install_operations.utils import update_device_info_udi
 
 
 class Plugin(CSMPlugin):
-    """This plugin checks if there was a failed piece of config detected during startup"""
-    name = "Check Failed Startup Config"
-    platforms = {'ASR9K', 'XR12K', 'CRS', 'NCS1K', 'NCS1001', 'NCS4K', 'NCS5K', 'NCS540',
-                 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
-    phases = {'Post-Activate', 'Post-Check'}
+    """This plugin rollback to the last committed installation point."""
+    name = "Install Rollback Plugin"
+    platforms = {'ASR9K', 'XR12K', 'CRS'}
+    phases = {'Rollback'}
+    os = {'XR'}
 
-    def _run(self):
-        output = self.ctx.send("show configuration failed startup")
-        lines = output.split("\n", 100)
-        if len(lines) < 6:
-            self.ctx.info("No failed configuration detected during startup")
-            return
+    def run(self):
 
-        self.ctx.warning("Some configuration parts failed during startup")
-        for line in lines:
-            self.ctx.warning(line)
+        self.ctx.send("admin show install active summary")
+        self.ctx.send("admin show install committed summary")
+
+        cmd = 'admin install rollback to committed prompt-level none asynchronous'
+
+        self.ctx.info("Install rollback to the last committed installation point Pending")
+        self.ctx.post_status("Install rollback to the last committed installation point Pending")
+
+        install_activate_deactivate(self.ctx, cmd)
+
+        self.ctx.info("Install rollback done")
+
+        self.ctx.info("Refreshing package and inventory information")
+        self.ctx.post_status("Refreshing package and inventory information")
+
+        # Refresh package and inventory information
+        get_package(self.ctx)
+        get_inventory(self.ctx)
+
+        update_device_info_udi(self.ctx)

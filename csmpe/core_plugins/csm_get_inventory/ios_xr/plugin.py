@@ -30,25 +30,31 @@ from csmpe.plugins import CSMPlugin
 class Plugin(CSMPlugin):
     """This plugin retrieves software information from the device."""
     name = "Get Inventory"
-    platforms = {'ASR9K', 'CRS'}
+    platforms = {'ASR9K', 'XR12K', 'CRS'}
     phases = {'Get-Inventory'}
     os = {'XR'}
 
     def _run(self):
         get_package(self.ctx)
         get_inventory(self.ctx)
+        get_satellite(self.ctx)
 
 
 def get_inventory(ctx):
     # saved the output of "admin show inventory"
     output = ctx.send("admin show inventory", timeout=3600)
-    ctx.save_data("cli_show_inventory", output)
+    ctx.save_job_data("cli_show_inventory", output)
 
 
 def get_package(ctx):
-    ctx.save_data("cli_show_install_inactive",
-                  ctx.send("admin show install inactive summary"))
-    ctx.save_data("cli_show_install_active",
-                  ctx.send("admin show install active summary"))
-    ctx.save_data("cli_show_install_committed",
-                  ctx.send("admin show install committed summary"))
+    ctx.save_job_data("cli_show_install_inactive",
+                      ctx.send("admin show install inactive summary"))
+    ctx.save_job_data("cli_show_install_active",
+                      ctx.send("admin show install active summary"))
+    ctx.save_job_data("cli_show_install_committed",
+                      ctx.send("admin show install committed summary"))
+
+
+def get_satellite(ctx):
+    ctx.save_job_data("cli_show_nv_satellite",
+                      ctx.send("show nv satellite status"))

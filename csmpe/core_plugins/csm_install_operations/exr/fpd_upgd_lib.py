@@ -291,6 +291,70 @@ def fpd_needs_reload(ctx, fpd_location, fpd_type):
     0/RP0     NCS1K-CNTLR       0.1   Daisy_Duke_FPGA   S  RLOAD REQ  0.15    0.17
     0/PM0     NCS1K-2KW-AC      0.0   PO-PriMCU            CURRENT
     0/PM1     NCS1K-2KW-AC      0.0   PO-PriMCU            CURRENT    4.00    4.00
+
+    Platform: ASR9K-X64
+    RP/0/RSP0/CPU0:vkg3#show hw-module fpd
+                                                                       FPD Versions
+                                                                    ===============
+    Location  Card type         HWver FPD device       ATR Status   Run    Programd
+    -------------------------------------------------------------------------------
+    0/0       A99-8X100GE-SE    1.0   CBC                  CURRENT   38.23   38.23
+    0/0       A99-8X100GE-SE    1.0   Dalla                CURRENT    1.09    1.09
+    0/0       A99-8X100GE-SE    1.0   IPU-FPGA             CURRENT    1.91    1.91
+    0/0       A99-8X100GE-SE    1.0   IPU-FSBL             CURRENT    1.96    1.96
+    0/0       A99-8X100GE-SE    1.0   IPU-Linux            CURRENT    1.96    1.96
+    0/0       A99-8X100GE-SE    1.0   Meldun-0             CURRENT    1.07    1.07
+    0/0       A99-8X100GE-SE    1.0   Meldun-1             CURRENT    1.07    1.07
+    0/0       A99-8X100GE-SE    1.0   Primary-BIOS         CURRENT    8.43    8.43
+    0/RP0     A99-RP2-SE        1.0   Alpha-FPGA           CURRENT    0.16    0.16
+    0/RP0     A99-RP2-SE        1.0   CBC-0                CURRENT   35.12   35.12
+    0/RP0     A99-RP2-SE        1.0   CBC-1                CURRENT   35.12   35.12
+    0/RP0     A99-RP2-SE        1.0   Cha-FPGA             CURRENT    0.05    0.05
+    0/RP0     A99-RP2-SE        1.0   IPU-FPGA             CURRENT    0.52    0.52
+    0/RP0     A99-RP2-SE        1.0   IPU-FSBL             CURRENT    1.96    1.96
+    0/RP0     A99-RP2-SE        1.0   IPU-Linux            CURRENT    1.96    1.96
+    0/RP0     A99-RP2-SE        1.0   Omega-FPGA           CURRENT    0.15    0.15
+    0/RP0     A99-RP2-SE        1.0   Optimus-FPGA         CURRENT    0.12    0.12
+    0/RP0     A99-RP2-SE        1.0   Primary-BIOS         CURRENT   14.28   14.28
+    0/RP1     A99-RP2-SE        1.0   Alpha-FPGA           CURRENT    0.16    0.16
+    0/RP1     A99-RP2-SE        1.0   CBC-0                CURRENT   35.12   35.12
+    0/RP1     A99-RP2-SE        1.0   CBC-1                CURRENT   35.12   35.12
+    0/RP1     A99-RP2-SE        1.0   Cha-FPGA             CURRENT    0.05    0.05
+    0/RP1     A99-RP2-SE        1.0   IPU-FPGA             CURRENT    0.52    0.52
+    0/RP1     A99-RP2-SE        1.0   IPU-FSBL             CURRENT    1.96    1.96
+    0/RP1     A99-RP2-SE        1.0   IPU-Linux            CURRENT    1.96    1.96
+    0/RP1     A99-RP2-SE        1.0   Omega-FPGA           CURRENT    0.15    0.15
+    0/RP1     A99-RP2-SE        1.0   Optimus-FPGA         CURRENT    0.12    0.12
+    0/RP1     A99-RP2-SE        1.0   Primary-BIOS         CURRENT   14.28   14.28
+    0/FC0     A99-SFC2          1.0   CBC                  CURRENT   37.20   37.20
+    0/FC0     A99-SFC2          1.0   IPU-FPGA             CURRENT    0.33    0.33
+    0/FC0     A99-SFC2          1.0   IPU-FSBL             CURRENT    1.79    1.79
+    0/FC0     A99-SFC2          1.0   IPU-Linux            CURRENT    1.79    1.79
+    0/FC1     A99-SFC2          1.0   CBC                  CURRENT   37.20   37.20
+    0/FC1     A99-SFC2          1.0   IPU-FPGA             CURRENT    0.33    0.33
+    0/FC1     A99-SFC2          1.0   IPU-FSBL             CURRENT    1.79    1.79
+    0/FC1     A99-SFC2          1.0   IPU-Linux            CURRENT    1.79    1.79
+    0/FC2     A99-SFC2          1.0   CBC                  CURRENT   37.20   37.20
+    0/FC2     A99-SFC2          1.0   IPU-FPGA             CURRENT    0.33    0.33
+    0/FC2     A99-SFC2          1.0   IPU-FSBL             CURRENT    1.79    1.79
+    0/FC2     A99-SFC2          1.0   IPU-Linux            CURRENT    1.79    1.79
+    0/FC3     A99-SFC2          1.0   CBC                  CURRENT   37.20   37.20
+    0/FC3     A99-SFC2          1.0   IPU-FPGA             CURRENT    0.33    0.33
+    0/FC3     A99-SFC2          1.0   IPU-FSBL             CURRENT    1.79    1.79
+    0/FC3     A99-SFC2          1.0   IPU-Linux            CURRENT    1.79    1.79
+    0/FC4     A99-SFC2          1.0   CBC                  CURRENT   37.20   37.20
+    0/FC4     A99-SFC2          1.0   IPU-FPGA             CURRENT    0.33    0.33
+    0/FC4     A99-SFC2          1.0   IPU-FSBL             CURRENT    1.79    1.79
+    0/FC4     A99-SFC2          1.0   IPU-Linux            CURRENT    1.79    1.79
+    0/FT0     ASR-9912-FAN      1.0   CBC                  CURRENT   31.05   31.05
+    0/FT1     ASR-9912-FAN      1.0   CBC                  CURRENT   31.05   31.05
+    0/PT1     PWR-3KW-AC-V2     2.0   PM0-DT-PriMCU        UPGD SKIP  6.01    6.01
+    0/PT1     PWR-3KW-AC-V2     2.0   PM0-DT-Sec54vMCU     UPGD SKIP  6.01    6.01
+    0/PT1     PWR-3KW-AC-V2     2.0   PM0-DT-Sec5vMCU      UPGD SKIP  6.03    6.03
+    0/PT2     PWR-3KW-AC-V2     2.0   PM0-DT-PriMCU        UPGD SKIP  6.01    6.01
+    0/PT2     PWR-3KW-AC-V2     2.0   PM0-DT-Sec54vMCU     UPGD SKIP  6.01    6.01
+    0/PT2     PWR-3KW-AC-V2     2.0   PM0-DT-Sec5vMCU      UPGD SKIP  6.03    6.03
+    0/BPID0   ASR-9912-AC       1.0   CBC                  CURRENT    7.105   7.105
     """
 
     reload_ready = True
@@ -325,6 +389,10 @@ def fpd_needs_reload(ctx, fpd_location, fpd_type):
                 version = line[dl['Running']:].strip()
                 if not version:
                     continue
+
+            # take care of asr9k-x64 exception
+            if 'UPGD SKIP' in status:
+                continue
             if fpd_location == 'all' and fpd_type == 'all':
                 if 'CURRENT' not in status and 'RLOAD REQ' not in status:
                     reload_ready = False
@@ -446,6 +514,9 @@ def fpd_check_status(ctx, fpd_location, fpd_type):
                 version = line[dl['Running']:].strip()
                 if not version:
                     continue
+            # take care of asr9k-x64 exception
+            if 'UPGD SKIP' in status:
+                continue
             if fpd_location == 'all' and fpd_type == 'all':
                 if 'CURRENT' not in status:
                     ctx.warning('FPD Status: {}'.format(line))

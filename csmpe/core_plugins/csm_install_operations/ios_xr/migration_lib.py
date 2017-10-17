@@ -1,11 +1,12 @@
 import time
 import re
-import json
+import yaml
+import collections
 
 from csmpe.context import PluginError
 from csmpe.core_plugins.csm_custom_commands_capture.plugin import Plugin as CmdCapturePlugin
 
-SUPPORTED_HW_JSON = "./asr9k_x64/migration_supported_hw.json"
+SUPPORTED_HW_SPECS_FILE = "./asr9k_x64/asr9k_x64_supported_hardware.yaml"
 
 ADMIN_RP = "\d+/RS?P\d+"
 ADMIN_LC = "\d+/\d+"
@@ -18,7 +19,7 @@ def log_and_post_status(ctx, msg):
 
 def parse_exr_admin_show_platform(output):
     """Get all RSP/RP/LC string node names matched with the card type."""
-    inventory = {}
+    inventory = dict()
     lines = output.split('\n')
 
     for line in lines:
@@ -26,7 +27,7 @@ def parse_exr_admin_show_platform(output):
         if len(line) > 0 and line[0].isdigit():
             node = line[:10].strip()
             # print "node = *{}*".format(node)
-            node_type = line[10:34].strip(),
+            node_type = line[10:34].strip()
             # print "node_type = *{}*".format(node_type)
             inventory[node] = node_type
     return inventory
@@ -75,13 +76,8 @@ def get_all_supported_nodes(ctx, supported_cards):
 
     rp_pattern = re.compile(ADMIN_RP)
     lc_pattern = re.compile(ADMIN_LC)
-    supported_rp = supported_cards.get("RP")
-    if not supported_rp:
-        ctx.error("Missing supported hardware information for RP in {}.".format(SUPPORTED_HW_JSON))
-
-    supported_lc = supported_cards.get("LC")
-    if not supported_lc:
-        ctx.error("Missing supported hardware information for LC in {}.".format(SUPPORTED_HW_JSON))
+    supported_rp = supported_cards["RP_RSP"]
+    supported_lc = supported_cards["LC"]
 
     for node, node_type in inventory.items():
         if rp_pattern.match(node):
@@ -91,32 +87,70 @@ def get_all_supported_nodes(ctx, supported_cards):
                     break
         elif lc_pattern.match(node):
             for lc in supported_lc:
-                if lc in node_type:
+                if lc == node_type:
                     supported_nodes.append(node)
                     break
     ctx.send("exit")
+    ctx.info("Support nodes: " + str(supported_nodes))
     return supported_nodes
+
+
+def compare_version_numbers(version1, version2):
+    nums1 = version1.split('.')
+    nums2 = version2.split('.')
+    for i in range(min(len(nums1), len(nums2))):
+        if int(nums1[i]) < int(nums2[i]):
+            return -1
+        elif int(nums1[i]) > int(nums2[i]):
+            return 1
+    if len(nums1) == len(nums2):
+        return 0
+    return -1 if len(nums1) < len(nums2) else 1
 
 
 def get_version(ctx):
     output = ctx.send("show version | include Version")
-    version = re.search("Version\s*?(\d+\.\d+)\.\d+(?:\.\d+I)?", output)
+    version = re.search("Version\s*?(\d+\.\d+\.\d+)(?:\.\d+I)?", output)
     if not version:
         ctx.error("Failure to retrieve release number.")
     return version.group(1)
 
 
-def wait_for_final_band(ctx):
+def get_supported_cards_for_exr_version(ctx, supported_hw_list, exr_version):
+    supported_cards = collections.defaultdict(list)
+    for supported_hw in supported_hw_list:
+        if 'version' not in supported_hw:
+            ctx.error("Missing version number in the ASR9K-X64 supported hardware file.")
+        if compare_version_numbers(exr_version, supported_hw['version']) >= 0:
+            for card_type in supported_hw:
+                if card_type != 'version':
+                    supported_cards[card_type].extend(supported_hw[card_type])
+        else:
+            break
+    return supported_cards
+
+
+def check_exr_final_band(ctx, timeout=7200):
+    log_and_post_status(ctx, "Waiting for all supported nodes to come to FINAL Band.")
+    if wait_for_final_band(ctx, timeout):
+        log_and_post_status(ctx, "All supported nodes are in FINAL Band.")
+    else:
+        log_and_post_status(ctx, "Warning: Not all supported nodes went to FINAL Band after {} minutes.".format(timeout / 60))
+    return True
+
+
+def wait_for_final_band(ctx, timeout):
     """This is for ASR9K eXR. Wait for all present nodes to come to FINAL Band."""
     exr_version = get_version(ctx)
-    with open(SUPPORTED_HW_JSON) as supported_hw_file:
-        supported_hw = json.load(supported_hw_file)
-    if supported_hw.get(exr_version) is None:
-        ctx.error("No hardware support information available for release {}.".format(exr_version))
+    try:
+        with open(SUPPORTED_HW_SPECS_FILE) as supported_hw_file:
+            supported_hw_list = yaml.load(supported_hw_file)
+    except Exception as e:
+        ctx.error("Loading ASR9K-X64 supported hardware file hit exception: {}".format(str(e)))
 
-    supported_nodes = get_all_supported_nodes(ctx, supported_hw.get(exr_version))
+    supported_cards = get_supported_cards_for_exr_version(ctx, supported_hw_list, exr_version)
+    supported_nodes = get_all_supported_nodes(ctx, supported_cards)
     # Wait for all nodes to Final Band
-    timeout = 1500
     poll_time = 20
     time_waited = 0
 
@@ -145,7 +179,6 @@ def wait_for_final_band(ctx):
 def check_show_plat_vm(output, supported_nodes):
     """Check if all supported nodes reached FINAL Band status"""
 
-    all_nodes_ready = True
     entries_in_show_plat_vm = []
     lines = output.splitlines()
     for line in lines:
@@ -153,20 +186,19 @@ def check_show_plat_vm(output, supported_nodes):
         if len(line) > 0 and line[0].isdigit():
             entries_in_show_plat_vm.append(line)
 
-    if len(entries_in_show_plat_vm) < len(supported_nodes):
-        all_nodes_ready = False
-    else:
-        for node in supported_nodes:
-            node_is_ready = False
-            for entry in entries_in_show_plat_vm:
-                if node in entry:
+    if len(entries_in_show_plat_vm) >= len(supported_nodes):
+        ready_nodes_count = 0
+        for entry in entries_in_show_plat_vm:
+            for node in supported_nodes:
+                if entry.startswith(node):
                     if 'FINAL Band' in entry:
-                        node_is_ready = True
-                    break
-            if not node_is_ready:
-                all_nodes_ready = False
-                break
-    return all_nodes_ready
+                        ready_nodes_count += 1
+                        break
+                    else:
+                        return False
+        if ready_nodes_count == len(supported_nodes):
+            return True
+    return False
 
 
 def check_sw_status_admin(supported_nodes, output):

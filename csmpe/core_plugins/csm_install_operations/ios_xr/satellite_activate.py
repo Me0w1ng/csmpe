@@ -1,7 +1,6 @@
 # =============================================================================
-# asr9k
 #
-# Copyright (c)  2016, Cisco Systems
+# Copyright (c) 2016, Cisco Systems
 # All rights reserved.
 #
 # # Author: Klaudiusz Staniek
@@ -27,24 +26,43 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
-
 from csmpe.plugins import CSMPlugin
+from install import install_satellite_activate
+from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_satellite
 
 
 class Plugin(CSMPlugin):
-    """This plugin checks if there was a failed piece of config detected during startup"""
-    name = "Check Failed Startup Config"
-    platforms = {'ASR9K', 'XR12K', 'CRS', 'NCS1K', 'NCS1001', 'NCS4K', 'NCS5K', 'NCS540',
-                 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
-    phases = {'Post-Activate', 'Post-Check'}
+    """This plugin removes all inactive packages from the device."""
+    name = "Satellite-Activate Plugin"
+    platforms = {'ASR9K'}
+    phases = {'Satellite-Activate'}
+    os = {'XR'}
 
-    def _run(self):
-        output = self.ctx.send("show configuration failed startup")
-        lines = output.split("\n", 100)
-        if len(lines) < 6:
-            self.ctx.info("No failed configuration detected during startup")
-            return
+    def run(self):
 
-        self.ctx.warning("Some configuration parts failed during startup")
-        for line in lines:
-            self.ctx.warning(line)
+        """
+        Produces a list of satellite ID that needs transfer
+
+        RP/0/RP0/CPU0:AGN_PE_11_9k#install nv satellite 160,163 transfer
+        """
+        satellite_ids = self.ctx.load_job_data('selected_satellite_ids')
+
+        # ctype = type(satellite_ids[0])
+        # self.ctx.info("ctype = {}".format(ctype))
+        self.ctx.info("satellite_ids = {}".format(satellite_ids[0]))
+
+        self.ctx.info("Satellite-Activate Pending")
+        self.ctx.post_status("Satellite-Activate Pending")
+
+        result = install_satellite_activate(self.ctx, satellite_ids[0])
+
+        self.ctx.info("Refresh satellite inventory information")
+        self.ctx.post_status("Refresh satellite inventory information")
+
+        # Refresh satellite inventory information
+        get_satellite(self.ctx)
+
+        if result:
+            self.ctx.info("Satellite-Activate completed")
+        else:
+            self.ctx.error("Satellite-Activate failed to complete.")

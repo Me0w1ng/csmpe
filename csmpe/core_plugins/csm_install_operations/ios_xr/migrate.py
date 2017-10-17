@@ -25,10 +25,11 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
+import time
 import re
 
 from csmpe.plugins import CSMPlugin
-from migration_lib import wait_for_final_band, log_and_post_status, run_additional_custom_commands
+from migration_lib import check_exr_final_band, log_and_post_status, run_additional_custom_commands
 from csmpe.core_plugins.csm_get_inventory.exr.plugin import get_package, get_inventory
 from csmpe.core_plugins.csm_install_operations.utils import update_device_info_udi
 
@@ -40,8 +41,7 @@ SCRIPT_BACKUP_CONFIG_612_UP = "harddiskb:/cXR_xr_plane.cfg"
 SCRIPT_BACKUP_ADMIN_CONFIG_611_DOWN = "harddiskb:/admin.cfg"
 SCRIPT_BACKUP_ADMIN_CONFIG_612_UP = "harddiskb:/cXR_admin_plane.cfg"
 
-MIGRATION_TIME_OUT = 3600
-NODES_COME_UP_TIME_OUT = 3600
+MIGRATION_TIME_OUT = 7200
 
 PASSWORD_PROMPT = re.compile("[P|p]assword:\s?")
 USERNAME_PROMPT = re.compile("([U|u]sername:|login:)\s?")
@@ -83,7 +83,7 @@ class Plugin(CSMPlugin):
         :return: True if no error occurred.
         """
 
-        output = self.ctx.send("run /pkg/bin/migrate_to_eXR -m eusb", timeout=600)
+        output = self.ctx.send("run /pkg/bin/migrate_to_eXR -m eusb", timeout=1800)
 
         self._check_migration_script_output(output)
 
@@ -118,19 +118,37 @@ class Plugin(CSMPlugin):
 
     def _reload_all(self):
         """Reload all nodes to boot eXR image."""
-        if self.ctx.reload(reload_timeout=MIGRATION_TIME_OUT):
-            return self._wait_for_reload()
-        self.ctx.error("Encountered error when attempting to reload device.")
-
-    def _wait_for_reload(self):
-        """Wait for all nodes to come up with max timeout as 18 minutes after the first RSP/RP comes up."""
-        log_and_post_status(self.ctx, "Waiting for all nodes to come to FINAL Band.")
-        if wait_for_final_band(self.ctx):
-            log_and_post_status(self.ctx, "All nodes are in FINAL Band.")
+        if self.ctx.is_console:
+            if not self.ctx.reload(reload_timeout=MIGRATION_TIME_OUT):
+                self.ctx.error("Encountered error when attempting to reload device.")
         else:
-            log_and_post_status(self.ctx, "Warning: Not all nodes are in FINAL Band after 25 minutes.")
+            def send_newline(fsm_ctx):
+                fsm_ctx.ctrl.sendline()
+                return True
 
-        return True
+            UNCOMMITTED_PACKAGES = re.compile("software packages are not yet committed. Proceed\?\[confirm\]")
+            DONE = re.compile(re.escape("[Done]"))
+            PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
+
+            events = [UNCOMMITTED_PACKAGES, DONE, PROCEED]
+            transitions = [
+                (UNCOMMITTED_PACKAGES, [0], 1, send_newline, 300),
+                (DONE, [0, 1], 2, None, 300),
+                (PROCEED, [0, 1, 2], -1, send_newline, 300)
+            ]
+
+            if not self.ctx.run_fsm("RELOAD", "admin reload location all", events, transitions, timeout=300):
+                self.ctx.error("Failed to reload.")
+
+            # wait a little bit before disconnect so that newline character can reach the router
+            time.sleep(5)
+            self.ctx.disconnect()
+            self.ctx.post_status("Waiting for device boot to reconnect")
+            self.ctx.info("Waiting for device boot to reconnect")
+            time.sleep(300)
+            self.ctx.reconnect(max_timeout=MIGRATION_TIME_OUT, force_discovery=True)  # 60 * 60 = 3600
+
+        return check_exr_final_band(self.ctx)
 
     def _run(self):
 

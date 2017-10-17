@@ -39,7 +39,7 @@ smu_re = CSCuz33376
 sp_re = None
 subversion_re = 1.0.0
 """
-platforms = ["asr9k", "hfr"]
+platforms = ["asr9k", "c12k", "hfr"]
 # 'services-infra' needs to be before 'service' for matching purpose
 package_types = "mini mcast mgbl mpls k9sec diags fpd doc bng li optic services-infra services " \
                 "infra-test video 9000v asr901 asr903 ncs500x".split()

@@ -31,7 +31,8 @@ from plugin_lib import parse_show_platform
 class Plugin(CSMPlugin):
     """This plugin checks the states of all nodes"""
     name = "Node Status Check"
-    platforms = {'ASR9K', 'NCS1K', 'NCS4K', 'NCS5K', 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
+    platforms = {'ASR9K', 'NCS1K', 'NCS1001', 'NCS4K', 'NCS5K', 'NCS540',
+                 'NCS5500', 'NCS6K', 'IOSXRv-9K', 'IOSXRv-X64'}
     phases = {'Pre-Check', 'Post-Check'}
     os = {'eXR'}
 

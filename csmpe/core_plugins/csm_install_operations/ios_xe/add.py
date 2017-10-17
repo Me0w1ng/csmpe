@@ -28,12 +28,13 @@ import re
 from csmpe.plugins import CSMPlugin
 from utils import install_add_remove
 from csmpe.core_plugins.csm_get_inventory.ios_xe.plugin import get_package, get_inventory
+from condoor.exceptions import CommandSyntaxError
 
 
 class Plugin(CSMPlugin):
     """This plugin adds packages from repository to the device."""
     name = "Install Add"
-    platforms = {'ASR900'}
+    platforms = {'ASR900', 'ASR1K'}
     phases = {'Add'}
     os = {'XE'}
 
@@ -52,18 +53,32 @@ class Plugin(CSMPlugin):
         self.ctx.info("Add Package(s) Pending")
         self.ctx.post_status("Add Package(s) Pending")
 
+        try:
+            self.ctx.send('dir harddisk:')
+            disk = 'harddisk:'
+        except CommandSyntaxError:
+            disk = 'bootflash:'
+        stby_disk = 'stby-' + disk
+
         for package in packages:
 
-            output = self.ctx.send('dir bootflash:' + package)
+            output = self.ctx.send('dir ' + disk + package)
             m = re.search('No such file', output)
 
             if not m:
-                self.ctx.info("No action: {} exists in bootflash:".format(package))
+                self.ctx.info("No action: {} exists in {}".format(package, disk))
                 continue
 
-            cmd = "copy {}/{} bootflash:".format(server_repository_url, package)
-
+            cmd = "copy {}/{} {}".format(server_repository_url, package, disk)
             install_add_remove(self.ctx, cmd)
+
+            cmd = "dir " + stby_disk
+            try:
+                self.ctx.send(cmd)
+                cmd = "copy {}{} {}{}".format(disk, package, stby_disk, package)
+                install_add_remove(self.ctx, cmd)
+            except CommandSyntaxError:
+                continue
 
         self.ctx.info("Package(s) Added Successfully")
 
