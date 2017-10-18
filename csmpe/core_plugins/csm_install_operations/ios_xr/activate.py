@@ -29,7 +29,7 @@
 
 from package_lib import SoftwarePackage
 from csmpe.plugins import CSMPlugin
-from install import install_activate_deactivate
+from install import install_activate_deactivate, parse_pkg_list, report_changed_pkg
 from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_inventory
 from csmpe.core_plugins.csm_install_operations.utils import update_device_info_udi, get_cmd_for_install_activate_deactivate
 
@@ -93,12 +93,28 @@ class Plugin(CSMPlugin):
             self.ctx.info("Nothing to be activated.")
             return True
 
+        output = self.ctx.send("show install active summary")
+        before = parse_pkg_list(output)
+
         self.ctx.info("Activate package(s) pending")
         self.ctx.post_status("Activate Package(s) Pending")
 
         install_activate_deactivate(self.ctx, cmd)
 
         self.ctx.info("Activate package(s) done")
+
+        output = self.ctx.send("show install active summary")
+        after = parse_pkg_list(output)
+
+        pkg_list = report_changed_pkg(before, after)
+        pkg_change_list = ','.join(pkg_list)
+
+        self.ctx.save_job_data("package_change_list", pkg_change_list)
+        self.ctx.info("package change list:")
+
+        for pkg in pkg_list:
+            self.ctx.info("\t{}".format(pkg))
+
         self.ctx.info("Refreshing package and inventory information")
         self.ctx.post_status("Refreshing package and inventory information")
         # Refresh package and inventory information
