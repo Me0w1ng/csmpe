@@ -332,6 +332,8 @@ def report_install_status(ctx, op_id):
         log_install_errors(ctx, output)
         ctx.error("Operation {} failed".format(op_id))
 
+    report_changed_pkg(ctx, output)
+
     ctx.info("Operation {} finished successfully".format(op_id))
 
 
@@ -561,7 +563,7 @@ def observe_install_remove_all(ctx, cmd, prompt):
 
     op_id = ctx.op_id
     ctx.info("Install operation ID = {}".format(op_id))
-    OPER_SUCCESS = "Install operation {} finished successfully".format(op_id)
+    oper_success = "Install operation {} finished successfully".format(op_id)
 
     last_status = None
     no_install = r"No install operation in progress"
@@ -577,7 +579,7 @@ def observe_install_remove_all(ctx, cmd, prompt):
         try:
             try:
                 # this is to catch the successful operation as soon as possible
-                ctx.send("", wait_for_string=OPER_SUCCESS, timeout=20)
+                ctx.send("", wait_for_string=oper_success, timeout=20)
                 finish = True
             except ctx.CommandTimeoutError:
                 pass
@@ -612,9 +614,42 @@ def observe_install_remove_all(ctx, cmd, prompt):
     output = ctx.send(cmd_show_install_log, timeout=600)
     ctx.info(output)
 
-    if OPER_SUCCESS in output:
+    if oper_success in output:
+        report_changed_pkg(ctx, output)
         message = "Remove All Inactive Package(s) Successfully"
         ctx.info(message)
         ctx.post_status(message)
     else:
         ctx.error("Remove All Inactive Package(s) failed")
+
+
+def report_changed_pkg(ctx, output):
+    """
+    :param ctx: CSM Context object
+    :param output: show install log op_id detail
+    """
+
+    pkg_list = []
+    flag = False
+
+    lines = output.split('\n')
+    lines = [x for x in lines if x]
+
+    for line in lines:
+        if 'Packages added:' in line or 'Package list:' in line:
+            flag = True
+            continue
+
+        if flag:
+            if line[16].isalnum():
+                break
+            else:
+                pkg = line[20:].strip()
+                pkg_list.append(pkg)
+
+    if flag:
+        pkg_change_list = ','.join(pkg_list)
+        ctx.save_job_data("package_change_list", pkg_change_list)
+        ctx.info("package change list:")
+        for pkg in pkg_list:
+            ctx.info("\t{}".format(pkg))

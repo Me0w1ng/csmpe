@@ -27,7 +27,7 @@
 # =============================================================================
 
 from csmpe.plugins import CSMPlugin
-from install import install_add_remove
+from install import install_add_remove, parse_pkg_list, report_changed_pkg
 from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_inventory
 
 
@@ -92,12 +92,27 @@ class Plugin(CSMPlugin):
         if not s_packages:
             self.ctx.error("None of the selected package(s) has an acceptable file extension.")
 
+        output = self.ctx.send("show install inactive summary")
+        before = parse_pkg_list(output)
+
         self.ctx.info("Add Package(s) Pending")
         self.ctx.post_status("Add Package(s) Pending")
 
         self.install_add(server_repository_url, s_packages, has_tar=has_tar)
 
         self.ctx.info("Package(s) Added Successfully")
+
+        output = self.ctx.send("show install inactive summary")
+        after = parse_pkg_list(output)
+
+        pkg_list = report_changed_pkg(before, after)
+        pkg_change_list = ','.join(pkg_list)
+
+        self.ctx.save_job_data("package_change_list", pkg_change_list)
+        self.ctx.info("package change list:")
+
+        for pkg in pkg_list:
+            self.ctx.info("\t{}".format(pkg))
 
         # Refresh package and inventory information
         get_package(self.ctx)

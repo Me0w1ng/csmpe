@@ -1028,3 +1028,44 @@ def install_satellite_activate(ctx, satellite_ids):
     # Some transfer did not ccomplete
     ctx.warning("Satellite-Activate did not complete for satellites {}.".format(','.join(L)))
     return False
+
+
+def parse_pkg_list(output):
+    """
+    :param output: show install active/inactive summary
+    :return: a list of active/inactive packages
+    """
+
+    pkg_list = []
+    flag = False
+
+    lines = output.split('\n')
+    lines = [x for x in lines if x]
+
+    for line in lines:
+        if 'ctive Packages:' in line:
+            flag = True
+            continue
+
+        if flag:
+            if line[2].isalnum():
+                break
+            else:
+                pkg = line.strip()
+                pkg_list.append(pkg)
+
+    return pkg_list
+
+
+def report_changed_pkg(p, q):
+    """
+    :param p: a list of packages
+    :param q: a list of packages
+    :return: a list of packages in q but not in p
+    """
+
+    changed = list(set(q) - set(p))
+    changed_list = [re.sub(r'^.*:', '', pkg) for pkg in changed]
+    changed_list.sort()
+
+    return changed_list

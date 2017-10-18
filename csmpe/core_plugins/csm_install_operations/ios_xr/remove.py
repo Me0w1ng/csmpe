@@ -28,7 +28,7 @@
 
 from package_lib import SoftwarePackage
 from csmpe.plugins import CSMPlugin
-from install import install_add_remove
+from install import install_add_remove, parse_pkg_list, report_changed_pkg
 from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_inventory
 
 
@@ -63,12 +63,27 @@ class Plugin(CSMPlugin):
 
         cmd = 'admin install remove {} prompt-level none async'.format(to_remove)
 
+        output = self.ctx.send("show install inactive summary")
+        before = parse_pkg_list(output)
+
         self.ctx.info("Remove Package(s) Pending")
         self.ctx.post_status("Remove Package(s) Pending")
 
         install_add_remove(self.ctx, cmd)
 
         self.ctx.info("Package(s) Removed Successfully")
+
+        output = self.ctx.send("show install inactive summary")
+        after = parse_pkg_list(output)
+
+        pkg_list = report_changed_pkg(after, before)
+        pkg_change_list = ','.join(pkg_list)
+
+        self.ctx.save_job_data("package_change_list", pkg_change_list)
+        self.ctx.info("package change list:")
+
+        for pkg in pkg_list:
+            self.ctx.info("\t{}".format(pkg))
 
         # Refresh package and inventory information
         get_package(self.ctx)

@@ -27,7 +27,7 @@
 # =============================================================================
 
 from csmpe.plugins import CSMPlugin
-from install import install_remove_all
+from install import install_remove_all, parse_pkg_list, report_changed_pkg
 from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_inventory
 
 
@@ -42,12 +42,27 @@ class Plugin(CSMPlugin):
 
         cmd = 'admin install remove inactive async'
 
+        output = self.ctx.send("show install inactive summary")
+        before = parse_pkg_list(output)
+
         self.ctx.info("Remove All Inactive Package(s) Pending")
         self.ctx.post_status("Remove All Inactive Package(s) Pending")
 
         install_remove_all(self.ctx, cmd, self.ctx._connection.hostname)
 
         self.ctx.info("Remove All Inactive Package(s) Successfully")
+
+        output = self.ctx.send("show install inactive summary")
+        after = parse_pkg_list(output)
+
+        pkg_list = report_changed_pkg(after, before)
+        pkg_change_list = ','.join(pkg_list)
+
+        self.ctx.save_job_data("package_change_list", pkg_change_list)
+        self.ctx.info("package change list:")
+
+        for pkg in pkg_list:
+            self.ctx.info("\t{}".format(pkg))
 
         # Refresh package and inventory information
         get_package(self.ctx)
