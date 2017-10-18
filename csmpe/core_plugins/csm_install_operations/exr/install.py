@@ -329,6 +329,8 @@ def report_install_status(ctx, op_id):
         log_install_errors(ctx, output)
         ctx.error("Operation {} failed".format(op_id))
 
+    report_changed_pkg(ctx, output)
+
     ctx.info("Operation {} finished successfully".format(op_id))
 
 
@@ -633,8 +635,41 @@ def observe_install_remove_all(ctx, cmd, prompt):
     ctx.info(output)
 
     if oper_success in output:
+        report_changed_pkg(ctx, output)
         message = "Remove All Inactive Package(s) Successfully"
         ctx.info(message)
         ctx.post_status(message)
     else:
         ctx.error("Remove All Inactive Package(s) failed")
+
+
+def report_changed_pkg(ctx, output):
+    """
+    :param ctx: CSM Context object
+    :param output: show install log op_id detail
+    """
+
+    pkg_list = []
+    flag = False
+
+    lines = output.split('\n')
+    lines = [x for x in lines if x]
+
+    for line in lines:
+        if 'Packages added:' in line or 'Package list:' in line:
+            flag = True
+            continue
+
+        if flag:
+            if line[16].isalnum():
+                break
+            else:
+                pkg = line[20:].strip()
+                pkg_list.append(pkg)
+
+    if flag:
+        pkg_change_list = ','.join(pkg_list)
+        ctx.save_job_data("package_change_list", pkg_change_list)
+        ctx.info("package change list:")
+        for pkg in pkg_list:
+            ctx.info("\t{}".format(pkg))

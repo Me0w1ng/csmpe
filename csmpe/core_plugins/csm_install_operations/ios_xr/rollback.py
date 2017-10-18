@@ -27,7 +27,7 @@
 # =============================================================================
 
 from csmpe.plugins import CSMPlugin
-from install import install_activate_deactivate
+from install import install_activate_deactivate, parse_pkg_list, report_changed_pkg
 from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_package, get_inventory
 from csmpe.core_plugins.csm_install_operations.utils import update_device_info_udi
 
@@ -46,12 +46,27 @@ class Plugin(CSMPlugin):
 
         cmd = 'admin install rollback to committed prompt-level none asynchronous'
 
+        output = self.ctx.send("show install active summary")
+        before = parse_pkg_list(output)
+
         self.ctx.info("Install rollback to the last committed installation point Pending")
         self.ctx.post_status("Install rollback to the last committed installation point Pending")
 
         install_activate_deactivate(self.ctx, cmd)
 
         self.ctx.info("Install rollback done")
+
+        output = self.ctx.send("show install active summary")
+        after = parse_pkg_list(output)
+
+        pkg_list = report_changed_pkg(before, after)
+        pkg_change_list = ','.join(pkg_list)
+
+        self.ctx.save_job_data("package_change_list", pkg_change_list)
+        self.ctx.info("package change list:")
+
+        for pkg in pkg_list:
+            self.ctx.info("\t{}".format(pkg))
 
         self.ctx.info("Refreshing package and inventory information")
         self.ctx.post_status("Refreshing package and inventory information")
