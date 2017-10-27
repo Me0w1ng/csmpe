@@ -649,7 +649,6 @@ def report_changed_pkg(ctx, output):
     :param output: show install log op_id detail
     """
 
-    ctx.info("In report_changed_pkg")
     pkg_list = []
     flag = False
 
@@ -657,7 +656,7 @@ def report_changed_pkg(ctx, output):
     lines = [x for x in lines if x]
 
     for line in lines:
-        ctx.info("line: {}".format(line))
+
         if 'Packages added:' in line or 'Package list:' in line:
             flag = True
             ctx.info("flag is True")
@@ -668,7 +667,6 @@ def report_changed_pkg(ctx, output):
                 break
             else:
                 pkg = line[20:].strip()
-                ctx.info("pkg: {}".format(pkg))
                 pkg_list.append(pkg)
 
     if flag:
