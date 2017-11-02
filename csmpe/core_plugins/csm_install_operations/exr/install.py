@@ -665,6 +665,7 @@ def report_changed_pkg(ctx, output):
                 break
             else:
                 pkg = line[20:].strip()
+                pkg = pkg.replace('.x86_64', '')
                 pkg_list.append(pkg)
 
     if flag:
