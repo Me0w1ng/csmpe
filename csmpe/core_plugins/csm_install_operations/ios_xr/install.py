@@ -105,6 +105,11 @@ def watch_operation(ctx, op_id=0):
             time.sleep(60)
             ctx.reconnect()
 
+        # ctx.send returns with an empty output from 'show install request'. go back to loop
+        if output is None:
+            continue
+
+        # ctx.send returns and no active install action in progress. terminate the loop
         if no_install in output:
             break
 
