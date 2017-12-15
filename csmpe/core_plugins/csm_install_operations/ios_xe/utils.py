@@ -26,6 +26,15 @@
 
 import re
 import string
+from functools import partial
+from csmpe.core_plugins.csm_install_operations.actions import a_error
+from csmpe.core_plugins.csm_install_operations.actions import a_remote_host_address
+from csmpe.core_plugins.csm_install_operations.actions import a_source_username
+from csmpe.core_plugins.csm_install_operations.actions import a_source_password
+from csmpe.core_plugins.csm_install_operations.actions import a_source_filename
+from csmpe.core_plugins.csm_install_operations.actions import a_destination
+from csmpe.core_plugins.csm_install_operations.actions import a_send_newline
+from csmpe.core_plugins.csm_install_operations.actions import a_bytes_copied
 
 install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
 
@@ -616,3 +625,224 @@ def xe_show_platform(ctx):
                 platform_info[Slot] = [Type, State]
 
     return platform_info
+
+
+def install_add_ftp(ctx, pkg, disk):
+    """
+    Execute the copy ftp command
+
+    :param ctx
+    :param pkg
+    :param pkg
+    :return: nothing
+    """
+
+    global plugin_ctx
+    plugin_ctx = ctx
+
+    # The same known limintation as exr/add.py about the password
+    # The password cant contain special characters ':' and '@'
+    # url = 'ftp://administrator:xxxxxxx@172.27.148.198;Mgmt-intf/tftpboot'
+    # pkg = 'testme.bin'
+    # disk = 'bootflash:'
+
+    url = ctx.server_repository_url
+
+    # remove username, pasword
+    rest_url = url[url.index('@') + 1:]
+    # rest_url = '172.27.148.198;Mgmt-intf//tftpboot'
+    if not rest_url:
+        ctx.error("Check if the FTP server repository is configured correctly on CSM Server.")
+
+    # determine password
+    t1, d1, user_url = url.partition('//')
+    if not t1 or not d1 or not user_url:
+        ctx.error("Check if the FTP server repository is configured correctly on CSM Server.")
+
+    password = user_url[user_url.index(':') + 1:user_url.index('@')]
+
+    # url_no_password = url.replace(password, 'xxxxxxx')
+    # ctx.info("server_repository_url = {}".format(url_no_password))
+    # ctx.info("pacakage = {}".format(pkg))
+    # ctx.info("disk = {}".format(disk))
+
+    # determine if vrf is used
+    if ';' in rest_url:
+        # vrf = rest_url[rest_url.index(';') + 1:rest_url.index('/')]
+        # directory = rest_url[rest_url.index('/'):]
+        address = rest_url[:rest_url.index(';')]
+    else:
+        address = rest_url[:rest_url.index('/')]
+
+    if not address:
+        ctx.error("Check if the FTP server repository is configured correctly on CSM Server.")
+
+    # source directory
+    src_dir = rest_url[rest_url.index('/'):]
+    src_file = src_dir + '/' + pkg
+
+    ftp_cmd = url.replace(src_dir, '')
+    cmd = 'copy ' + ftp_cmd + ' ' + disk
+    cmd_no_password = cmd.replace(password, 'xxxxxxx')
+    ctx.info("{}".format(cmd_no_password))
+
+    ctx.src_address = address
+    ctx.src_file = src_file
+    ctx.destination_file = pkg
+
+    # PAN - 5205 - ASR903  # copy ftp://administrator:xxxxxxx@172.27.148.198;Mgmt-intf bootflash:
+    # Address or name of remote host [172.27.148.198]?
+    # Source filename [/tftpboot/testme.bin]?
+    # Destination filename [testme.bin]?
+    # %Warning:There is a file already existing with this name
+    # Do you want to over write? [confirm]
+    # Accessing ftp://*:*@172.27.148.198//tftpboot/testme.bin...
+    # Loading /tftpboot/testme.bin
+    # [OK - 4/4096 bytes]
+
+    # 4 bytes copied in 0.348 secs (11 bytes/sec)
+    REMOTE_HOST_ADDRESS = re.compile("Address or name of remote host")
+    SOURCE_FILE = re.compile("Source filename")
+    DESTINATION_NAME = re.compile("Destination filename")
+    OVERWRITE = re.compile("Do you want to over write")
+    OK = re.compile("bytes/sec")
+
+    # %Error opening ftp://*:*@172.27.148.198//tftpboot/jawei (No such file or directory)
+    # %Error copying ftp://*:*@172.27.148.198//tftpboot/testme.bin (Not enough space on device)
+    ERROR = re.compile(re.escape("%Error"))
+
+    #                  0                1              2             3        4    5
+    events = [REMOTE_HOST_ADDRESS, SOURCE_FILE, DESTINATION_NAME, OVERWRITE, OK, ERROR]
+    transitions = [
+        (REMOTE_HOST_ADDRESS, [0], 1, partial(a_remote_host_address, ctx), 60),
+        (SOURCE_FILE, [0, 1], 2, partial(a_source_filename, ctx), 60),
+        (DESTINATION_NAME, [2], 3, partial(a_destination, ctx), 3600),
+        (OVERWRITE, [3], 4, a_send_newline, 3600),
+        (OK, [3, 4], -1, partial(a_bytes_copied, ctx), 3600),
+        (ERROR, [3, 4], -1, partial(a_error, ctx), 0),
+    ]
+
+    message = "Waiting the operation to continue"
+    ctx.info(message)
+    ctx.post_status(message)
+
+    # ctx.pause_session_logging()
+    if not ctx.run_fsm("ADD-COPY-FTP", cmd, events, transitions, timeout=3600):
+        ctx.error("Failed: {}".format(cmd_no_password))
+    # ctx.resume_session_logging()
+    ctx.info("{} finished successfully".format(cmd_no_password))
+    return
+
+
+def install_add_scp(ctx, pkg, disk):
+    """
+    Execute the copy scp command
+
+    :param ctx
+    :param pkg
+    :param disk
+    :return: nothing
+    """
+
+    global plugin_ctx
+    plugin_ctx = ctx
+
+    # The same known limintation as exr/add.py about the password
+    # The password cant contain special characters ':' and '@'
+    # url = 'scp administrator:roZes123@172.27.148.198:/tftpboot bootflash:'
+    url = ctx.server_repository_url
+    rep, d1, rest_url = url.partition(' ')
+    # rep = 'scp'
+    # d1 = ' '
+    # rest_url = 'administrator:roZes123@172.27.148.198:/tftpboot bootflash:'
+    if not rep or not d1 or not rest_url:
+        ctx.error("Check if the SCP server repository is configured correctly on CSM Server.")
+
+    user_and_directory, d1, disk = rest_url.partition(' ')
+    # user_and_directory = 'administrator:roZes123@172.27.148.198:/tftpboot'
+    # disk = 'bootflash:'
+    if not user_and_directory or not d1 or not disk:
+        ctx.error("Check if the SCP server repository is configured correctly on CSM Server.")
+
+    user_and_password, d1, address_and_src = user_and_directory.partition('@')
+    # user_and_password = 'administrator:roZes123'
+    # address_and_src = '172.27.148.198:/tftpboot'
+    if not user_and_password or not d1 or not address_and_src:
+        ctx.error("Check if the SCP server repository is configured correctly on CSM Server.")
+
+    username = user_and_password[:user_and_password.index(':')]
+    password = user_and_password[user_and_password.index(':') + 1:]
+    # username = 'administrator'
+
+    # url_no_password = url.replace(password, 'xxxxxxx')
+    # ctx.info("server_repository_url = {}".format(url_no_password))
+    # ctx.info("pacakage = {}".format(pkg))
+    # ctx.info("disk = {}".format(disk))
+
+    address = address_and_src[:address_and_src.index(':')]
+    # address = '172.27.148.198'
+    # source directory
+    src_dir = address_and_src[address_and_src.index('/'):]
+    # src_dir = '/tftpboot'
+    src_file = src_dir + '/' + pkg
+
+    # cmd = 'copy scp://administrator@172.27.148.198 bootflash:'
+    cmd = 'copy ' + 'scp://' + username + '@' + address + ' ' + disk
+    ctx.info("{}".format(cmd))
+
+    ctx.src_address = address
+    ctx.src_username = username
+    ctx.src_file = src_file
+    ctx.destination_file = pkg
+    ctx.src_password = password
+
+    # PAN-5205-ASR903#copy scp://administrator@172.27.148.198 bootflash:
+    # Address or name of remote host [172.27.148.198]?
+    # Source username [administrator]?
+    # Source filename [/tftpboot/testme.bin]?
+    # Destination filename [testme.bin]?
+    # %Warning:There is a file already existing with this name
+    # Do you want to over write? [confirm]
+    # Password:
+    #  Sending file modes: C0777 4 testme.bin
+    # !
+    # 4 bytes copied in 3.444 secs (1 bytes/sec)
+
+    REMOTE_HOST_ADDRESS = re.compile("Address or name of remote host")
+    SOURCE_USERNAME = re.compile("Source filename")
+    SOURCE_FILE = re.compile("Source filename")
+    DESTINATION_NAME = re.compile("Destination filename")
+    OVERWRITE = re.compile("Do you want to over write")
+    SOURCE_PASSWORD = re.compile("Password:")
+    OK = re.compile("bytes/sec")
+
+    # %Error opening scp://*:*@172.27.148.198;Mgmt-intf//tftpboot/testme.bin (Invalid IP address or hostname)
+    # %Error copying scp://*:*@172.27.148.198//tftpboot/testme.bin (Not enough space on device)
+    ERROR = re.compile(re.escape("%Error"))
+
+    #                  0                1              2             3                  4
+    events = [REMOTE_HOST_ADDRESS, SOURCE_USERNAME, SOURCE_FILE, DESTINATION_NAME, OVERWRITE,
+              #        5        6    7
+              SOURCE_PASSWORD, OK, ERROR]
+
+    transitions = [
+        (REMOTE_HOST_ADDRESS, [0], 1, partial(a_remote_host_address, ctx), 60),
+        (SOURCE_USERNAME, [0, 1], 2, partial(a_source_username, ctx), 60),
+        (SOURCE_FILE, [0, 1, 2], 3, partial(a_source_filename, ctx), 60),
+        (DESTINATION_NAME, [3], 4, partial(a_destination, ctx), 300),
+        (OVERWRITE, [4], 5, a_send_newline, 300),
+        (SOURCE_PASSWORD, [4, 5], 6, partial(a_source_password, ctx), 3600),
+        (OK, [6], -1, partial(a_bytes_copied, ctx), 3600),
+        (ERROR, [0, 1, 2, 3, 4, 5, 6], -1, partial(a_error, ctx), 0),
+    ]
+
+    message = "Waiting the operation to continue"
+    ctx.info(message)
+    ctx.post_status(message)
+
+    # ctx.pause_session_logging()
+    if not ctx.run_fsm("ADD-COPY-SCP", cmd, events, transitions, timeout=3600):
+        ctx.error("Failed: {}".format(cmd))
+    # ctx.resume_session_logging()
+    ctx.info("{} finished successfully".format(cmd))
+    return

@@ -26,7 +26,7 @@
 
 import re
 from csmpe.plugins import CSMPlugin
-from utils import install_add_remove
+from utils import install_add_remove, install_add_ftp, install_add_scp
 from csmpe.core_plugins.csm_get_inventory.ios_xe.plugin import get_package, get_inventory
 from condoor.exceptions import CommandSyntaxError
 
@@ -53,32 +53,49 @@ class Plugin(CSMPlugin):
         self.ctx.info("Add Package(s) Pending")
         self.ctx.post_status("Add Package(s) Pending")
 
+        self.ctx.pause_session_logging()
         try:
             self.ctx.send('dir harddisk:')
             disk = 'harddisk:'
         except CommandSyntaxError:
             disk = 'bootflash:'
-        stby_disk = 'stby-' + disk
+        self.ctx.resume_session_logging()
 
         for package in packages:
 
+            stby_disk = ''
+            self.ctx.pause_session_logging()
             output = self.ctx.send('dir ' + disk + package)
+            self.ctx.resume_session_logging()
+
             m = re.search('No such file', output)
 
             if not m:
                 self.ctx.info("No action: {} exists in {}".format(package, disk))
                 continue
 
-            cmd = "copy {}/{} {}".format(server_repository_url, package, disk)
-            install_add_remove(self.ctx, cmd)
+            if server_repository_url.startswith("tftp"):
+                cmd = "copy {}/{} {}".format(server_repository_url, package, disk)
+                install_add_remove(self.ctx, cmd)
+            elif server_repository_url.startswith("ftp"):
+                install_add_ftp(self.ctx, package, disk)
+            elif server_repository_url.startswith("scp"):
+                install_add_scp(self.ctx, package, disk)
+            else:
+                self.ctx.error("Unsupported repository type {}".format(server_repository_url))
 
-            cmd = "dir " + stby_disk
+            cmd = "dir " + 'stby-' + disk
+            self.ctx.pause_session_logging()
             try:
                 self.ctx.send(cmd)
-                cmd = "copy {}{} {}{}".format(disk, package, stby_disk, package)
-                install_add_remove(self.ctx, cmd)
+                stby_disk = 'stby-' + disk
             except CommandSyntaxError:
                 continue
+            self.ctx.resume_session_logging()
+
+            if stby_disk:
+                cmd = "copy {}{} {}{}".format(disk, package, stby_disk, package)
+                install_add_remove(self.ctx, cmd)
 
         self.ctx.info("Package(s) Added Successfully")
 
