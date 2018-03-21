@@ -147,13 +147,14 @@ def wait_for_reload(ctx):
     begin = time.time()
     if not ctx.is_console:
         # wait a little bit before disconnect so that newline character can reach the router
-        time.sleep(5)
+        # XR ddts CSCvb67386 workaround - reload is aborted after a confirmation is received from
+        # the router if disconnect too soon (less than 6 seconds)
+        time.sleep(10)
         ctx.disconnect()
         ctx.post_status("Waiting for device boot to reconnect")
         ctx.info("Waiting for device boot to reconnect")
         time.sleep(60)
         ctx.reconnect(max_timeout=3600, force_discovery=True)  # 60 * 60 = 3600
-
     else:
         ctx.info("Keeping console connected")
         ctx.post_status("Boot process started")
