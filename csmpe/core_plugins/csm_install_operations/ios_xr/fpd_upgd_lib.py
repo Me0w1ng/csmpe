@@ -342,13 +342,15 @@ def hw_fpd_upgd(ctx, location, type):
     CONTINUE_YES = re.compile("Continue\? \[confirm\]")
     CONTINUE_UPGD = re.compile("Continue \? \[no\]:")
     END_UPGD = re.compile("FPD upgrade has ended.")
+    COMPLETE_UPGD = re.compile("FPD upgrade completed. Auto-reload triggered")
     HOST_PROMPT = re.compile(ctx.prompt)
 
-    events = [CONTINUE_YES, CONTINUE_UPGD, END_UPGD, HOST_PROMPT]
+    events = [CONTINUE_YES, CONTINUE_UPGD, END_UPGD, COMPLETE_UPGD, HOST_PROMPT]
     transitions = [
         (CONTINUE_YES, [0], 1, send_newline, 9600),
         (CONTINUE_UPGD, [0, 1], 2, send_yes, 9600),
         (END_UPGD, [1, 2], 3, None, 9600),
+        (COMPLETE_UPGD, [1, 2], 3, None, 9600),
         (HOST_PROMPT, [3], -1, None, 9600)
     ]
 
@@ -490,3 +492,117 @@ def active_rsp_location(ctx):
             location = line[0:16].strip()
 
     return location
+
+
+def cbc_pwr_only(ctx):
+    """
+    :param ctx
+    :return: True or False
+
+    Platform: ASR9000
+    RP/0/RSP0/CPU0:cxr1#admin show hw-module fpd location all
+
+    ===================================== ==========================================
+                                          Existing Field Programmable Devices
+                                          ==========================================
+                                            HW                       Current SW Upg/
+    Location     Card Type                Version Type Subtype Inst   Version   Dng?
+    ============ ======================== ======= ==== ======= ==== =========== ====
+    0/RSP0/CPU0  A9K-RSP440-TR              1.0   lc   cbc     0      16.116    No
+                                                  lc   fpga2   0       1.10     No
+                                                  lc   fpga3   0       4.09     No
+                                                  lc   fpga1   0       0.11     No
+                                                  lc   rommon  0       0.76     No
+    --------------------------------------------------------------------------------
+    0/FT0/SP     ASR-9904-FAN               1.0   ft   cbc     7      31.05     No
+    --------------------------------------------------------------------------------
+    0/BPID0/SP   ASR-9904-BPID2             1.0   bp   cbc     11      7.105    No
+    --------------------------------------------------------------------------------
+    0/PS0/M0/SP  PWR-3KW-AC-V2              1.0   pm   fpga14  13      3.18^    No
+                                                  pm   fpga15  13      3.06^    No
+                                                  pm   fpga16  13      3.12^    No
+    --------------------------------------------------------------------------------
+    0/PS0/M3/SP  PWR-3KW-AC-V2              1.0   pm   fpga14  16      3.18^    No
+                                                  pm   fpga15  16      3.06^    No
+                                                  pm   fpga16  16      3.12^    No
+    --------------------------------------------------------------------------------
+    0/RSP1/CPU0  A9K-RSP440-TR              1.0   lc   cbc     0      16.116    No
+                                                  lc   fpga3   0       4.09     No
+                                                  lc   fpga2   0       1.10     No
+                                                  lc   fpga1   0       0.11     No
+                                                  lc   rommon  0       0.76     No
+    --------------------------------------------------------------------------------
+    0/0/CPU0     A9K-MOD80-SE               1.0   lc   cbc     0      20.118    No
+                                                  lc   fpga4   0       1.05     No
+                                                  lc   fpga2   0       1.04     No
+                                                  lc   rommon  0       3.03     No
+    --------------------------------------------------------------------------------
+    0/0/0        A9K-MPA-20X1GE             1.102 spa  fpga3   0       1.00     Yes
+    --------------------------------------------------------------------------------
+    0/1/CPU0     A9K-MOD400-SE              1.0   lc   cbc     0      39.07     No
+                                                  lc   rommon  0       8.43     No
+                                                  lc   fpga2   0       1.91     Yes
+                                                  lc   fsbl    0       1.96     Yes
+                                                  lc   lnxfw   0       1.96     Yes
+                                                  lc   fpga10  0       1.19     No
+    --------------------------------------------------------------------------------
+    0/1/0        A9K-MPA-20X10GE            1.0   spa  fpga5   0       1.14     Yes
+    --------------------------------------------------------------------------------
+    NOTES:
+    1.  One or more FPD needs an upgrade.  This can be accomplished
+        using the "admin> upgrade hw-module fpd <fpd> location <loc>" CLI.
+    2.  ^ One or more FPD will be intentionally skipped from upgrade using CLI with option "all" or during "Auto fpd".
+          It can be upgraded only using the "admin> upgrade hw-module fpd <fpd> location <loc>" CLI with exact location.
+    """
+
+    avoid_reload = True
+    sl = ['Type', 'Subtype', 'Inst', 'Dng']
+    dl = {}
+    check = False
+    cmd = 'admin show hw-module fpd location all'
+
+    output = ctx.send(cmd)
+    lines = output.split('\n')
+    lines = [x for x in lines if x]
+    for line in lines:
+
+        if '------------------------------------' in line:
+            continue
+
+        if 'NOTES:' in line:
+            break
+
+        if line[0:8] == 'Location':
+            for s in sl:
+                n = line.find(s)
+                if n != -1:
+                    dl[str(s)] = n
+                else:
+                    ctx.warning("unrecognized show hw-module fpd header {}".format(line))
+                    return False
+            continue
+
+        if check:
+            subtype = line[dl['Subtype']:dl['Inst']].strip()
+            type = line[dl['Type']:dl['Subtype']].strip()
+            if 'pm' in type:
+                continue
+            if 'Yes' in line[dl['Dng']:] and 'cbc' not in subtype:
+                avoid_reload = False
+                break
+            else:
+                continue
+
+        if line[0].isdigit():
+            check = True
+            subtype = line[dl['Subtype']:dl['Inst']].strip()
+            type = line[dl['Type']:dl['Subtype']].strip()
+            if 'pm' in type:
+                continue
+            if 'Yes' in line[dl['Dng']:] and 'cbc' not in subtype:
+                avoid_reload = False
+                break
+            else:
+                continue
+
+    return avoid_reload

@@ -30,7 +30,7 @@ import time
 
 from csmpe.plugins import CSMPlugin
 from fpd_upgd_lib import fpd_locations, fpd_needs_upgd, hw_fpd_upgd, \
-    fpd_package_installed, fpd_check_status, hw_fpd_reload
+    fpd_package_installed, fpd_check_status, hw_fpd_reload, cbc_pwr_only
 from install import wait_for_reload
 from csmpe.core_plugins.csm_get_inventory.exr.plugin import get_package, get_inventory
 from csmpe.core_plugins.csm_install_operations.utils import update_device_info_udi
@@ -46,6 +46,10 @@ class Plugin(CSMPlugin):
     def run(self):
 
         need_reload = False
+
+        # XR ddts CSCvb67386 workaround
+        # if cbc only or power module only, then do not reload
+        avoid_reload = False
 
         self.ctx.info("FPD-Upgrade Pending")
         self.ctx.post_status("FPD-Upgrade Pending")
@@ -72,6 +76,7 @@ class Plugin(CSMPlugin):
         # case 4: both fpd_location and fpd_type are specified
 
         locations = fpd_locations(self.ctx)
+        self.ctx.info("FPD Location to be upgraded = {}".format(locations))
 
         upgd_result = True
         begin = time.time()
@@ -88,19 +93,26 @@ class Plugin(CSMPlugin):
             self.ctx.info("All FPD devices are current. Nothing to be upgraded.")
             return True
 
-        elapsed = time.time() - begin
-        self.ctx.info("Overall fpd upgrade time: {} minute(s) {:.0f} second(s)".format(elapsed // 60, elapsed % 60))
+        if 'cbc' in fpd_type or '/PS' in 'fpd_location':
+            avoid_reload = True
 
-        self.ctx.info("Reloading the host")
+        if fpd_location == 'all' and fpd_type == 'all':
+            avoid_reload = cbc_pwr_only(self.ctx)
 
-        if not hw_fpd_reload(self.ctx, fpd_location):
-            self.ctx.warning("Encountered error when attempting to reload device.")
+        if not avoid_reload:
+            elapsed = time.time() - begin
+            self.ctx.info("Overall fpd upgrade time: {} minute(s) {:.0f} second(s)".format(elapsed // 60, elapsed % 60))
 
-        self.ctx.info("Wait for the host reload to complete")
-        success = wait_for_reload(self.ctx)
-        if not success:
-            self.ctx.error("Reload or boot failure")
-            return False
+            self.ctx.info("Reloading the host")
+
+            if not hw_fpd_reload(self.ctx, fpd_location):
+                self.ctx.warning("Encountered error when attempting to reload device.")
+
+            self.ctx.info("Wait for the host reload to complete")
+            success = wait_for_reload(self.ctx)
+            if not success:
+                self.ctx.error("Reload or boot failure")
+                return False
 
         self.ctx.info("Refreshing package and inventory information")
         self.ctx.post_status("Refreshing package and inventory information")
