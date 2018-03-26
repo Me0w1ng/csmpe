@@ -172,7 +172,11 @@ class PluginContext(object):
         self.post_status("Connecting to device")
 
         # Use force discovery until we sort out all cache issues.
-        self.connect(force_discovery=True)
+        try:
+            self.connect(force_discovery=True)
+        except Exception:
+            self.finalize()
+            raise
         """
         if self.phase in ["Get-Inventory", "Post-Upgrade"]:
             self.connect(force_discovery=True)

@@ -156,11 +156,13 @@ class CSMPluginManager(object):
         except NoMatches:
             self._ctx.post_status("No plugins found for phase {}".format(self._phase))
             self._ctx.error("No plugins found for phase {}".format(self._phase))
+        finally:
+            self._ctx.info("CSM Plugin Manager Finished")
+            self._ctx.finalize()
 
         self._ctx.current_plugin = None
         self._ctx.success = True
-        self._ctx.info("CSM Plugin Manager Finished")
-        self._ctx.finalize()
+
         return results
 
     def set_platform_filter(self, platform):
