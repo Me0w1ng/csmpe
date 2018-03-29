@@ -206,7 +206,6 @@ class PluginContext(object):
 
         """Log ERROR message"""
         self._logger.error(self._format_log(message))
-        self.finalize()
         raise PluginError
 
     def warning(self, message):
