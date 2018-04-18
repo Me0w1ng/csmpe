@@ -101,7 +101,7 @@ class Plugin(CSMPlugin):
 
     def _ping_repository_check(self, repo_url):
         """Test ping server repository ip from device"""
-        repo_ip = re.search("[/@](\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/", repo_url)
+        repo_ip = re.search("[/@](\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})[;/]", repo_url)
 
         if not repo_ip:
             self.ctx.error("Bad hostname for server repository. Please check the settings in CSM.")
