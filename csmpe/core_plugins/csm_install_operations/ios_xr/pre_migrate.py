@@ -88,6 +88,7 @@ class Plugin(CSMPlugin):
     os = {'XR'}
 
     node_pattern = re.compile("^\d+(/\w+)+$")
+    repo_ip_search_pattern = re.compile("[/@](\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(;.*?)?/")
 
     def _save_show_platform(self):
         """Save the output of 'show platform' to session log"""
@@ -101,12 +102,17 @@ class Plugin(CSMPlugin):
 
     def _ping_repository_check(self, repo_url):
         """Test ping server repository ip from device"""
-        repo_ip = re.search("[/@](\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})[;/]", repo_url)
-
+        repo_ip = re.search(self.repo_ip_search_pattern, repo_url)
         if not repo_ip:
             self.ctx.error("Bad hostname for server repository. Please check the settings in CSM.")
 
-        output = self.ctx.send("ping {}".format(repo_ip.group(1)))
+        vrf = repo_ip.group(2)[1:]
+
+        if vrf:
+            output = self.ctx.send("ping vrf {} {}".format(vrf, repo_ip.group(1)))
+        else:
+            output = self.ctx.send("ping {}".format(repo_ip.group(1)))
+
         if "100 percent" not in output:
             self.ctx.error("Failed to ping server repository {} on device.".format(repo_ip.group(1)) +
                            "Please check session.log.")
@@ -232,6 +238,11 @@ class Plugin(CSMPlugin):
         :return: None if no error occurred.
         """
 
+        def send_repo_ip(ctx):
+            repo_ip = re.search(self.repo_ip_search_pattern, repository)
+            ctx.ctrl.sendline(repo_ip.group(1))
+            return True
+
         def send_newline(ctx):
             ctx.ctrl.sendline()
             return True
@@ -244,6 +255,7 @@ class Plugin(CSMPlugin):
 
             command = "copy {}/{} {}".format(repository, source_filenames[x], dest_files[x])
 
+            CONFIRM_HOST = re.compile("Address or name of remote host")
             CONFIRM_FILENAME = re.compile("Destination filename.*\?")
             CONFIRM_OVERWRITE = re.compile("Copy : Destination exists, overwrite \?\[confirm\]")
             COPIED = re.compile(".+bytes copied in.+ sec")
@@ -254,13 +266,14 @@ class Plugin(CSMPlugin):
             PROMPT = self.ctx.prompt
             TIMEOUT = self.ctx.TIMEOUT
 
-            events = [PROMPT, CONFIRM_FILENAME, CONFIRM_OVERWRITE, COPIED, COPYING,
+            events = [PROMPT, CONFIRM_HOST, CONFIRM_FILENAME, CONFIRM_OVERWRITE, COPIED, COPYING,
                       TIMEOUT, NO_SUCH_FILE, ERROR_COPYING]
             transitions = [
-                (CONFIRM_FILENAME, [0], 1, send_newline, timeout),
+                (CONFIRM_HOST, [0], 0, send_repo_ip, 120),
+                (CONFIRM_FILENAME, [0], 1, send_newline, 120),
                 (CONFIRM_OVERWRITE, [1], 2, send_newline, timeout),
-                (COPIED, [1, 2], 3, None, 20),
-                (COPYING, [1, 2], 2, send_newline, timeout),
+                (COPIED, [0, 1, 2], 3, None, 60),
+                (COPYING, [0, 1, 2], 2, send_newline, timeout),
                 (PROMPT, [3], -1, None, 0),
                 (TIMEOUT, [0, 1, 2, 3], -1, error, 0),
                 (NO_SUCH_FILE, [0, 1, 2, 3], -1, error, 0),
