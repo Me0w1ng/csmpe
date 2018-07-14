@@ -26,6 +26,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 # =============================================================================
 
+import subprocess
 from csmpe.plugins import CSMPlugin
 from install import install_satellite_activate
 from csmpe.core_plugins.csm_get_inventory.ios_xr.plugin import get_satellite
@@ -46,6 +47,17 @@ class Plugin(CSMPlugin):
         RP/0/RP0/CPU0:AGN_PE_11_9k#install nv satellite 160,163 transfer
         """
         satellite_ids = self.ctx.load_job_data('selected_satellite_ids')
+        pre_check_script = self.ctx.load_job_data('pre_check_script')
+        post_check_script = self.ctx.load_job_data('post_check_script')
+
+        if pre_check_script:
+            self.ctx.info("Satellite-Activate pre_check_script {} Pending".format(pre_check_script))
+            try:
+                subprocess.check_output(pre_check_script, shell=True)
+            except subprocess.CalledProcessError as e:
+                self.ctx.warning('Satellite-Activate pre_check_script {} error:'.format(pre_check_script))
+                self.ctx.error(e.output)
+            self.ctx.info("Satellite-Activate pre_check_script {} completed".format(pre_check_script))
 
         # ctype = type(satellite_ids[0])
         # self.ctx.info("ctype = {}".format(ctype))
@@ -61,6 +73,15 @@ class Plugin(CSMPlugin):
 
         # Refresh satellite inventory information
         get_satellite(self.ctx)
+
+        if post_check_script:
+            self.ctx.info("Satellite-Activate post_check_script {} Pending".format(post_check_script))
+            try:
+                subprocess.check_output(post_check_script, shell=True)
+            except subprocess.CalledProcessError as e:
+                self.ctx.warning('Satellite-Activate post_check_script {} error:'.format(post_check_script))
+                self.ctx.error(e.output)
+            self.ctx.info("Satellite-Activate post_check_script {} completed".format(post_check_script))
 
         if result:
             self.ctx.info("Satellite-Activate completed")
