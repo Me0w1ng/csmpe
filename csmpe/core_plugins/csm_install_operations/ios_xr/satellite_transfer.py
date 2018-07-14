@@ -47,8 +47,8 @@ class Plugin(CSMPlugin):
         RP/0/RP0/CPU0:AGN_PE_11_9k#install nv satellite 160,163 transfer
         """
         satellite_ids = self.ctx.load_job_data('selected_satellite_ids')
-        pre_check_script = self.ctx.load_job_data('pre_check_script')
-        post_check_script = self.ctx.load_job_data('post_check_script')
+        pre_check_script = str(self.ctx.load_job_data('pre_check_script')[0])
+        post_check_script = str(self.ctx.load_job_data('post_check_script')[0])
 
         if pre_check_script:
             self.ctx.info("Satellite-Transfer pre_check_script {} Pending".format(pre_check_script))
