@@ -47,13 +47,20 @@ class Plugin(CSMPlugin):
         RP/0/RP0/CPU0:AGN_PE_11_9k#install nv satellite 160,163 transfer
         """
         satellite_ids = self.ctx.load_job_data('selected_satellite_ids')
-        pre_check_script = str(self.ctx.load_job_data('pre_check_script')[0])
-        post_check_script = str(self.ctx.load_job_data('post_check_script')[0])
+        pre_check_script = self.ctx.load_job_data('pre_check_script')[0]
+        post_check_script = self.ctx.load_job_data('post_check_script')[0]
+
+        if pre_check_script:
+            pre_check_script = str(pre_check_script)
+        if post_check_script:
+            post_check_script = str(post_check_script)
 
         if pre_check_script:
             self.ctx.info("Satellite-Activate pre_check_script {} Pending".format(pre_check_script))
             try:
-                subprocess.check_output(pre_check_script, shell=True)
+                output = subprocess.check_output(pre_check_script, shell=True)
+                self.ctx.info("pre_check_script {} output:".format(pre_check_script))
+                self.ctx.info("{}".format(output.decode('UTF-8').rstrip()))
             except subprocess.CalledProcessError as e:
                 self.ctx.warning('Satellite-Activate pre_check_script {} error:'.format(pre_check_script))
                 self.ctx.error(e.output)
@@ -77,7 +84,9 @@ class Plugin(CSMPlugin):
         if post_check_script:
             self.ctx.info("Satellite-Activate post_check_script {} Pending".format(post_check_script))
             try:
-                subprocess.check_output(post_check_script, shell=True)
+                output = subprocess.check_output(post_check_script, shell=True)
+                self.ctx.info("post_check_script {} output:".format(post_check_script))
+                self.ctx.info("{}".format(output.decode('UTF-8').rstrip()))
             except subprocess.CalledProcessError as e:
                 self.ctx.warning('Satellite-Activate post_check_script {} error:'.format(post_check_script))
                 self.ctx.error(e.output)
