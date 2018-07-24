@@ -735,7 +735,11 @@ def install_satellite_transfer(ctx, satellite_ids):
             ctx.info("Satellite ID {} Status: Connected (New image transferred)".format(L[id]))
             L[id] = None
 
-        if 'Remote version: Compatible (latest version)' in output:
+        # Replace 'Remote version: Compatible (latest version)' in output with
+        # 'Available' not in output to workaround XR 5.1.3 bug that even when there is a
+        # new satellite software available it will display “Compatible (latest version)”.
+        # if 'Remote version: Compatible (latest version)' in output:
+        if 'Available' not in output:
             ctx.info("Satellite ID {} Remote version: Compatible (latest version)".format(L[id]))
             L[id] = None
 
@@ -946,7 +950,11 @@ def install_satellite_activate(ctx, satellite_ids):
             L[id] = None
             command_success = False
 
-        if 'Remote version: Compatible (latest version)' in output:
+        # Replace 'Remote version: Compatible (latest version)' in output with
+        # 'Available' not in output to workaround XR 5.1.3 bug that even when there is a
+        # new satellite software available it will display “Compatible (latest version)”.
+        # if 'Remote version: Compatible (latest version)' in output:
+        if 'Available' not in output:
             ctx.info("Satellite ID {} Remote version: Compatible (latest version)".format(L[id]))
             L[id] = None
 
