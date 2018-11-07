@@ -106,7 +106,10 @@ class Plugin(CSMPlugin):
         if not repo_ip:
             self.ctx.error("Bad hostname for server repository. Please check the settings in CSM.")
 
-        vrf = repo_ip.group(2)[1:]
+        if not repo_ip.group(2):
+            vrf = ''
+        else:
+            vrf = repo_ip.group(2)[1:]
 
         if vrf:
             output = self.ctx.send("ping vrf {} {}".format(vrf, repo_ip.group(1)))
