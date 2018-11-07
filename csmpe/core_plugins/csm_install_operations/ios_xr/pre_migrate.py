@@ -87,8 +87,8 @@ class Plugin(CSMPlugin):
     phases = {'Pre-Migrate'}
     os = {'XR'}
 
-    node_pattern = re.compile("^\d+(/\w+)+$")
-    repo_ip_search_pattern = re.compile("[/@](\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(;.*?)?/")
+    node_pattern = re.compile(r"^\d+(/\w+)+$")
+    repo_ip_search_pattern = re.compile(r"[/@](\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(;.*?)?/")
 
     def _save_show_platform(self):
         """Save the output of 'show platform' to session log"""
@@ -122,7 +122,7 @@ class Plugin(CSMPlugin):
 
     def _all_configs_supported(self, nox_output):
         """Check text output from running NoX on system. Only return True if all configs are supported by eXR."""
-        pattern = "Filename[\sA-Za-z\n]*[-\s]*\S*\s+\d*\s+\d*\(\s*\d*%\)\s+\d*\(\s*\d*%\)\s+\d*\(\s*\d*%\)\s+(\d*)"
+        pattern = r"Filename[\sA-Za-z\n]*[-\s]*\S*\s+\d*\s+\d*\(\s*\d*%\)\s+\d*\(\s*\d*%\)\s+\d*\(\s*\d*%\)\s+(\d*)"
         match = re.search(pattern, nox_output)
 
         if match:
@@ -258,13 +258,13 @@ class Plugin(CSMPlugin):
 
             command = "copy {}/{} {}".format(repository, source_filenames[x], dest_files[x])
 
-            CONFIRM_HOST = re.compile("Address or name of remote host")
-            CONFIRM_FILENAME = re.compile("Destination filename.*\?")
-            CONFIRM_OVERWRITE = re.compile("Copy : Destination exists, overwrite \?\[confirm\]")
-            COPIED = re.compile(".+bytes copied in.+ sec")
-            COPYING = re.compile("C" * 50)
-            NO_SUCH_FILE = re.compile("%Error copying.*\(Error opening source file\): No such file or directory")
-            ERROR_COPYING = re.compile("%Error copying")
+            CONFIRM_HOST = re.compile(r"Address or name of remote host")
+            CONFIRM_FILENAME = re.compile(r"Destination filename.*\?")
+            CONFIRM_OVERWRITE = re.compile(r"Copy : Destination exists, overwrite \?\[confirm\]")
+            COPIED = re.compile(r".+bytes copied in.+ sec")
+            COPYING = re.compile(r"C" * 50)
+            NO_SUCH_FILE = re.compile(r"%Error copying.*\(Error opening source file\): No such file or directory")
+            ERROR_COPYING = re.compile(r"%Error copying")
 
             PROMPT = self.ctx.prompt
             TIMEOUT = self.ctx.TIMEOUT
@@ -360,11 +360,11 @@ class Plugin(CSMPlugin):
                 command = "sftp {}@{}/{} {} vrf {}".format(server.username, source_path, source_filenames[x],
                                                            dest_files[x], server.vrf)
 
-            PASSWORD = re.compile("Password:")
-            CONFIRM_OVERWRITE = re.compile("Overwrite.*\[yes/no\]\:")
-            COPIED = re.compile("bytes copied in", re.MULTILINE)
-            NO_SUCH_FILE = re.compile("src.*does not exist")
-            DOWNLOAD_ABORTED = re.compile("Download aborted.")
+            PASSWORD = re.compile(r"Password:")
+            CONFIRM_OVERWRITE = re.compile(r"Overwrite.*\[yes/no\]\:")
+            COPIED = re.compile(r"bytes copied in", re.MULTILINE)
+            NO_SUCH_FILE = re.compile(r"src.*does not exist")
+            DOWNLOAD_ABORTED = re.compile(r"Download aborted.")
 
             PROMPT = self.ctx.prompt
             TIMEOUT = self.ctx.TIMEOUT
@@ -447,7 +447,7 @@ class Plugin(CSMPlugin):
 
         conversion_success = False
 
-        match = re.search("Filename[\sA-Za-z\n]*[-\s]*\S*\s+(\d*)\s+\d*\(\s*\d*%\)\s+\d*\(\s*\d*%\)\s+(\d*)",
+        match = re.search(r"Filename[\sA-Za-z\n]*[-\s]*\S*\s+(\d*)\s+\d*\(\s*\d*%\)\s+\d*\(\s*\d*%\)\s+(\d*)",
                           nox_output)
 
         if match:
@@ -631,9 +631,9 @@ class Plugin(CSMPlugin):
 
             log_and_post_status(self.ctx, "FPD upgrade - start to upgrade FPD {} on all locations".format(fpdtype))
 
-            CONFIRM_CONTINUE = re.compile("Continue\? \[confirm\]")
-            CONFIRM_SECOND_TIME = re.compile("Continue \? \[no\]:")
-            UPGRADE_END = re.compile("FPD upgrade has ended.")
+            CONFIRM_CONTINUE = re.compile(r"Continue\? \[confirm\]")
+            CONFIRM_SECOND_TIME = re.compile(r"Continue \? \[no\]:")
+            UPGRADE_END = re.compile(r"FPD upgrade has ended.")
 
             PROMPT = self.ctx.prompt
             TIMEOUT = self.ctx.TIMEOUT
@@ -658,7 +658,7 @@ class Plugin(CSMPlugin):
 
             for location in subtype_to_locations_need_upgrade[fpdtype]:
 
-                pattern = "Successfully\s*(?:downgrade|upgrade)\s*{}.*location\s*{}".format(fpdtype, location)
+                pattern = r"Successfully\s*(?:downgrade|upgrade)\s*{}.*location\s*{}".format(fpdtype, location)
                 fpd_upgrade_success = re.search(pattern, fpd_log)
 
                 if not fpd_upgrade_success:
@@ -858,7 +858,7 @@ class Plugin(CSMPlugin):
             self.ctx.error("More than two packages are selected, however, only the ASR9K IOS XR 64 Bit tar file and the crypto key generation file should be selected.")
         if len(packages) == 0:
             self.ctx.error("No ASR9K IOS XR 64 Bit tar file selected for Pre-Migrate.")
-        image_pattern = re.compile("asr9k.*\.tar.*")
+        image_pattern = re.compile(r"asr9k.*\.tar.*")
         exr_tar = None
         crypto_file = None
         for package in packages:
@@ -919,7 +919,7 @@ class Plugin(CSMPlugin):
 
         exr_image, crypto_file = self._get_packages(packages)
 
-        version_match = re.findall("\d+\.\d+\.\d+", exr_image)
+        version_match = re.findall(r"\d+\.\d+\.\d+", exr_image)
         if version_match:
             exr_version = version_match[0]
         else:
@@ -927,8 +927,8 @@ class Plugin(CSMPlugin):
 
         self._filter_server_repository(server)
 
-        hostname_for_filename = re.sub("[()\s]", "_", self.ctx._csm.host.hostname)
-        hostname_for_filename = re.sub("_+", "_", hostname_for_filename)
+        hostname_for_filename = re.sub(r"[()\s]", "_", self.ctx._csm.host.hostname)
+        hostname_for_filename = re.sub(r"_+", "_", hostname_for_filename)
 
         fileloc = self.ctx.migration_directory + hostname_for_filename
 
@@ -947,7 +947,7 @@ class Plugin(CSMPlugin):
 
         log_and_post_status(self.ctx, "Checking current software version.")
 
-        match_version = re.search("(\d\.\d\.\d).*", self.ctx.os_version)
+        match_version = re.search(r"(\d\.\d\.\d).*", self.ctx.os_version)
 
         if not match_version:
             self.ctx.error("Bad os_version.")

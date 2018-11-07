@@ -138,13 +138,13 @@ platforms = ['asr9k', 'ncs1k', 'ncs1001', 'ncs4k', 'ncs5k', 'ncs540', 'ncs5500',
 
 
 version_dict = {"asr9k ncs1k ncs1001 ncs4k ncs5k ncs540 ncs5500 ncs6k xrv9k iosxrv":  # r61117I or r611 or 6.1.1.17I or 6.1.1
-                re.compile("(?P<VERSION>(r\d+\d+\d+(\d+\w+)?)|(\d+\.\d+\.\d+(\.\d+\w+)?)(?!\.\d)(?!-))")
+                re.compile(r"(?P<VERSION>(r\d+\d+\d+(\d+\w+)?)|(\d+\.\d+\.\d+(\.\d+\w+)?)(?!\.\d)(?!-))")
                 }
 
-smu_re = re.compile("(?P<SMU>CSC[a-z]{2}\d{5})")
+smu_re = re.compile(r"(?P<SMU>CSC[a-z]{2}\d{5})")
 
 subversion_dict = {"asr9k ncs1k ncs1001 ncs4k ncs5k ncs540 ncs5500 ncs6k xrv9k iosxrv":
-                   re.compile("-(?P<SUBVERSION>\d+\.\d+\.\d+\.\d+)-")
+                   re.compile(r"-(?P<SUBVERSION>\d+\.\d+\.\d+\.\d+)-")
                    }
 
 
@@ -184,12 +184,12 @@ class SoftwarePackage(object):
         Package Types: mpls-te-rsvp, sysadmin, mcast, mgbl, mgbl-x64, mini-x, goldenk9-x
         """
         if not self._package_type:
-            pattern = '-\d\.\d\.\d.\d'
+            pattern = r'-\d\.\d\.\d.\d'
 
             if self.platform and self.platform in self.package_name:
                 match = re.search(pattern, self.package_name)
                 if not match:
-                    pattern = '-\d+\.\d+\.\d+'   # take care of the exception cases (i.x. -X.X.X).
+                    pattern = r'-\d+\.\d+\.\d+'   # take care of the exception cases (i.x. -X.X.X).
                     match = re.search(pattern, self.package_name)
 
                 if match:

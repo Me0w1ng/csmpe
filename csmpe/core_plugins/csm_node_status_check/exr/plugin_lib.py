@@ -183,7 +183,7 @@ def parse_show_platform(ctx, output):
 
         if line[0].isdigit():
             node = line[:dl["type"]]
-            if not re.search('CPU\d+\s*$', node):
+            if not re.search(r'CPU\d+\s*$', node):
                 continue
 
             node_type = line[dl['type']:dl['state']].strip()

@@ -34,7 +34,7 @@ from csmpe.core_plugins.csm_get_inventory.exr.plugin import get_package, get_inv
 from csmpe.core_plugins.csm_install_operations.utils import update_device_info_udi
 
 
-XR_PROMPT = re.compile('(\w+/\w+/\w+/\w+:.*?)(\([^()]*\))?#')
+XR_PROMPT = re.compile(r'(\w+/\w+/\w+/\w+:.*?)(\([^()]*\))?#')
 
 SCRIPT_BACKUP_CONFIG_611_DOWN = "harddiskb:/classic.cfg"
 SCRIPT_BACKUP_CONFIG_612_UP = "harddiskb:/cXR_xr_plane.cfg"
@@ -43,16 +43,16 @@ SCRIPT_BACKUP_ADMIN_CONFIG_612_UP = "harddiskb:/cXR_admin_plane.cfg"
 
 MIGRATION_TIME_OUT = 7200
 
-PASSWORD_PROMPT = re.compile("[P|p]assword:\s?")
-USERNAME_PROMPT = re.compile("([U|u]sername:|login:)\s?")
+PASSWORD_PROMPT = re.compile(r"[P|p]assword:\s?")
+USERNAME_PROMPT = re.compile(r"([U|u]sername:|login:)\s?")
 
-PERMISSION_DENIED = "Permission denied"
-AUTH_FAILED = "Authentication failed|not authorized|Login incorrect"
-RESET_BY_PEER = "reset by peer|closed by foreign host"
-SET_USERNAME = "[Ee]nter.*username:"
-SET_PASSWORD = "Enter secret"
-PASSWORD_OK = "[Pp]assword [Oo][Kk]"
-PRESS_RETURN = "Press RETURN to get started\."
+PERMISSION_DENIED = r"Permission denied"
+AUTH_FAILED = r"Authentication failed|not authorized|Login incorrect"
+RESET_BY_PEER = r"reset by peer|closed by foreign host"
+SET_USERNAME = r"[Ee]nter.*username:"
+SET_PASSWORD = r"Enter secret"
+PASSWORD_OK = r"[Pp]assword [Oo][Kk]"
+PRESS_RETURN = r"Press RETURN to get started\."
 
 # Error when the hostname can't be resolved or there is
 # network reachability timeout
@@ -132,9 +132,9 @@ class Plugin(CSMPlugin):
                 fsm_ctx.ctrl.sendline()
                 return True
 
-            UNCOMMITTED_PACKAGES = re.compile("software packages are not yet committed. Proceed\?\[confirm\]")
-            DONE = re.compile(re.escape("[Done]"))
-            PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
+            UNCOMMITTED_PACKAGES = re.compile(r"software packages are not yet committed. Proceed\?\[confirm\]")
+            DONE = re.compile(re.escape(r"[Done]"))
+            PROCEED = re.compile(re.escape(r"Proceed with reload? [confirm]"))
 
             events = [UNCOMMITTED_PACKAGES, DONE, PROCEED]
             transitions = [

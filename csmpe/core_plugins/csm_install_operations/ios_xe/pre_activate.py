@@ -79,7 +79,7 @@ class Plugin(CSMPlugin):
         supported_imgs['asr1002'] = ['asr1000']
         supported_imgs['asr1006'] = ['asr1000']
 
-        m = re.search('ASR-?(\d+)', self.ctx._connection.platform)
+        m = re.search(r'ASR-?(\d+)', self.ctx._connection.platform)
         if m:
             device_family = m.group(1)
             device_family = 'asr' + device_family
@@ -101,11 +101,11 @@ class Plugin(CSMPlugin):
 
         output = self.ctx.send("show version | include RSP")
         if output:
-            m = re.search('(RS?P\d)', output)
+            m = re.search(r'(RS?P\d)', output)
             if m:
                 curr_rsp = m.group(0).lower()
 
-            m = re.search('(rs?p\d)', pkg)
+            m = re.search(r'(rs?p\d)', pkg)
             if m:
                 pkg_rsp = m.group(0)
 
@@ -162,7 +162,7 @@ class Plugin(CSMPlugin):
             cmd = "dir " + disk + " | include " + pkg
             output = self.ctx.send(cmd)
             if output:
-                m = re.search('-rw-\s+(\d+)\s+', output)
+                m = re.search(r'-rw-\s+(\d+)\s+', output)
                 if m:
                     total_size += int(m.group(1))
 

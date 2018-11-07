@@ -339,10 +339,10 @@ def hw_fpd_upgd(ctx, location, type):
     cmd = 'admin upgrade hw-module fpd ' + type + ' location ' + location
 
     # There can be two different prompts
-    CONTINUE_YES = re.compile("Continue\? \[confirm\]")
-    CONTINUE_UPGD = re.compile("Continue \? \[no\]:")
-    END_UPGD = re.compile("FPD upgrade has ended.")
-    COMPLETE_UPGD = re.compile("FPD upgrade completed. Auto-reload triggered")
+    CONTINUE_YES = re.compile(r"Continue\? \[confirm\]")
+    CONTINUE_UPGD = re.compile(r"Continue \? \[no\]:")
+    END_UPGD = re.compile(r"FPD upgrade has ended.")
+    COMPLETE_UPGD = re.compile(r"FPD upgrade completed. Auto-reload triggered")
     HOST_PROMPT = re.compile(ctx.prompt)
 
     events = [CONTINUE_YES, CONTINUE_UPGD, END_UPGD, COMPLETE_UPGD, HOST_PROMPT]
@@ -457,9 +457,9 @@ def hw_fpd_reload(ctx, location):
     fsm_name = 'Reload location ' + location
 
     # Seeing this message without the reboot prompt indicates a non-reload situation
-    PROCEED_RELOAD = re.compile("software packages are not yet committed. Proceed\?\[confirm\]")
-    DONE = re.compile(re.escape("[Done]"))
-    PROCEED = re.compile(re.escape("Proceed with reload? [confirm]"))
+    PROCEED_RELOAD = re.compile(r"software packages are not yet committed. Proceed\?\[confirm\]")
+    DONE = re.compile(re.escape(r"[Done]"))
+    PROCEED = re.compile(re.escape(r"Proceed with reload? [confirm]"))
 
     events = [PROCEED_RELOAD, DONE, PROCEED]
     transitions = [

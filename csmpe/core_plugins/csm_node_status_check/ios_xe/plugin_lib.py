@@ -66,7 +66,7 @@ def parse_show_platform(ctx, output):
 
         if len(line) > 0:
 
-            states = re.split('\s+', line)
+            states = re.split(r'\s+', line)
             # ctx.info("states[0] = {}".format(states[0]))
 
             if '--' in states[0]:

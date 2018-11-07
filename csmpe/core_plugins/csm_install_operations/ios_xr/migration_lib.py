@@ -8,8 +8,8 @@ from csmpe.core_plugins.csm_custom_commands_capture.plugin import Plugin as CmdC
 
 SUPPORTED_HW_SPECS_FILE = "./asr9k_x64/asr9k_x64_supported_hardware.yaml"
 
-ADMIN_RP = "\d+/RS?P\d+"
-ADMIN_LC = "\d+/\d+"
+ADMIN_RP = r"\d+/RS?P\d+"
+ADMIN_LC = r"\d+/\d+"
 
 
 def log_and_post_status(ctx, msg):
@@ -110,7 +110,7 @@ def compare_version_numbers(version1, version2):
 
 def get_version(ctx):
     output = ctx.send("show version | include Version")
-    version = re.search("Version\s*?(\d+\.\d+\.\d+)(?:\.\d+I)?", output)
+    version = re.search(r"Version\s*?(\d+\.\d+\.\d+)(?:\.\d+I)?", output)
     if not version:
         ctx.error("Failure to retrieve release number.")
     return version.group(1)

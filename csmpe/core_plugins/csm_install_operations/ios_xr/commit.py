@@ -47,12 +47,12 @@ class Plugin(CSMPlugin):
         """
 
         failed_oper = r'Install operation (\d+) failed'
-        completed_with_failure = 'Install operation (\d+) completed with failure'
+        completed_with_failure = r'Install operation (\d+) completed with failure'
         success_oper = r'Install operation (\d+) completed successfully'
 
         cmd = "admin install commit"
         output = self.ctx.send(cmd)
-        result = re.search('Install operation (\d+) \'', output)
+        result = re.search(r'Install operation (\d+) \'', output)
         if result:
             op_id = result.group(1)
             watch_operation(self.ctx, op_id)

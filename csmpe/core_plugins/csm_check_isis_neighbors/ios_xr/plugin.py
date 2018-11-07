@@ -70,20 +70,20 @@ class Plugin(CSMPlugin):
         if output:
             isis_instance = None
             for line in output.split('\n'):
-                result = re.search('IS-IS (.*) neighbor summary:', line)
+                result = re.search(r'IS-IS (.*) neighbor summary:', line)
                 if result:
                     isis_instance = result.group(1)
                     isis_neighbor_info[isis_instance] = {}
                     continue
-                result = re.search('Up\s+(\d+)\s+(\d+)\s+(\d+)', line)
+                result = re.search(r'Up\s+(\d+)\s+(\d+)\s+(\d+)', line)
                 if result and isis_instance:
                     isis_neighbor_info[isis_instance]["Up"] = [result.group(n) for n in range(1, 4)]
                     continue
-                result = re.search('Init\s+(\d+)\s+(\d+)\s+(\d+)', line)
+                result = re.search(r'Init\s+(\d+)\s+(\d+)\s+(\d+)', line)
                 if result and isis_instance:
                     isis_neighbor_info[isis_instance]["Init"] = [result.group(n) for n in range(1, 4)]
                     continue
-                result = re.search('Failed\s+(\d+)\s+(\d+)\s+(\d+)', line)
+                result = re.search(r'Failed\s+(\d+)\s+(\d+)\s+(\d+)', line)
                 if result and isis_instance:
                     isis_neighbor_info[isis_instance]["Failed"] = [result.group(n) for n in range(1, 4)]
                     continue

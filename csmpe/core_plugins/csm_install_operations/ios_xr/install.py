@@ -31,7 +31,7 @@ import itertools
 from condoor import ConnectionError, CommandError
 from csmpe.core_plugins.csm_node_status_check.ios_xr.plugin_lib import parse_show_platform
 
-install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
+install_error_pattern = re.compile(r"Error:    (.*)$", re.MULTILINE)
 
 plugin_ctx = None
 
@@ -203,12 +203,12 @@ def wait_for_reload(ctx):
 
 def watch_install(ctx, cmd, op_id=0):
     success_oper = r'Install operation (\d+) completed successfully'
-    completed_with_failure = 'Install operation (\d+) completed with failure'
+    completed_with_failure = r'Install operation (\d+) completed with failure'
     failed_oper = r'Install operation (\d+) failed'
     failed_incr = r'incremental.*parallel'
     # restart = r'Parallel Process Restart'
     install_method = r'Install [M|m]ethod: (.*)'
-    op_success = "The install operation will continue asynchronously"
+    op_success = r"The install operation will continue asynchronously"
 
     watch_operation(ctx, op_id)
 
@@ -219,7 +219,7 @@ def watch_install(ctx, cmd, op_id=0):
             cmd += " parallel-reload"
             output = ctx.send(cmd)
             if op_success in output:
-                result = re.search('Install operation (\d+) \'', output)
+                result = re.search(r'Install operation (\d+) \'', output)
                 if result:
                     op_id = result.group(1)
                     watch_operation(ctx, op_id)
@@ -376,7 +376,7 @@ def install_add_remove(ctx, cmd, has_tar=False):
     ctx.post_status(message)
 
     output = ctx.send(cmd, timeout=7200)
-    result = re.search('Install operation (\d+) \'', output)
+    result = re.search(r'Install operation (\d+) \'', output)
     if result:
         op_id = result.group(1)
     else:
@@ -412,7 +412,7 @@ def install_activate_deactivate(ctx, cmd):
 
     op_success = "The install operation will continue asynchronously"
     output = ctx.send(cmd, timeout=7200)
-    result = re.search('Install operation (\d+) \'', output)
+    result = re.search(r'Install operation (\d+) \'', output)
     if result:
         op_id = result.group(1)
     else:
@@ -477,7 +477,7 @@ def install_remove_all(ctx, cmd, hostname):
     Error:     - use 'show install request' to see the state of the current install
     Error:       operation.
     Error:     - re-issue the command when the current operation has completed.
-    """
+    """  # noqa: W605
 
     global plugin_ctx
     plugin_ctx = ctx
@@ -492,7 +492,7 @@ def install_remove_all(ctx, cmd, hostname):
     if 'No log information' in output:
         op_id = 0
     else:
-        result = re.search('Install operation (\d+) started', output)
+        result = re.search(r'Install operation (\d+) started', output)
         if result:
             op_id = int(result.group(1))
         else:
@@ -504,9 +504,9 @@ def install_remove_all(ctx, cmd, hostname):
     op_id += 1
 
     operr = "Install operation {} failed at".format(op_id)
-    Error1 = re.compile("Error:     - re-issue the command when the current operation has completed.")
+    Error1 = re.compile(r"Error:     - re-issue the command when the current operation has completed.")
     Error2 = re.compile(operr)
-    Proceed_removing = re.compile("\[confirm\]")
+    Proceed_removing = re.compile(r"\[confirm\]")
     Host_prompt = re.compile(hostname)
 
     events = [Host_prompt, Error1, Error2, Proceed_removing]
@@ -588,7 +588,7 @@ def build_satellite_list(satellite_ids):
     input_list = satellite_ids.split(',')
     for item in input_list:
         if '-' in item:
-            m = re.search('(\w+)-(\w+)', item)
+            m = re.search(r'(\w+)-(\w+)', item)
             arg1 = int(m.group(1))
             arg2 = int(m.group(2)) + 1
             ilist = range(arg1, arg2)
@@ -758,7 +758,7 @@ def install_satellite_transfer(ctx, satellite_ids):
     arg = build_new_argument(L)
 
     cmd = 'install nv satellite ' + arg + ' transfer'
-    Warning = re.compile("Do you wish to continue\? \[confirm\(y/n\)\]")
+    Warning = re.compile(r"Do you wish to continue\? \[confirm\(y/n\)\]")
     Host_prompt = re.compile(ctx._connection.hostname)
 
     events = [Host_prompt, Warning]
@@ -973,7 +973,7 @@ def install_satellite_activate(ctx, satellite_ids):
     arg = build_new_argument(L)
 
     cmd = 'install nv satellite ' + arg + ' activate'
-    Warning = re.compile("Do you wish to continue\? \[confirm\(y/n\)\]")
+    Warning = re.compile(r"Do you wish to continue\? \[confirm\(y/n\)\]")
     Host_prompt = re.compile(ctx._connection.hostname)
 
     events = [Host_prompt, Warning]

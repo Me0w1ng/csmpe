@@ -55,7 +55,7 @@ def check_ncs6k_release(ctx):
         packages = ctx.software_packages
         if packages is not None:
             for package_name in packages:
-                matches = re.findall("\d+\.\d+\.\d+", package_name)
+                matches = re.findall(r"\d+\.\d+\.\d+", package_name)
                 if matches:
                     if matches[0] < '5.2.5':
                         ctx.error('Abort: Software package earlier than release 5.2.5 for NCS6K is not supported.')
@@ -69,7 +69,7 @@ def check_ncs4k_release(ctx):
         packages = ctx.software_packages
         if packages is not None:
             for package_name in packages:
-                matches = re.findall("\d+\.\d+\.\d+", package_name)
+                matches = re.findall(r"\d+\.\d+\.\d+", package_name)
                 if matches:
                     if matches[0] < '6.0.2':
                         ctx.error('Abort: Software package earlier than release 6.0.2 for NCS4K is not supported.')
@@ -291,7 +291,7 @@ def observe_install_add_remove(ctx, output, has_tar=False):
 
     RP/0/RSP0/CPU0:CORFU#May 23 22:57:48 Install operation 28 aborted
     """
-    result = re.search('Install operation (\d+)', output)
+    result = re.search(r'Install operation (\d+)', output)
     if result:
         op_id = result.group(1)
     else:
@@ -316,7 +316,7 @@ def get_op_id(output):
     :param output: Output from the install command
     :return: the operational ID
     """
-    result = re.search('Install operation (\d+)', output)
+    result = re.search(r'Install operation (\d+)', output)
     if result:
         return result.group(1)
     return -1
@@ -557,7 +557,7 @@ def observe_install_remove_all(ctx, cmd, prompt):
     if 'No install operation' in output:
         op_id = 0
     else:
-        result = re.search('Install operation (\d+) started', output)
+        result = re.search(r'Install operation (\d+) started', output)
         if result:
             op_id = int(result.group(1))
         else:

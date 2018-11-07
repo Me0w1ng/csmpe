@@ -54,10 +54,10 @@ class Plugin(CSMPlugin):
 
         fpdtable = self.ctx.send("show hw-module fpd")
 
-        match = re.search("\d+/\w+.+\d+.\d+\s+[-\w]+\s+(NEED UPGD)", fpdtable)
+        match = re.search(r"\d+/\w+.+\d+.\d+\s+[-\w]+\s+(NEED UPGD)", fpdtable)
 
         if match:
-            if re.search("\d+/\w+.+\d+.\d+\s+[-\w]+\s+(NOT READY)", fpdtable):
+            if re.search(r"\d+/\w+.+\d+.\d+\s+[-\w]+\s+(NOT READY)", fpdtable):
                 self.ctx.send("exit")
                 self.ctx.error("Some nodes are not ready for FPD upgrade. Please re-schedule Post-Migrate when all nodes are ready.")
             else:
@@ -102,7 +102,7 @@ class Plugin(CSMPlugin):
                 return True
 
         output = self.ctx.send("show hw-module fpd")
-        if len(re.findall("\d+% UPGD|IN QUEUE|NEED UPGD", output)) == 0:
+        if len(re.findall(r"\d+% UPGD|IN QUEUE|NEED UPGD", output)) == 0:
             if len(re.findall("RLOAD REQ", output)) > 0:
                 log_and_post_status(self.ctx, "Reloading device to complete the upgrade.")
                 self.ctx.send("exit")
@@ -123,7 +123,7 @@ class Plugin(CSMPlugin):
                 fsm_ctx.ctrl.sendline('yes')
                 return True
 
-            CONFIRM = re.compile("Reload hardware module \? \[no,yes\]")
+            CONFIRM = re.compile(r"Reload hardware module \? \[no,yes\]")
 
             events = [CONFIRM]
             transitions = [

@@ -45,11 +45,11 @@ class Plugin(CSMPlugin):
     platforms = {'ASR9K'}
     phases = {'Migration-Audit'}
 
-    rp_pattern = re.compile('\d+/RS??P\d+/CPU\d+')
-    fc_pattern = re.compile('\d+/FC\d+/SP')
-    fan_pattern = re.compile('\d+/FT\d+/SP')
-    pem_pattern = re.compile('\d+/P[SM]\d+/M?\d+/SP')
-    lc_pattern = re.compile('\d+/\d+/CPU\d+')
+    rp_pattern = re.compile(r'\d+/RS??P\d+/CPU\d+')
+    fc_pattern = re.compile(r'\d+/FC\d+/SP')
+    fan_pattern = re.compile(r'\d+/FT\d+/SP')
+    pem_pattern = re.compile(r'\d+/P[SM]\d+/M?\d+/SP')
+    lc_pattern = re.compile(r'\d+/\d+/CPU\d+')
 
     def _check_if_hw_supported_and_in_valid_state(self, inventory, supported_hw, override):
         """

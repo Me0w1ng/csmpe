@@ -142,8 +142,8 @@ def install_activate_write_memory(ctx, cmd):
     plugin_ctx = ctx
 
     # Seeing this message without the reboot prompt indicates a non-reload situation
-    Build_config = re.compile("\[OK\]")
-    Overwrite_warning = re.compile("Overwrite the previous NVRAM configuration\?\[confirm\]")
+    Build_config = re.compile(r'\[OK\]')
+    Overwrite_warning = re.compile(r"Overwrite the previous NVRAM configuration\?\[confirm\]")
 
     events = [Overwrite_warning, Build_config]
     transitions = [

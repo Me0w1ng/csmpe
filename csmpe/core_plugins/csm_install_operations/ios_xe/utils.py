@@ -70,7 +70,7 @@ def number_of_rsp(ctx):
     # show platform can take more than 1 minute after router reload. Issue No. 47
     output = ctx.send("show platform | count RP|RSP", timeout=600)
     if output:
-        m = re.search('Number.*= (\d+)', output)
+        m = re.search(r'Number.*= (\d+)', output)
         if m:
             count = m.group(1)
             if count not in valid_count:
@@ -96,7 +96,7 @@ def install_folder(ctx, disk):
 
     output = ctx.send("show version running | include packages.conf")
     if output:
-        m = re.search('File: (.*)/?packages.conf', output)
+        m = re.search(r'File: (.*)/?packages.conf', output)
         if m:
             folder = m.group(1)
             folder = re.sub("/$", "", folder)
@@ -118,7 +118,7 @@ def create_folder(ctx, folder):
     """
 
     output = ctx.send('dir ' + folder)
-    m = re.search('%Error opening', output)
+    m = re.search(r'%Error opening', output)
     if m:
         cmd = 'mkdir ' + folder
         ctx.send(cmd, wait_for_string="Create directory filename")
@@ -127,7 +127,7 @@ def create_folder(ctx, folder):
         return True
 
     output = ctx.send('dir ' + folder)
-    m = re.search('%Error opening', output)
+    m = re.search(r'%Error opening', output)
     if m:
         return False
     else:
@@ -145,7 +145,7 @@ def available_space(ctx, device):
 
     available = -1
     output = ctx.send('dir ' + device)
-    m = re.search('(\d+) bytes free', output)
+    m = re.search(r'(\d+) bytes free', output)
     if m:
         available = int(m.group(1))
 
@@ -163,14 +163,14 @@ def installed_package_name(ctx, pkg_conf):
         ctx.error("dir {} failed".format(pkg_conf))
         return None
 
-    m = re.search('No such file', output)
+    m = re.search(r'No such file', output)
     if m:
         ctx.info('{} does not exist'.format(pkg_conf))
         return None
 
     cmd = "more " + pkg_conf + " | include PackageName"
     output = ctx.send(cmd)
-    m = re.search('pkginfo: PackageName: (.*)$', output)
+    m = re.search(r'pkginfo: PackageName: (.*)$', output)
     if m:
         img_name = m.group(1)
         ctx.info("installed package name = {} ".format(img_name))
@@ -193,7 +193,7 @@ def installed_package_version(ctx):
     cmd = 'show version | include Cisco IOS XE Software'
     output = ctx.send(cmd)
     # Cisco IOS XE Software, Version 03.13.03.S - Extended Support Release
-    m = re.search('Version (.*) -', output)
+    m = re.search(r'Version (.*) -', output)
 
     # Cisco IOS XE Software, Version 03.18.01.SP.156-2.SP1-ext
     if not m:
@@ -222,7 +222,7 @@ def installed_package_device(ctx):
         lines = string.split(output, '\n')
         lines = [x for x in lines if x]
         for line in lines:
-            m = re.search('File: .*(asr\w+)-\w+.\w+', line)
+            m = re.search(r'File: .*(asr\w+)-\w+.\w+', line)
             if m:
                 img_dev = m.group(1)
                 break
@@ -237,7 +237,7 @@ def install_package_family(pkg):
     :return: device_type of the installed image ie asr900
     """
     img_dev = None
-    m = re.search('(asr\d+)\w*', pkg)
+    m = re.search(r'(asr\d+)\w*', pkg)
     if m:
         img_dev = m.group(1)
 
@@ -259,7 +259,7 @@ def install_add_remove(ctx, cmd):
     ctx.send(cmd, wait_for_string="Destination filename")
     output = ctx.send("\r\n\r\n\r\n", timeout=3600)
 
-    result = re.search("\d+ bytes copied in .* secs", output)
+    result = re.search(r"\d+ bytes copied in .* secs", output)
 
     if result:
         ctx.info("Command {} finished successfully".format(cmd))
@@ -302,7 +302,7 @@ def remove_exist_image(ctx, package):
     """
 
     output = ctx.send('dir ' + package)
-    m = re.search('No such file', output)
+    m = re.search(r'No such file', output)
 
     if m:
         return True
@@ -312,7 +312,7 @@ def remove_exist_image(ctx, package):
         ctx.info("Removing files : {}".format(package))
 
     output = ctx.send(cmd)
-    m = re.search('No such file', output)
+    m = re.search(r'No such file', output)
     if m:
         return True
     else:
@@ -335,7 +335,7 @@ def remove_exist_subpkgs(ctx, folder, pkg):
         ctx.error("dir {} failed".format(pkg_conf))
         return
 
-    m = re.search('No such file', output)
+    m = re.search(r'No such file', output)
     if m:
         ctx.info('Booted from consolidated mode: '
                  '{} does not exist'.format(pkg_conf))
@@ -366,7 +366,7 @@ def remove_exist_subpkgs(ctx, folder, pkg):
         lines = string.split(output, '\n')
         lines = [x for x in lines if x]
         for line in lines:
-            m = re.search('(asr.*\.bin)', line)
+            m = re.search(r'(asr.*\.bin)', line)
             if m:
                 previous_pkg = m.group(0)
                 if previous_pkg != pkg:
@@ -393,7 +393,7 @@ def remove_exist_subpkgs(ctx, folder, pkg):
     lines = string.split(output, '\n')
     lines = [x for x in lines if x]
     for line in lines:
-        m = re.search('(asr9.*pkg)', line)
+        m = re.search(r'(asr9.*pkg)', line)
         if m:
             exfile = m.group(1)
             package = folder + '/' + exfile
@@ -417,7 +417,7 @@ def check_issu_readiness(ctx, disk, pkg, image_size):
     cmd = 'show version | count packages.conf'
     output = ctx.send(cmd)
     if output:
-        m = re.search('Number.*= (\d+)', output)
+        m = re.search(r'Number.*= (\d+)', output)
         if m:
             count = m.group(1)
             if count == '0':
@@ -434,7 +434,7 @@ def check_issu_readiness(ctx, disk, pkg, image_size):
     cmd = 'show version | include System image file'
     output = ctx.send(cmd)
     if output:
-        m = re.search('System image file is \"(.*)\"', output)
+        m = re.search(r'System image file is \"(.*)\"', output)
         if m:
             pkg_conf = m.group(1)
             img_name = installed_package_name(ctx, pkg_conf)
@@ -448,7 +448,7 @@ def check_issu_readiness(ctx, disk, pkg, image_size):
         ctx.warning("Show version command error!")
         return False
 
-    m = re.search('asr\w+-(\w+)\.\w+', pkg)
+    m = re.search(r'asr\w+-(\w+)\.\w+', pkg)
     if m:
         pkg_name = m.group(1)
         if img_name != pkg_name:
@@ -468,7 +468,7 @@ def check_issu_readiness(ctx, disk, pkg, image_size):
         lines = [x for x in lines if x]
         # Package: rpbase, version: 03.16.00.S.155-3.S-ext, status: active
         for line in lines:
-            m = re.search('Package: (.*) status', line)
+            m = re.search(r'Package: (.*) status', line)
             if m:
                 img_type = m.group(1)
                 if img_type not in stby_output:
@@ -511,7 +511,7 @@ def check_issu_readiness(ctx, disk, pkg, image_size):
     cmd = 'show redundancy | include Configured Redundancy Mode'
     output = ctx.send(cmd)
     if output:
-        m = re.search('Configured Redundancy Mode = (.*)', output)
+        m = re.search(r'Configured Redundancy Mode = (.*)', output)
         if m:
             configed_mode = m.group(1)
             if configed_mode != 'sso':
@@ -527,7 +527,7 @@ def check_issu_readiness(ctx, disk, pkg, image_size):
     cmd = 'show redundancy | include Operating Redundancy Mode'
     output = ctx.send(cmd)
     if output:
-        m = re.search('Operating Redundancy Mode = (.*)', output)
+        m = re.search(r'Operating Redundancy Mode = (.*)', output)
         if m:
             operating_mode = m.group(1)
             if operating_mode != 'sso':
@@ -551,7 +551,7 @@ def check_issu_readiness(ctx, disk, pkg, image_size):
             ctx.warning("Current Software state = {}".format(output))
             return False
 
-        m = re.search('Current Software state = (.*)', lines[0])
+        m = re.search(r'Current Software state = (.*)', lines[0])
         if m:
             active_state = m.group(1)
             if 'ACTIVE' not in active_state:
@@ -563,7 +563,7 @@ def check_issu_readiness(ctx, disk, pkg, image_size):
             ctx.warning("Show redundancy command error!")
             return False
 
-        m = re.search('Current Software state = (.*)', lines[1])
+        m = re.search(r'Current Software state = (.*)', lines[1])
         if m:
             stby_state = m.group(1)
             if 'STANDBY HOT' not in stby_state:
@@ -605,13 +605,13 @@ def xe_show_platform(ctx):
         sip0 = False
         for line in lines:
             if not sip0:
-                m = re.search('--------- ------------------- '
+                m = re.search(r'--------- ------------------- '
                               '--------------------- -----------------', line)
                 if m:
                     sip0 = True
                 continue
 
-            m = re.search('Slot      CPLD Version        Firmware Version', line)
+            m = re.search(r'Slot      CPLD Version        Firmware Version', line)
             if m:
                 break
 
@@ -619,8 +619,8 @@ def xe_show_platform(ctx):
             Type = line[10:28].strip()
             State = line[30:50].strip()
 
-            m1 = re.search('^0\/\d+', Slot)
-            m2 = re.search('^R\d+', Slot)
+            m1 = re.search(r'^0\/\d+', Slot)
+            m2 = re.search(r'^R\d+', Slot)
             if m1 or m2:
                 platform_info[Slot] = [Type, State]
 

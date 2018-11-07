@@ -52,7 +52,7 @@ def a_send_newline(fsm_ctx):
 
 def a_bytes_copied(plugin_ctx, fsm_ctx):
     """Capture number of bytes copied."""
-    m = re.search("\d+ bytes copied in .* secs", fsm_ctx.ctrl.before)
+    m = re.search(r"\d+ bytes copied in .* secs", fsm_ctx.ctrl.before)
     if m:
         plugin_ctx.info('{}'.format(m.group(0)))
     else:

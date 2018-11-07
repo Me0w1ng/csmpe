@@ -43,10 +43,10 @@ platforms = ["asr9k", "c12k", "hfr"]
 # 'services-infra' needs to be before 'service' for matching purpose
 package_types = "mini mcast mgbl mpls k9sec diags fpd doc bng li optic services-infra services " \
                 "infra-test video 9000v asr901 asr903 ncs500x".split()
-version_re = re.compile("(?P<VERSION>\d+\.\d+\.\d+(\.\d+\w+)?)")
-smu_re = re.compile("(?P<SMU>CSC[a-z]{2}\d{5})")
-sp_re = re.compile("(?P<SP>(sp|fp)\d{0,2})")
-subversion_re = re.compile("(CSC|sp|fp).*(?P<SUBVERSION>\d+\.\d+\.\d+?)")
+version_re = re.compile(r"(?P<VERSION>\d+\.\d+\.\d+(\.\d+\w+)?)")
+smu_re = re.compile(r"(?P<SMU>CSC[a-z]{2}\d{5})")
+sp_re = re.compile(r"(?P<SP>(sp|fp)\d{0,2})")
+subversion_re = re.compile(r"(CSC|sp|fp).*(?P<SUBVERSION>\d+\.\d+\.\d+?)")
 
 
 class SoftwarePackage(object):

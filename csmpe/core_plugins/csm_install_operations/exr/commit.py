@@ -52,7 +52,7 @@ class Plugin(CSMPlugin):
         """
         cmd = "install commit"
         output = self.ctx.send(cmd)
-        result = re.search('Install operation (\d+)', output)
+        result = re.search(r'Install operation (\d+)', output)
         if result:
             op_id = result.group(1)
             watch_operation(self.ctx, op_id)
@@ -65,7 +65,7 @@ class Plugin(CSMPlugin):
         success_oper = r'Install operation (\d+) finished successfully'
 
         # Not sure if this is still the message on NCS6K
-        completed_with_failure = 'Install operation (\d+) completed with failure'
+        completed_with_failure = r'Install operation (\d+) completed with failure'
 
         cmd = "show install log {} detail".format(op_id)
         output = self.ctx.send(cmd)

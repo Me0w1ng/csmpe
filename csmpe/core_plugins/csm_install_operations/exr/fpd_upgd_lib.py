@@ -590,7 +590,7 @@ def hw_fpd_reload(ctx, location):
     cmd = 'admin hw-module location ' + location + ' reload'
 
     # Seeing this message without the reboot prompt indicates a non-reload situation
-    RELOAD_MODULE = re.compile("Reload hardware module \? \[no,yes\]")
+    RELOAD_MODULE = re.compile(r"Reload hardware module \? \[no,yes\]")
     HOST_PROMPT = re.compile(ctx.prompt)
 
     events = [RELOAD_MODULE, HOST_PROMPT]

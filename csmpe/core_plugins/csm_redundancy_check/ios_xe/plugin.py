@@ -102,7 +102,7 @@ class Plugin(CSMPlugin):
                     self.ctx.info('{}'.format(line.lstrip()))
                 continue
 
-            m = re.search('Redundancy Mode \(Operational\)\s+= (.*)', line)
+            m = re.search(r'Redundancy Mode \(Operational\)\s+= (.*)', line)
             if m:
                 state = m.group(1)
                 if 'sso' in state:
@@ -110,7 +110,7 @@ class Plugin(CSMPlugin):
                     self.ctx.info('{}'.format(line.lstrip()))
                 continue
 
-            m = re.search('Redundancy Mode \(Configured\)\s+= (.*)', line)
+            m = re.search(r'Redundancy Mode \(Configured\)\s+= (.*)', line)
             if m:
                 state = m.group(1)
                 if 'sso' in state:
@@ -118,7 +118,7 @@ class Plugin(CSMPlugin):
                     self.ctx.info('{}'.format(line.lstrip()))
                 continue
 
-            m = re.search('Redundancy State        \s+ = (.*)', line)
+            m = re.search(r'Redundancy State        \s+ = (.*)', line)
             if m:
                 state = m.group(1)
                 if 'sso' in state:

@@ -29,7 +29,7 @@ import time
 plugin_ctx = None
 
 
-install_error_pattern = re.compile("Error:    (.*)$", re.MULTILINE)
+install_error_pattern = re.compile(r"Error:    (.*)$", re.MULTILINE)
 
 
 def log_install_errors(ctx, output):
@@ -126,7 +126,7 @@ def wait_for_reload(ctx):
 
         ctx.info("output = {}".format(output))
 
-        m = re.search('(asr.*\.bin)', output)
+        m = re.search(r'(asr.*\.bin)', output)
         if m:
             ctx.info("The device is in the desired state")
             elapsed = time.time() - begin
@@ -157,9 +157,9 @@ def install_activate_write_memory(ctx, cmd, hostname):
     plugin_ctx = ctx
 
     # Seeing this message without the reboot prompt indicates a non-reload situation
-    Build_config = re.compile("\[OK\]")
+    Build_config = re.compile(r"\[OK\]")
 
-    Overwrite_warning = re.compile("Overwrite the previous NVRAM configuration\?\[confirm\]")
+    Overwrite_warning = re.compile(r"Overwrite the previous NVRAM configuration\?\[confirm\]")
 
     Host_prompt = re.compile(hostname)
 
@@ -189,7 +189,7 @@ def install_add_remove(ctx, cmd):
     ctx.send(cmd, wait_for_string="Destination filename")
     output = ctx.send("\r\n\r\n\r\n", timeout=3600)
 
-    result = re.search("\d+ bytes copied in .* secs", output)
+    result = re.search(r"\d+ bytes copied in .* secs", output)
 
     if result:
         ctx.info("Command {} finished successfully".format(cmd))
