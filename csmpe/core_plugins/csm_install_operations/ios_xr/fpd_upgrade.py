@@ -39,7 +39,7 @@ from csmpe.core_plugins.csm_install_operations.utils import update_device_info_u
 class Plugin(CSMPlugin):
     """This plugin removes inactive packages from the device."""
     name = "Install FPD Upgrade Plugin"
-    platforms = {'ASR9K'}
+    platforms = {'ASR9K', 'CRS'}
     phases = {'FPD-Upgrade'}
     os = {'XR'}
 
