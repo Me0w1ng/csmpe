@@ -957,8 +957,8 @@ class Plugin(CSMPlugin):
         if compare_version_numbers(version, MINIMUM_RELEASE_VERSION_FOR_MIGRATION) < 0:
             self.ctx.error("The minimal release version required for migration is {0}. Please upgrade to at lease {0} before scheduling migration.".format(MINIMUM_RELEASE_VERSION_FOR_MIGRATION))
 
-        log_and_post_status(self.ctx, "Testing ping to selected server repository IP.")
-        self._ping_repository_check(server_repo_url)
+        # log_and_post_status(self.ctx, "Testing ping to selected server repository IP.")
+        # self._ping_repository_check(server_repo_url)
 
         log_and_post_status(self.ctx, "Checking if FPD package is active on device.")
         self._check_if_fpd_package_installed()
