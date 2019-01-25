@@ -81,6 +81,57 @@ def fpd_needs_upgd(ctx, location, fpd_type):
     NOTES:
     1.  One or more FPD needs an upgrade.  This can be accomplished
         using the "admin> upgrade hw-module fpd <fpd> location <loc>" CLI.
+
+    Platform: CRS
+    RP/0/RP0/CPU0:beast#admin show hw-module fpd location all
+
+    ===================================== ==========================================
+                                          Existing Field Programmable Devices
+                                          ==========================================
+                                            HW                       Current SW Upg/
+    Location     Card Type                Version Type Subtype Inst   Version   Dng?
+    ============ ======================== ======= ==== ======= ==== =========== ====
+    0/RP0/CPU0   PRP                        N/A   lc   rommonA 0       2.10*    No
+    --------------------------------------------------------------------------------
+    0/RP0/CPU0   PRP                        N/A   lc   rommon  1       2.11     No
+    --------------------------------------------------------------------------------
+    0/RP0/CPU0   PRP                        7.0   lc   fpga1   2       7.00     Yes
+    --------------------------------------------------------------------------------
+    0/RP0/CPU0   PRP                        N/A   lc   fpga2   3       0.01     No
+    --------------------------------------------------------------------------------
+    0/RP0/CPU0   PRP                       14.0   lc   fpga3   4      14.00     No
+    --------------------------------------------------------------------------------
+    0/RP0/CPU0   PRP                        N/A   lc   fpga4   5       0.01     No
+    --------------------------------------------------------------------------------
+    0/RP0/CPU0   PRP                        N/A   lc   fpga5   6       0.01     No
+    --------------------------------------------------------------------------------
+    0/SM0/SP     Fabric HS123 Superstar     0.2   lc   rommonA 0       2.10*    No
+                                                  lc   rommon  0       2.11     No
+                                                  lc   fpga1   0       6.04     No
+                                                  lc   fpga2   0       4.00^    No
+    --------------------------------------------------------------------------------
+    0/SM1/SP     Fabric HS123 Superstar     0.2   lc   rommonA 0       2.10*    No
+                                                  lc   rommon  0       2.11     No
+                                                  lc   fpga1   0       6.04     No
+                                                  lc   fpga2   0       4.00^    No
+    --------------------------------------------------------------------------------
+    0/SM2/SP     Fabric HS123 Superstar     0.2   lc   rommonA 0       2.10*    No
+                                                  lc   rommon  0       2.11     No
+                                                  lc   fpga1   0       6.04     No
+                                                  lc   fpga2   0       4.00^    No
+    --------------------------------------------------------------------------------
+    0/SM3/SP     Fabric HS123 Superstar     0.2   lc   rommonA 0       2.10*    No
+                                                  lc   rommon  0       2.11     No
+                                                  lc   fpga1   0       6.04     No
+                                                  lc   fpga2   0       4.00^    No
+    --------------------------------------------------------------------------------
+    NOTES:
+    1.  One or more FPD needs an upgrade.  This can be accomplished
+        using the "admin> upgrade hw-module fpd <fpd> location <loc>" CLI.
+    2.  * One or more FPD is running minimum software version supported.
+          It can be upgraded using the "admin> upgrade hw-module fpd <fpd> force location <loc>" CLI.
+    3.  ^ One or more FPD will be intentionally skipped from upgrade using CLI with option "all" or during "Auto fpd".
+          It can be upgraded only using the "admin> upgrade hw-module fpd <fpd> location <loc>" CLI with exact location.
     """
 
     need_upgd = False
@@ -92,9 +143,12 @@ def fpd_needs_upgd(ctx, location, fpd_type):
     output = ctx.send(cmd)
     lines = output.split('\n')
     lines = [x for x in lines if x]
+    xlen = len(lines)
+    i = 0
     for line in lines:
 
-        if '------------------------------------' in line or 'NOTES:' in line:
+        i += 1
+        if i == xlen or 'NOTES:' in line:
             break
 
         if line[0:8] == 'Location':
@@ -218,6 +272,7 @@ def fpd_locations(ctx):
         if 'NOTES:' in line:
             break
 
+    locations = list(set(locations))
     return locations
 
 
